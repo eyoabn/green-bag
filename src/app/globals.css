@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter, "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  --font-serif: var(--font-playfair, "Playfair Display", Georgia, "Times New Roman", Cambria, serif);
+  
+  --color-primary: #8C4B31; /* Terracotta */
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #2C4A3B; /* Forest green */
+  --color-secondary-foreground: #FFFFFF;
+  
+  --color-background: #F9F6F0; /* Cream / paper background */
+  --color-foreground: #2A2522; /* Dark brown/black for text */
+  --color-muted: #E8E3DB;
+  --color-muted-foreground: #6B655E;
+  
+  --color-accent: #D7A977; /* Kraft paper tan */
+  --color-accent-foreground: #2A2522;
+  
+  --color-border: #E8E3DB;
+}
+
+:root {
+  --background: #F9F6F0;
+  --foreground: #2A2522;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}

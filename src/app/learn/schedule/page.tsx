@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Calendar as CalendarIcon, 
@@ -95,6 +95,7 @@ const SESSIONS: Session[] = [
 import { DataStore } from "@/utils/dataStore";
 
 export default function SchedulePage() {
+  const [sessionsList, setSessionsList] = useState<Session[]>(SESSIONS);
   const [filterType, setFilterType] = useState<"all" | "in_person" | "live">("all");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [bookingName, setBookingName] = useState("");
@@ -102,8 +103,38 @@ export default function SchedulePage() {
   const [receiptUploaded, setReceiptUploaded] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeBanks, setActiveBanks] = useState(DataStore.getActiveBanks());
 
-  const filteredSessions = SESSIONS.filter((s) => {
+  useEffect(() => {
+    setActiveBanks(DataStore.getActiveBanks());
+  }, []);
+
+  useEffect(() => {
+    const loadSessions = () => {
+      const stored = DataStore.getClasses();
+      if (stored && stored.length > 0) {
+        setSessionsList(stored.map((s) => ({
+          id: s.id,
+          type: s.type,
+          title: s.title,
+          date: s.date,
+          time: s.time,
+          location: s.location,
+          price: s.price,
+          capacity: s.capacity,
+          enrolled: s.enrolled || 0,
+          instructor: s.instructor,
+          description: s.description || "",
+          materialsIncluded: s.materialsIncluded || ["Workshop handbook & certificate"]
+        })));
+      }
+    };
+    loadSessions();
+    window.addEventListener("arenguade_datastore_change", loadSessions);
+    return () => window.removeEventListener("arenguade_datastore_change", loadSessions);
+  }, []);
+
+  const filteredSessions = sessionsList.filter((s) => {
     if (filterType === "all") return true;
     return s.type === filterType;
   });
@@ -404,20 +435,28 @@ export default function SchedulePage() {
                   </div>
 
                   {/* Bank Details */}
-                  <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-stone-200 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-stone-500 uppercase">Transfer {selectedSession.price} ETB to:</span>
-                      <p className="font-mono text-sm font-bold text-stone-900 mt-0.5">CBE: 1000123456789</p>
-                      <p className="text-[10px] text-stone-500">or Telebirr: 0911234567</p>
+                  <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-stone-200 space-y-2">
+                    <span className="text-[10px] font-bold text-stone-500 uppercase block">
+                      Transfer {selectedSession.price} ETB to Official Plant Settlement:
+                    </span>
+                    <div className="space-y-2">
+                      {activeBanks.map((bank) => (
+                        <div key={bank.id} className="flex items-center justify-between text-xs py-1 border-b border-stone-200/60 last:border-0">
+                          <div>
+                            <span className="font-semibold text-stone-800">{bank.name}</span>
+                            <p className="font-mono font-bold text-stone-900">{bank.accountNumber}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(bank.accountNumber)}
+                            className="p-1.5 rounded-lg bg-white border border-stone-300 text-[11px] font-bold text-stone-700 hover:bg-stone-100 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Copy size={11} />
+                            <span>Copy</span>
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy("1000123456789")}
-                      className="p-2 rounded-lg bg-white border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 flex items-center gap-1"
-                    >
-                      {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                      <span>{copied ? "Copied" : "Copy"}</span>
-                    </button>
                   </div>
 
                   {/* Receipt upload */}

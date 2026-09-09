@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { 
@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   ExternalLink
 } from "lucide-react";
+import { DataStore, StoredProduct } from "@/utils/dataStore";
 
 export interface Product {
   id: string;
@@ -241,12 +242,40 @@ const CATEGORIES = [
 ];
 
 export default function ProductsPage() {
+  const [productsList, setProductsList] = useState<Product[]>(PRODUCTS_CATALOG);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price-low" | "price-high">("featured");
   const [lightboxProduct, setLightboxProduct] = useState<Product | null>(null);
 
-  const filteredProducts = PRODUCTS_CATALOG.filter((product) => {
+  useEffect(() => {
+    const loadProducts = () => {
+      const stored = DataStore.getProducts();
+      if (stored && stored.length > 0) {
+        setProductsList(stored.map((s) => ({
+          id: s.id,
+          name: s.name,
+          client: s.client || "Arenguade Custom Line",
+          category: s.category,
+          price: s.price,
+          bundleSize: s.bundleSize || 100,
+          gsm: s.gsm || 200,
+          handleType: s.handleType || "Twisted Kraft Cord",
+          image: s.image || "/images/photo_6_2026-09-05_00-36-03.jpg",
+          gallery: s.gallery && s.gallery.length > 0 ? s.gallery : [s.image],
+          badge: s.inStock ? s.badge : "Out of Stock",
+          description: s.description || "",
+          dimensions: s.dimensions || "24cm × 30cm + 10cm gusset",
+          material: s.material || "100% Ethiopian Virgin Kraft",
+        })));
+      }
+    };
+    loadProducts();
+    window.addEventListener("arenguade_datastore_change", loadProducts);
+    return () => window.removeEventListener("arenguade_datastore_change", loadProducts);
+  }, []);
+
+  const filteredProducts = productsList.filter((product) => {
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           product.client.toLowerCase().includes(searchQuery.toLowerCase()) ||

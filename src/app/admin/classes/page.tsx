@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Users, 
@@ -8,98 +8,79 @@ import {
   Calendar, 
   Plus, 
   MapPin, 
-  Clock, 
-  CheckCircle2, 
+  Trash2,
   ExternalLink,
   X,
-  PlayCircle
+  PlayCircle,
+  Clock,
+  Sparkles
 } from "lucide-react";
-
-interface AdminClassSession {
-  id: string;
-  type: "in_person" | "live";
-  title: string;
-  instructor: string;
-  date: string;
-  time: string;
-  location: string;
-  price: number;
-  capacity: number;
-  enrolled: number;
-  livekitRoom?: string;
-}
-
-const INITIAL_SESSIONS: AdminClassSession[] = [
-  {
-    id: "1",
-    type: "in_person",
-    title: "Beginner Paper Bag Workshop & Structural Folds",
-    instructor: "Master Craftsman Abebe Kebede",
-    date: "Oct 15, 2026",
-    time: "10:00 AM - 2:00 PM",
-    location: "Addis Ababa Studio (Bole Subcity)",
-    price: 500,
-    capacity: 12,
-    enrolled: 8,
-  },
-  {
-    id: "2",
-    type: "live",
-    title: "Virtual: Advanced Origami Folds & Gusset Dynamics",
-    instructor: "Sara Haile (Design Lead)",
-    date: "Oct 18, 2026",
-    time: "3:00 PM - 5:00 PM",
-    location: "LiveKit Online Classroom",
-    price: 300,
-    capacity: 40,
-    enrolled: 26,
-    livekitRoom: "session_2",
-  },
-  {
-    id: "3",
-    type: "in_person",
-    title: "Corporate Gift Bag & Screen Printing Masterclass",
-    instructor: "Abebe Kebede & Technical Team",
-    date: "Oct 22, 2026",
-    time: "9:00 AM - 4:00 PM",
-    location: "Addis Ababa Studio (Bole Subcity)",
-    price: 1000,
-    capacity: 10,
-    enrolled: 7,
-  },
-];
+import { DataStore, StoredClassSession } from "@/utils/dataStore";
 
 export default function AdminClassesPage() {
-  const [sessions, setSessions] = useState<AdminClassSession[]>(INITIAL_SESSIONS);
+  const [sessions, setSessions] = useState<StoredClassSession[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   
   // New session form state
   const [title, setTitle] = useState("");
   const [type, setType] = useState<"in_person" | "live">("live");
-  const [instructor, setInstructor] = useState("Sara Haile");
+  const [instructor, setInstructor] = useState("Sara Haile (Design Lead)");
   const [date, setDate] = useState("Nov 05, 2026");
   const [time, setTime] = useState("2:00 PM - 4:00 PM");
   const [price, setPrice] = useState(350);
   const [capacity, setCapacity] = useState(30);
+  const [location, setLocation] = useState("LiveKit Interactive Video Room");
+  const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCreateSession = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadSessions();
+    window.addEventListener("arenguade_datastore_change", loadSessions);
+    return () => window.removeEventListener("arenguade_datastore_change", loadSessions);
+  }, []);
+
+  const loadSessions = () => {
+    setSessions(DataStore.getClasses());
+  };
+
+  const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newSession: AdminClassSession = {
-      id: String(sessions.length + 1),
-      title,
-      type,
-      instructor,
-      date,
-      time,
-      location: type === "live" ? "LiveKit Online Classroom" : "Addis Ababa Studio",
-      price: Number(price),
-      capacity: Number(capacity),
-      enrolled: 0,
-      livekitRoom: type === "live" ? `session_${sessions.length + 1}` : undefined
-    };
-    setSessions([...sessions, newSession]);
-    setModalOpen(false);
-    setTitle("");
+    setIsSubmitting(true);
+
+    try {
+      await DataStore.addClass({
+        title,
+        type,
+        instructor,
+        date,
+        time,
+        location: type === "live" ? "LiveKit Interactive Video Room" : (location || "Addis Ababa Studio (Bole Subcity)"),
+        price: Number(price),
+        capacity: Number(capacity),
+        livekitRoom: type === "live" ? `session_${Date.now()}` : undefined,
+        description: description || `Professional craft masterclass led by ${instructor}. Includes hands-on instruction and certificates.`,
+        materialsIncluded: type === "live" 
+          ? ["Live interactive Q&A with instructor", "Downloadable PDF blueprints", "Permanent session replay recording", "Digital Certificate"]
+          : ["100% Ethiopian Virgin Kraft sheets", "Adhesives & bone folders", "Twisted cords & eyelets", "Take-home portfolio"]
+      });
+
+      setModalOpen(false);
+      setTitle("");
+      setDescription("");
+      loadSessions();
+    } catch (err) {
+      console.error("Failed to add session:", err);
+      alert("Failed to schedule class.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to remove this workshop from the public curriculum?")) {
+      await DataStore.deleteClass(id);
+      loadSessions();
+    }
   };
 
   return (
@@ -109,23 +90,33 @@ export default function AdminClassesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">
-            Arenguade Craft Academy
+            Arenguade Craft Academy Command
           </span>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
             Workshops & LiveKit Classrooms
           </h1>
           <p className="text-xs text-stone-500 mt-1">
-            Schedule hands-on studio sessions in Addis Ababa and broadcast live streaming WebRTC classes.
+            Schedule studio classes in Addis Ababa and broadcast live streaming WebRTC classes to students worldwide.
           </p>
         </div>
 
-        <button
-          onClick={() => setModalOpen(true)}
-          className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-5 py-3 rounded-full transition-colors flex items-center gap-2 shadow-sm"
-        >
-          <Plus size={16} />
-          <span>Schedule New Workshop</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/learn/schedule"
+            target="_blank"
+            className="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-4 py-3 rounded-full transition-colors flex items-center gap-1.5"
+          >
+            <span>Public Schedule</span>
+            <ExternalLink size={13} />
+          </Link>
+          <button
+            onClick={() => setModalOpen(true)}
+            className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-5 py-3 rounded-full transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+          >
+            <Plus size={16} />
+            <span>Schedule New Workshop</span>
+          </button>
+        </div>
       </div>
 
       {/* Class Sessions List */}
@@ -135,7 +126,7 @@ export default function AdminClassesPage() {
             key={session.id}
             className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
           >
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
                 <span
                   className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
@@ -155,7 +146,7 @@ export default function AdminClassesPage() {
                 {session.title}
               </h3>
 
-              <div className="flex flex-wrap gap-4 text-xs text-stone-600">
+              <div className="flex flex-wrap gap-3 text-xs text-stone-600">
                 <span className="flex items-center gap-1.5 bg-[#FAF7F2] px-3 py-1 rounded-lg border border-stone-200">
                   <Calendar size={13} className="text-[#8C4B31]" /> {session.date} • {session.time}
                 </span>
@@ -172,7 +163,7 @@ export default function AdminClassesPage() {
                   {session.price} ETB
                 </span>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  {session.enrolled} / {session.capacity} Students Registered
+                  {session.enrolled} / {session.capacity} Students Enrolled
                 </p>
               </div>
 
@@ -183,28 +174,35 @@ export default function AdminClassesPage() {
                     className="px-4 py-2 rounded-full bg-[#1E3B2E] text-white text-xs font-bold hover:bg-[#8C4B31] transition-colors flex items-center gap-1.5 shadow-sm"
                   >
                     <PlayCircle size={14} />
-                    <span>Launch LiveKit Room</span>
+                    <span>Launch Live Broadcast</span>
                   </Link>
                 )}
                 <button
-                  onClick={() => alert(`Enrolled roster for ${session.title}: 8 active students with confirmed receipts.`)}
-                  className="px-4 py-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors"
+                  onClick={() => handleDelete(session.id)}
+                  className="p-2 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  title="Delete workshop"
                 >
-                  View Student Roster
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>
           </div>
         ))}
+
+        {sessions.length === 0 && (
+          <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center text-stone-500">
+            <p className="text-sm">No workshops scheduled yet.</p>
+          </div>
+        )}
       </div>
 
       {/* Schedule Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 border border-stone-200 shadow-2xl relative animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 border border-stone-200 shadow-2xl relative my-8">
             <button
               onClick={() => setModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-800"
+              className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-800 cursor-pointer"
             >
               <X size={20} />
             </button>
@@ -222,7 +220,7 @@ export default function AdminClassesPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Masterclass in Handle Tensile Strength"
+                  placeholder="e.g. Masterclass in Heavy Kraft Handle Attachment"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
@@ -234,7 +232,12 @@ export default function AdminClassesPage() {
                   <label className="font-bold text-stone-700 block mb-1">Session Type</label>
                   <select
                     value={type}
-                    onChange={(e) => setType(e.target.value as any)}
+                    onChange={(e) => {
+                      const t = e.target.value as "in_person" | "live";
+                      setType(t);
+                      if (t === "live") setLocation("LiveKit Interactive Video Room");
+                      else setLocation("Addis Ababa Studio (Bole Subcity)");
+                    }}
                     className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
                   >
                     <option value="live">LiveKit Virtual Online</option>
@@ -255,20 +258,22 @@ export default function AdminClassesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-stone-700 block mb-1">Date</label>
+                  <label className="font-bold text-stone-700 block mb-1">Calendar Date</label>
                   <input
                     type="text"
                     required
+                    placeholder="e.g. Nov 12, 2026"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-stone-700 block mb-1">Time</label>
+                  <label className="font-bold text-stone-700 block mb-1">Session Hours</label>
                   <input
                     type="text"
                     required
+                    placeholder="e.g. 2:00 PM - 5:00 PM"
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
                     className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
@@ -288,7 +293,7 @@ export default function AdminClassesPage() {
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-stone-700 block mb-1">Max Capacity</label>
+                  <label className="font-bold text-stone-700 block mb-1">Max Seat Capacity</label>
                   <input
                     type="number"
                     required
@@ -299,12 +304,37 @@ export default function AdminClassesPage() {
                 </div>
               </div>
 
+              {type === "in_person" && (
+                <div>
+                  <label className="font-bold text-stone-700 block mb-1">Physical Location</label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. Addis Ababa Studio (Bole Subcity)"
+                    className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Curriculum Highlights</label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Techniques covered, paper grades, practical takeaways..."
+                  className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
+                />
+              </div>
+
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold tracking-wider uppercase transition-all shadow-md"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold tracking-wider uppercase transition-all shadow-md cursor-pointer disabled:opacity-50"
                 >
-                  Publish Workshop to Schedule
+                  {isSubmitting ? "Publishing Workshop..." : "Publish to Academy Schedule"}
                 </button>
               </div>
             </form>

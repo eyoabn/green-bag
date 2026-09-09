@@ -26,7 +26,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
 
-  const product = PRODUCTS_CATALOG.find((p) => p.id === productId) || PRODUCTS_CATALOG[0];
+  const [product, setProduct] = useState(() => {
+    const dynamicProd = DataStore.getProductById(productId);
+    if (dynamicProd) {
+      return {
+        id: dynamicProd.id,
+        name: dynamicProd.name,
+        client: dynamicProd.client || "Arenguade Custom Line",
+        category: dynamicProd.category,
+        price: dynamicProd.price,
+        bundleSize: dynamicProd.bundleSize || 100,
+        gsm: dynamicProd.gsm || 200,
+        handleType: dynamicProd.handleType || "Twisted Kraft Cord",
+        image: dynamicProd.image || "/images/photo_6_2026-09-05_00-36-03.jpg",
+        gallery: dynamicProd.gallery && dynamicProd.gallery.length > 0 ? dynamicProd.gallery : [dynamicProd.image],
+        badge: dynamicProd.inStock ? dynamicProd.badge : "Out of Stock",
+        description: dynamicProd.description || "",
+        dimensions: dynamicProd.dimensions || "24cm × 30cm + 10cm gusset",
+        material: dynamicProd.material || "100% Ethiopian Virgin Kraft",
+      };
+    }
+    return PRODUCTS_CATALOG.find((p) => p.id === productId) || PRODUCTS_CATALOG[0];
+  });
 
   const [banks, setBanks] = useState<StoredBankAccount[]>(DataStore.getActiveBanks());
   const [selectedBank, setSelectedBank] = useState<StoredBankAccount>(DataStore.getActiveBanks()[0] || {

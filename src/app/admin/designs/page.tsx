@@ -100,6 +100,7 @@ export default function AdminDesignsPage() {
   }, []);
 
   const updateStatus = (id: string, newStatus: SubmittedDesign["status"]) => {
+    DataStore.updateDesignStatus(id, newStatus);
     setDesigns((prev) =>
       prev.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
     );

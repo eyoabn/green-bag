@@ -86,6 +86,13 @@ export default function AdminBankAccountsPage() {
     loadBanks();
   };
 
+  const handleDeleteBank = (id: string) => {
+    if (confirm("Are you sure you want to delete this bank settlement account?")) {
+      DataStore.deleteBank(id);
+      loadBanks();
+    }
+  };
+
   const handleAddAccount = (e: React.FormEvent) => {
     e.preventDefault();
     DataStore.addBank({
@@ -182,12 +189,21 @@ export default function AdminBankAccountsPage() {
               <span className="text-stone-400 text-[11px]">
                 {bank.isActive ? "Displayed to all customers during bank transfer flow" : "Hidden from checkout options"}
               </span>
-              <button
-                onClick={() => toggleStatus(bank.id)}
-                className="font-bold text-[#8C4B31] hover:underline"
-              >
-                {bank.isActive ? "Deactivate" : "Activate"}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => toggleStatus(bank.id)}
+                  className="font-bold text-[#8C4B31] hover:underline cursor-pointer"
+                >
+                  {bank.isActive ? "Deactivate" : "Activate"}
+                </button>
+                <button
+                  onClick={() => handleDeleteBank(bank.id)}
+                  className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  title="Delete account"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           </div>
         ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -19,7 +19,19 @@ import {
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currency, setCurrency] = useState<"ETB" | "USD">("ETB");
+  const [user, setUser] = useState<{ role: string; full_name?: string } | null>(null);
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("arenguade_user");
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch {}
+      }
+    }
+  }, [pathname]);
 
   // Hide on admin and dashboard internal pages to prevent double navigation
   const isAdminOrDashboard = pathname?.startsWith("/admin") || pathname?.startsWith("/dashboard");
@@ -94,13 +106,22 @@ export default function Navbar() {
             </button>
 
             {/* Account / Dashboard link */}
-            <Link
-              href="/dashboard"
-              className="text-xs font-semibold text-stone-700 hover:text-[#1E3B2E] px-3 py-1.5 rounded-full hover:bg-stone-200/40 transition-colors flex items-center gap-1.5"
-            >
-              <User size={14} />
-              <span>Portal</span>
-            </Link>
+            {user ? (
+              <Link
+                href={user.role === "admin" ? "/admin" : "/dashboard"}
+                className="text-xs font-semibold text-stone-800 hover:text-[#1E3B2E] px-3.5 py-1.5 rounded-full bg-stone-200/50 hover:bg-stone-200 transition-colors flex items-center gap-1.5"
+              >
+                <User size={13} className="text-[#8C4B31]" />
+                <span>{user.role === "admin" ? "Admin Console" : "My Orders"}</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="text-xs font-semibold text-stone-700 hover:text-[#1E3B2E] px-3 py-1.5 rounded-full hover:bg-stone-200/40 transition-colors"
+              >
+                Log In
+              </Link>
+            )}
 
             {/* Primary CTA */}
             <Link

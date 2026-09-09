@@ -77,8 +77,27 @@ const INITIAL_DESIGNS: SubmittedDesign[] = [
   }
 ];
 
+import { useEffect } from "react";
+import { DataStore } from "@/utils/dataStore";
+
 export default function AdminDesignsPage() {
   const [designs, setDesigns] = useState<SubmittedDesign[]>(INITIAL_DESIGNS);
+
+  const loadDesigns = () => {
+    const custom = DataStore.getDesigns();
+    if (custom.length > 0) {
+      setDesigns([...(custom as any), ...INITIAL_DESIGNS]);
+    } else {
+      setDesigns(INITIAL_DESIGNS);
+    }
+  };
+
+  useEffect(() => {
+    loadDesigns();
+    const handleUpdate = () => loadDesigns();
+    window.addEventListener("arenguade_datastore_change", handleUpdate);
+    return () => window.removeEventListener("arenguade_datastore_change", handleUpdate);
+  }, []);
 
   const updateStatus = (id: string, newStatus: SubmittedDesign["status"]) => {
     setDesigns((prev) =>

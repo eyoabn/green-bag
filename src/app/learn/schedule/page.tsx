@@ -92,6 +92,8 @@ const SESSIONS: Session[] = [
   },
 ];
 
+import { DataStore } from "@/utils/dataStore";
+
 export default function SchedulePage() {
   const [filterType, setFilterType] = useState<"all" | "in_person" | "live">("all");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -117,6 +119,19 @@ export default function SchedulePage() {
     if (!receiptUploaded) {
       alert("Please upload your transaction screenshot to confirm your registration.");
       return;
+    }
+    if (selectedSession) {
+      DataStore.addRegistration({
+        sessionId: selectedSession.id,
+        sessionTitle: selectedSession.title,
+        sessionType: selectedSession.type,
+        sessionDate: selectedSession.date,
+        sessionTime: selectedSession.time,
+        location: selectedSession.location,
+        studentName: bookingName || "Student",
+        studentPhone: bookingPhone || "0911000000",
+        priceEtb: selectedSession.price,
+      });
     }
     setBookingSuccess(true);
   };

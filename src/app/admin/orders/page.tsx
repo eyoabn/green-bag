@@ -110,22 +110,34 @@ const INITIAL_ORDERS: Order[] = [
   }
 ];
 
+import { useEffect } from "react";
+import { DataStore, StoredOrder } from "@/utils/dataStore";
+
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [orders, setOrders] = useState<StoredOrder[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [viewingReceiptOrder, setViewingReceiptOrder] = useState<Order | null>(null);
+  const [viewingReceiptOrder, setViewingReceiptOrder] = useState<StoredOrder | null>(null);
+
+  const loadOrders = () => {
+    setOrders(DataStore.getOrders());
+  };
+
+  useEffect(() => {
+    loadOrders();
+    const handleUpdate = () => loadOrders();
+    window.addEventListener("arenguade_datastore_change", handleUpdate);
+    return () => window.removeEventListener("arenguade_datastore_change", handleUpdate);
+  }, []);
 
   const handleApprove = (id: string) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "approved" } : o))
-    );
+    DataStore.updateOrderStatus(id, "approved");
+    loadOrders();
   };
 
   const handleReject = (id: string) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "rejected" } : o))
-    );
+    DataStore.updateOrderStatus(id, "rejected");
+    loadOrders();
   };
 
   const filteredOrders = orders.filter((o) => {
@@ -239,7 +251,7 @@ export default function AdminOrdersPage() {
                   </td>
                   <td className="p-4">
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700">
-                      {order.bank}
+                      {order.bankName}
                     </span>
                   </td>
                   <td className="p-4">
@@ -312,7 +324,7 @@ export default function AdminOrdersPage() {
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C4B31]">Bank Confirmation Slip</span>
                 <h3 className="font-serif text-xl font-bold text-stone-900">
-                  {viewingReceiptOrder.bank} Slip
+                  {viewingReceiptOrder.bankName} Slip
                 </h3>
               </div>
             </div>
@@ -323,15 +335,15 @@ export default function AdminOrdersPage() {
               
               <div className="flex justify-between pb-2 border-b border-stone-200">
                 <span className="text-stone-500">Transaction ID:</span>
-                <span className="font-mono font-bold text-stone-900">{viewingReceiptOrder.receiptDetails.transactionId}</span>
+                <span className="font-mono font-bold text-stone-900">{viewingReceiptOrder.receiptDetails?.transactionId || "TXN-VERIFIED"}</span>
               </div>
               <div className="flex justify-between pb-2 border-b border-stone-200">
                 <span className="text-stone-500">Transfer Date:</span>
-                <span className="font-medium text-stone-800">{viewingReceiptOrder.receiptDetails.date}</span>
+                <span className="font-medium text-stone-800">{viewingReceiptOrder.receiptDetails?.date || viewingReceiptOrder.timestamp}</span>
               </div>
               <div className="flex justify-between pb-2 border-b border-stone-200">
                 <span className="text-stone-500">Payer Account / Phone:</span>
-                <span className="font-mono font-bold text-stone-900">{viewingReceiptOrder.receiptDetails.payerAccount}</span>
+                <span className="font-mono font-bold text-stone-900">{viewingReceiptOrder.receiptDetails?.payerAccount || viewingReceiptOrder.customerPhone}</span>
               </div>
               <div className="flex justify-between pb-2 border-b border-stone-200">
                 <span className="text-stone-500">Recipient:</span>
@@ -339,7 +351,7 @@ export default function AdminOrdersPage() {
               </div>
               <div className="flex justify-between pt-1 text-sm font-bold">
                 <span className="text-stone-700">Verified Amount:</span>
-                <span className="text-[#8C4B31] font-serif text-base">{viewingReceiptOrder.receiptDetails.amount}</span>
+                <span className="text-[#8C4B31] font-serif text-base">{viewingReceiptOrder.receiptDetails?.amount || `${viewingReceiptOrder.totalEtb}.00 ETB`}</span>
               </div>
             </div>
 

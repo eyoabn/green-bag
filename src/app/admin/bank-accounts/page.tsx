@@ -57,8 +57,11 @@ const INITIAL_BANKS: BankConfig[] = [
   }
 ];
 
+import { useEffect } from "react";
+import { DataStore, StoredBankAccount } from "@/utils/dataStore";
+
 export default function AdminBankAccountsPage() {
-  const [banks, setBanks] = useState<BankConfig[]>(INITIAL_BANKS);
+  const [banks, setBanks] = useState<StoredBankAccount[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   
   // New bank state
@@ -67,26 +70,35 @@ export default function AdminBankAccountsPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [type, setType] = useState<"bank" | "mobile_money">("bank");
 
+  const loadBanks = () => {
+    setBanks(DataStore.getBanks());
+  };
+
+  useEffect(() => {
+    loadBanks();
+    const handleUpdate = () => loadBanks();
+    window.addEventListener("arenguade_datastore_change", handleUpdate);
+    return () => window.removeEventListener("arenguade_datastore_change", handleUpdate);
+  }, []);
+
   const toggleStatus = (id: string) => {
-    setBanks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, isActive: !b.isActive } : b))
-    );
+    DataStore.toggleBankStatus(id);
+    loadBanks();
   };
 
   const handleAddAccount = (e: React.FormEvent) => {
     e.preventDefault();
-    const newBank: BankConfig = {
-      id: String(banks.length + 1),
-      bankName,
+    DataStore.addBank({
+      name: bankName,
       accountName,
       accountNumber,
       type,
-      isActive: true
-    };
-    setBanks([...banks, newBank]);
+      isActive: true,
+    });
     setModalOpen(false);
     setBankName("");
     setAccountNumber("");
+    loadBanks();
   };
 
   return (
@@ -133,7 +145,7 @@ export default function AdminBankAccountsPage() {
                 </div>
                 <div>
                   <h3 className="font-serif text-lg font-bold text-stone-900">
-                    {bank.bankName}
+                    {bank.name}
                   </h3>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
                     {bank.type === "mobile_money" ? "Mobile Money Till / Merchant" : "Commercial Bank Account"}

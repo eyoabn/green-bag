@@ -19,42 +19,8 @@ import {
   Eye
 } from "lucide-react";
 import { PRODUCTS_CATALOG } from "@/app/products/page";
-
-interface BankAccount {
-  id: string;
-  name: string;
-  accountNumber: string;
-  accountHolder: string;
-  type: string;
-  badgeColor: string;
-}
-
-const BANKS: BankAccount[] = [
-  {
-    id: "cbe",
-    name: "Commercial Bank of Ethiopia (CBE)",
-    accountNumber: "1000123456789",
-    accountHolder: "Ethiopia Arenguade Paper Product PLC",
-    type: "Bank Transfer",
-    badgeColor: "bg-purple-50 text-purple-700 border-purple-200"
-  },
-  {
-    id: "telebirr",
-    name: "Telebirr SuperApp",
-    accountNumber: "0911234567",
-    accountHolder: "Arenguade Merchant Services",
-    type: "Mobile Money",
-    badgeColor: "bg-blue-50 text-blue-700 border-blue-200"
-  },
-  {
-    id: "awash",
-    name: "Awash Bank",
-    accountNumber: "01320876543200",
-    accountHolder: "Ethiopia Arenguade Paper Product",
-    type: "Bank Transfer",
-    badgeColor: "bg-amber-50 text-amber-700 border-amber-200"
-  }
-];
+import { DataStore, StoredBankAccount } from "@/utils/dataStore";
+import { useEffect } from "react";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -62,8 +28,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const product = PRODUCTS_CATALOG.find((p) => p.id === productId) || PRODUCTS_CATALOG[0];
 
+  const [banks, setBanks] = useState<StoredBankAccount[]>(DataStore.getActiveBanks());
+  const [selectedBank, setSelectedBank] = useState<StoredBankAccount>(DataStore.getActiveBanks()[0] || {
+    id: "cbe",
+    name: "Commercial Bank of Ethiopia (CBE)",
+    accountNumber: "1000123456789",
+    accountHolder: "Ethiopia Arenguade Paper Product PLC",
+    type: "bank",
+    isActive: true
+  });
+
+  useEffect(() => {
+    const active = DataStore.getActiveBanks();
+    if (active.length > 0) {
+      setBanks(active);
+      setSelectedBank(active[0]);
+    }
+  }, []);
+
   const [quantity, setQuantity] = useState<number>(1);
-  const [selectedBank, setSelectedBank] = useState<BankAccount>(BANKS[0]);
   const [selectedImage, setSelectedImage] = useState<string>(product.image);
   const [copied, setCopied] = useState<boolean>(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -90,19 +73,34 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uploadedFile) {
       alert("Please upload your bank transaction receipt / screenshot to complete your order.");
       return;
     }
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const savedOrder = await DataStore.addOrder({
+        customerName: customerName || "Customer",
+        customerPhone: customerPhone || "0911000000",
+        productId: product.id,
+        productName: `${product.name} (${quantity} Bundles)`,
+        quantityBundles: quantity,
+        totalEtb: totalPrice,
+        bankName: selectedBank.name,
+      });
+
+      setOrderRef(savedOrder.id);
+      setOrderConfirmed(true);
+    } catch (err) {
+      console.error("Order submission failed:", err);
       const generatedRef = `ARN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       setOrderRef(generatedRef);
       setOrderConfirmed(true);
-    }, 1200);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -349,7 +347,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
                     {/* Bank Tabs */}
                     <div className="grid grid-cols-3 gap-2 mb-3">
-                      {BANKS.map((bank) => (
+                      {banks.map((bank) => (
                         <button
                           key={bank.id}
                           type="button"
@@ -360,7 +358,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                               : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
                           }`}
                         >
-                          {bank.id.toUpperCase()}
+                          {bank.name.split(" ")[0].toUpperCase()}
                         </button>
                       ))}
                     </div>

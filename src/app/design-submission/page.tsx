@@ -29,6 +29,7 @@ import {
   Mail,
   SlidersHorizontal
 } from "lucide-react";
+import { DataStore } from "@/utils/dataStore";
 
 export default function DesignSubmissionPage() {
   // Main Studio Mode: "design" (Design for Yourself) vs "upload" (Upload Existing Artwork)
@@ -191,11 +192,26 @@ export default function DesignSubmissionPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const saved = DataStore.addDesign({
+        clientName: companyName || "Client Partner",
+        clientCompany: companyName || "Bespoke Ethiopian Client",
+        clientContact: `${contactEmail || "info@client.et"} • ${contactPhone || "0911000000"}`,
+        dimensions: `${bagWidth} × ${bagHeight} + ${bagGusset} cm`,
+        paperWeight: `${paperWeight} GSM Kraft`,
+        paperShade: bagColorName,
+        quantity: quantity,
+        handleType: `${handleType} Handle`,
+        fileName: dielineFile?.name || (activeMode === "design" ? "Vector_Generated_Spec.pdf" : "Custom_Dieline.ai"),
+        notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}.` : "Uploaded bespoke dieline artwork."),
+      });
+      setSubmittedRef(saved.id);
+    } catch (err) {
       const randomTicket = `AR-${activeMode === "design" ? "DSG" : "UPL"}-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       setSubmittedRef(randomTicket);
-    }, 1200);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

@@ -16,100 +16,6 @@ import {
   ArrowRight
 } from "lucide-react";
 
-interface Order {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  productName: string;
-  quantityBundles: number;
-  totalEtb: number;
-  bank: string;
-  status: "pending_verification" | "approved" | "rejected";
-  timestamp: string;
-  receiptDetails: {
-    transactionId: string;
-    payerAccount: string;
-    date: string;
-    amount: string;
-  };
-}
-
-const INITIAL_ORDERS: Order[] = [
-  {
-    id: "ARN-2026-8491",
-    customerName: "Dawit Haile",
-    customerPhone: "0911234567",
-    customerEmail: "dawit@oromiacoffee.et",
-    productName: "Specialty Coffee Degassing Pouch (500 Bags)",
-    quantityBundles: 5,
-    totalEtb: 855,
-    bank: "CBE Birr",
-    status: "pending_verification",
-    timestamp: "10 mins ago",
-    receiptDetails: {
-      transactionId: "CBE-TXN-99882314",
-      payerAccount: "1000234891024",
-      date: "04/09/2026 14:32",
-      amount: "855.00 ETB"
-    }
-  },
-  {
-    id: "ARN-2026-7732",
-    customerName: "Bethlehem Mengistu",
-    customerPhone: "0922456789",
-    customerEmail: "bethlehem@bolecouture.com",
-    productName: "Bole Boutique Luxury Shopper (1,000 Bags)",
-    quantityBundles: 10,
-    totalEtb: 2112,
-    bank: "Telebirr SuperApp",
-    status: "approved",
-    timestamp: "2 hours ago",
-    receiptDetails: {
-      transactionId: "TB-8834910294",
-      payerAccount: "0922456789",
-      date: "04/09/2026 12:15",
-      amount: "2,112.00 ETB"
-    }
-  },
-  {
-    id: "ARN-2026-6120",
-    customerName: "Yonas Birhanu",
-    customerPhone: "0933789012",
-    customerEmail: "yonas@addisbakery.et",
-    productName: "Addis Artisan Bakery Pouch (300 Bags)",
-    quantityBundles: 3,
-    totalEtb: 330,
-    bank: "Awash Bank",
-    status: "pending_verification",
-    timestamp: "3 hours ago",
-    receiptDetails: {
-      transactionId: "AW-REF-7749102",
-      payerAccount: "013209847190",
-      date: "04/09/2026 11:04",
-      amount: "330.00 ETB"
-    }
-  },
-  {
-    id: "ARN-2026-5501",
-    customerName: "Solomon Kassa",
-    customerPhone: "0944123456",
-    customerEmail: "solomon@ethiopiahotel.et",
-    productName: "Arenguade Forest Heritage Tote (800 Bags)",
-    quantityBundles: 8,
-    totalEtb: 1680,
-    bank: "CBE Birr",
-    status: "approved",
-    timestamp: "Yesterday",
-    receiptDetails: {
-      transactionId: "CBE-TXN-11029481",
-      payerAccount: "100055918234",
-      date: "03/09/2026 16:40",
-      amount: "1,680.00 ETB"
-    }
-  }
-];
-
 import { useEffect } from "react";
 import { DataStore, StoredOrder } from "@/utils/dataStore";
 
@@ -328,6 +234,23 @@ export default function AdminOrdersPage() {
                 </h3>
               </div>
             </div>
+
+            {/* Uploaded Payment Screenshot / QR Code */}
+            {viewingReceiptOrder.receiptUrl && (
+              <div className="mb-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block mb-1.5">
+                  Customer Uploaded Payment QR Code / Deposit Slip:
+                </span>
+                <div className="max-h-64 overflow-hidden rounded-2xl border border-stone-200 bg-stone-950 flex items-center justify-center p-2">
+                  <img 
+                    src={viewingReceiptOrder.receiptUrl} 
+                    alt="Payment QR Receipt" 
+                    className="max-h-60 w-auto object-contain rounded-xl"
+                  />
+                </div>
+                <span className="text-[10px] text-stone-400 block mt-1">Verify CBE/Telebirr reference against plant bank records.</span>
+              </div>
+            )}
 
             {/* Stylized Digital Receipt Graphic */}
             <div className="bg-[#FAF7F2] p-6 rounded-2xl border border-stone-200 text-xs space-y-3 mb-6 relative overflow-hidden">

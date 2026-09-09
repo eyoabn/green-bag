@@ -30,7 +30,7 @@ export default function LoginPage() {
         const userObj = {
           id: `usr_${Date.now()}`,
           email,
-          full_name: isAdmin ? "Arenguade Plant Manager" : "Dawit Haile",
+          full_name: email.split("@")[0] || "User",
           role: isAdmin ? "admin" : "customer",
         };
         if (typeof window !== "undefined") {
@@ -85,21 +85,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = (role: "admin" | "customer") => {
-    const userObj = {
-      id: role === "admin" ? "admin_001" : "cust_001",
-      email: role === "admin" ? "admin@arenguade.et" : "dawit@oromiacoffee.et",
-      full_name: role === "admin" ? "Arenguade Plant Owner" : "Dawit Haile",
-      role,
-    };
-    if (typeof window !== "undefined") {
-      localStorage.setItem("arenguade_user", JSON.stringify(userObj));
-    }
-    setSuccessMessage(`Entering as ${role === "admin" ? "Admin" : "Customer"}...`);
-    setTimeout(() => {
-      router.push(role === "admin" ? "/admin" : "/dashboard");
-    }, 500);
-  };
+
 
   return (
     <div className="flex flex-col min-h-screen pt-24 pb-16 bg-[#F9F6F0] items-center justify-center px-4">
@@ -187,36 +173,22 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Instant Demo Sandbox Access */}
-        <div className="mt-6 pt-6 border-t border-stone-200">
-          <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block text-center mb-3">
-            Quick Sandbox Credentials (1-Click)
-          </span>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => handleDemoLogin("customer")}
-              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 font-semibold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <User size={13} className="text-[#1E3B2E]" />
-              <span>Demo Customer</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin("admin")}
-              className="p-2.5 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 font-semibold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <ShieldCheck size={13} className="text-[#8C4B31]" />
-              <span>Demo Admin</span>
-            </button>
+        <div className="mt-8 pt-6 border-t border-stone-200 flex flex-col items-center gap-3">
+          <div className="text-center text-xs text-stone-500">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="text-[#8C4B31] font-bold hover:underline">
+              Create customer or student account
+            </Link>
           </div>
-        </div>
-        
-        <div className="mt-6 text-center text-xs text-stone-500">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-[#8C4B31] font-bold hover:underline">
-            Sign up
-          </Link>
+
+          <div className="text-center text-[11px] text-stone-400 flex items-center gap-1.5 mt-2">
+            <ShieldCheck size={13} className="text-[#1E3B2E]" />
+            <span>Are you a Plant Administrator?{" "}
+              <Link href="/admin/login" className="text-[#1E3B2E] font-bold hover:underline">
+                Sign in to Admin Console
+              </Link>
+            </span>
+          </div>
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@ CREATE TABLE profiles (
   id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
   full_name TEXT,
   phone TEXT,
-  role TEXT CHECK (role IN ('customer', 'admin')) DEFAULT 'customer',
+  role TEXT CHECK (role IN ('customer', 'student', 'admin')) DEFAULT 'customer',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

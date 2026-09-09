@@ -83,6 +83,8 @@ export interface StoredClassSession {
   materialsIncluded?: string[];
 }
 
+export type StoredClass = StoredClassSession;
+
 export interface StoredDesign {
   id: string;
   clientName: string;
@@ -135,98 +137,11 @@ export const DEFAULT_BANKS: StoredBankAccount[] = [
   }
 ];
 
-// Initial Demo Orders
-export const DEFAULT_ORDERS: StoredOrder[] = [
-  {
-    id: "ARN-2026-8491",
-    customerName: "Dawit Haile",
-    customerPhone: "0911234567",
-    customerEmail: "dawit@oromiacoffee.et",
-    productId: "1",
-    productName: "Specialty Coffee Degassing Pouch (500 Bags)",
-    quantityBundles: 5,
-    totalEtb: 855,
-    bankName: "Commercial Bank of Ethiopia (CBE)",
-    status: "pending_verification",
-    timestamp: "10 mins ago",
-    receiptDetails: {
-      transactionId: "CBE-TXN-99882314",
-      payerAccount: "1000234891024",
-      date: "04/09/2026 14:32",
-      amount: "855.00 ETB",
-    }
-  },
-  {
-    id: "ARN-2026-7732",
-    customerName: "Bethlehem Mengistu",
-    customerPhone: "0922456789",
-    customerEmail: "bethlehem@bolecouture.com",
-    productId: "2",
-    productName: "Bole Boutique Luxury Shopper (1,000 Bags)",
-    quantityBundles: 10,
-    totalEtb: 2112,
-    bankName: "Telebirr SuperApp Merchant",
-    status: "approved",
-    timestamp: "2 hours ago",
-    receiptDetails: {
-      transactionId: "TB-8834910294",
-      payerAccount: "0922456789",
-      date: "04/09/2026 12:15",
-      amount: "2,112.00 ETB",
-    }
-  },
-  {
-    id: "ARN-2026-6120",
-    customerName: "Yonas Birhanu",
-    customerPhone: "0933789012",
-    customerEmail: "yonas@addisbakery.et",
-    productId: "5",
-    productName: "Addis Artisan Bakery Pouch (300 Bags)",
-    quantityBundles: 3,
-    totalEtb: 330,
-    bankName: "Awash Bank",
-    status: "pending_verification",
-    timestamp: "3 hours ago",
-    receiptDetails: {
-      transactionId: "AW-REF-7749102",
-      payerAccount: "013209847190",
-      date: "04/09/2026 11:04",
-      amount: "330.00 ETB",
-    }
-  }
-];
+// Initial Real Orders (Starts empty - only real customer submissions)
+export const DEFAULT_ORDERS: StoredOrder[] = [];
 
-// Initial Demo Workshop Registrations
-export const DEFAULT_REGISTRATIONS: StoredRegistration[] = [
-  {
-    id: "REG-2026-102",
-    sessionId: "2",
-    sessionTitle: "Virtual: Advanced Origami Folds & Gusset Dynamics",
-    sessionType: "live",
-    sessionDate: "Oct 18, 2026",
-    sessionTime: "3:00 PM - 5:00 PM",
-    location: "LiveKit Interactive Video Room",
-    studentName: "Dawit Haile",
-    studentPhone: "0911234567",
-    priceEtb: 300,
-    status: "approved",
-    timestamp: "Yesterday",
-  },
-  {
-    id: "REG-2026-098",
-    sessionId: "1",
-    sessionTitle: "Beginner Paper Bag Workshop & Structural Folds",
-    sessionType: "in_person",
-    sessionDate: "Oct 15, 2026",
-    sessionTime: "10:00 AM - 2:00 PM",
-    location: "Addis Ababa Studio (Bole Subcity)",
-    studentName: "Dawit Haile",
-    studentPhone: "0911234567",
-    priceEtb: 500,
-    status: "pending_verification",
-    timestamp: "2 days ago",
-  }
-];
+// Initial Real Workshop Registrations (Starts empty - only real student enrollments)
+export const DEFAULT_REGISTRATIONS: StoredRegistration[] = [];
 
 export const DEFAULT_PRODUCTS: StoredProduct[] = [
   {
@@ -642,7 +557,40 @@ export const DataStore = {
       timestamp: "Just now",
     };
     setLocal(REGISTRATIONS_KEY, [newReg, ...current]);
+
+    try {
+      const supabase = createClient();
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+        supabase.from("session_registrations").insert({
+          session_id: reg.sessionId,
+          payment_screenshot_url: reg.receiptUrl || "uploaded_qr_slip",
+          status: "pending_verification",
+        }).then();
+      }
+    } catch (e) {
+      console.warn("Supabase registration insert skipped:", e);
+    }
+
     return newReg;
+  },
+
+  updateRegistrationStatus(regId: string, status: StoredRegistration["status"]): void {
+    const current = this.getRegistrations();
+    const updated = current.map((r) => (r.id === regId ? { ...r, status } : r));
+    setLocal(REGISTRATIONS_KEY, updated);
+
+    try {
+      const supabase = createClient();
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+        supabase.from("session_registrations").update({ status }).eq("id", regId).then();
+      }
+    } catch (e) {
+      console.warn("Supabase registration update failed:", e);
+    }
+  },
+
+  getRegistrationsBySessionId(sessionId: string): StoredRegistration[] {
+    return this.getRegistrations().filter((r) => r.sessionId === sessionId);
   },
 
   // --- DESIGNS ---

@@ -12,7 +12,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const currentTab = searchParams?.get("tab") || "orders";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userName, setUserName] = useState("Dawit Haile");
+  const [userName, setUserName] = useState("Customer");
   const [userRole, setUserRole] = useState("Customer");
 
   useEffect(() => {

@@ -19,7 +19,8 @@ import {
   ExternalLink,
   Receipt,
   Download,
-  Layers
+  Layers,
+  Lock
 } from "lucide-react";
 import { DataStore, StoredOrder, StoredRegistration, StoredDesign } from "@/utils/dataStore";
 
@@ -30,7 +31,7 @@ function CustomerDashboardContent() {
   const [orders, setOrders] = useState<StoredOrder[]>([]);
   const [registrations, setRegistrations] = useState<StoredRegistration[]>([]);
   const [designs, setDesigns] = useState<StoredDesign[]>([]);
-  const [customerName, setCustomerName] = useState("Dawit Haile");
+  const [customerName, setCustomerName] = useState("Valued Customer");
 
   useEffect(() => {
     if (urlTab) {
@@ -253,23 +254,64 @@ function CustomerDashboardContent() {
               </div>
 
               {reg.sessionType === "live" ? (
-                <Link
-                  href={`/dashboard/sessions/${reg.sessionId}`}
-                  className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-7 py-3.5 rounded-full transition-all shadow-md flex items-center gap-2"
-                >
-                  <PlayCircle size={16} />
-                  <span>Enter LiveKit Classroom</span>
-                </Link>
+                reg.status === "approved" ? (
+                  <Link
+                    href={`/dashboard/sessions/${reg.sessionId}`}
+                    className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-7 py-3.5 rounded-full transition-all shadow-md flex items-center gap-2"
+                  >
+                    <PlayCircle size={16} />
+                    <span>Enter LiveKit Classroom</span>
+                  </Link>
+                ) : (
+                  <div className="flex flex-col items-end gap-1.5">
+                    <button
+                      disabled
+                      className="bg-stone-200 text-stone-500 text-xs font-bold px-6 py-3 rounded-full cursor-not-allowed flex items-center gap-2"
+                      title="Your payment QR code is being checked by the admin"
+                    >
+                      <Lock size={14} />
+                      <span>Classroom Locked (Pending Verification)</span>
+                    </button>
+                    <span className="text-[11px] text-amber-800 font-medium">
+                      Admin is verifying your payment QR code
+                    </span>
+                  </div>
+                )
               ) : (
-                <button
-                  onClick={() => alert(`Admission Pass #${reg.id} generated for ${reg.studentName}. Show this ticket at Bole Studio entrance.`)}
-                  className="px-6 py-3 rounded-full bg-stone-100 hover:bg-stone-200 text-xs font-bold text-stone-800 transition-colors"
-                >
-                  Download Studio Pass (PDF)
-                </button>
+                reg.status === "approved" ? (
+                  <button
+                    onClick={() => alert(`Verified Admission Pass #${reg.id} for ${reg.studentName}. Show at Bole Studio.`)}
+                    className="px-6 py-3 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Download Studio Pass (PDF)
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="px-6 py-3 rounded-full bg-stone-200 text-stone-500 text-xs font-bold cursor-not-allowed"
+                  >
+                    Pass Locked (Pending Review)
+                  </button>
+                )
               )}
             </div>
           ))}
+          {registrations.length === 0 && (
+            <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center text-stone-500">
+              <BookOpen size={36} className="mx-auto text-stone-400 mb-2" />
+              <h4 className="font-serif text-lg font-bold text-stone-800">No Workshop Registrations Yet</h4>
+              <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto mb-4">
+                Explore our Ethiopian craft curriculum to book in-person studio sessions or join LiveKit WebRTC interactive streams.
+              </p>
+              <Link
+                href="/learn/schedule"
+                className="inline-flex items-center gap-2 bg-[#1E3B2E] text-white text-xs font-bold px-5 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"
+              >
+                <span>Browse Academy Workshops</span>
+                <ArrowRight size={13} />
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

@@ -12,7 +12,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"customer" | "admin">("customer");
+  const [role, setRole] = useState<"customer" | "student">("customer");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -34,7 +34,7 @@ export default function SignupPage() {
       const isPlaceholder = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
 
       if (isPlaceholder) {
-        // Fallback demo user session
+        // Fallback user session
         if (typeof window !== "undefined") {
           localStorage.setItem("arenguade_user", JSON.stringify({
             id: `usr_${Date.now()}`,
@@ -46,8 +46,8 @@ export default function SignupPage() {
         }
         setSuccessMessage("Account created successfully! Redirecting to portal...");
         setTimeout(() => {
-          router.push(role === "admin" ? "/admin" : "/dashboard");
-        }, 1200);
+          router.push(role === "student" ? "/dashboard?tab=classes" : "/dashboard?tab=orders");
+        }, 1000);
         return;
       }
 
@@ -92,8 +92,8 @@ export default function SignupPage() {
 
       setSuccessMessage("Account created successfully! Redirecting to portal...");
       setTimeout(() => {
-        router.push(role === "admin" ? "/admin" : "/dashboard");
-      }, 1200);
+        router.push(role === "student" ? "/dashboard?tab=classes" : "/dashboard?tab=orders");
+      }, 1000);
 
     } catch (err: any) {
       setErrorMessage(err?.message || "An unexpected error occurred. Please try again.");
@@ -194,30 +194,36 @@ export default function SignupPage() {
 
           <div>
             <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
-              Account Role
+              Select Your Role
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setRole("customer")}
-                className={`py-2 px-3 rounded-xl border font-bold text-xs transition-all ${
+                className={`py-3 px-3 rounded-xl border font-bold text-xs transition-all text-left ${
                   role === "customer"
                     ? "bg-[#1E3B2E] text-white border-[#1E3B2E] shadow-sm"
                     : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
                 }`}
               >
-                Customer / Student
+                <span className="block font-bold">Packaging Buyer</span>
+                <span className={`text-[10px] font-normal block mt-0.5 ${role === "customer" ? "text-stone-300" : "text-stone-500"}`}>
+                  Order bags & submit dielines
+                </span>
               </button>
               <button
                 type="button"
-                onClick={() => setRole("admin")}
-                className={`py-2 px-3 rounded-xl border font-bold text-xs transition-all ${
-                  role === "admin"
+                onClick={() => setRole("student")}
+                className={`py-3 px-3 rounded-xl border font-bold text-xs transition-all text-left ${
+                  role === "student"
                     ? "bg-[#8C4B31] text-white border-[#8C4B31] shadow-sm"
                     : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
                 }`}
               >
-                Factory Owner / Admin
+                <span className="block font-bold">Academy Student</span>
+                <span className={`text-[10px] font-normal block mt-0.5 ${role === "student" ? "text-stone-300" : "text-stone-500"}`}>
+                  Attend workshops & live classes
+                </span>
               </button>
             </div>
           </div>

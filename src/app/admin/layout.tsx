@@ -50,8 +50,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     try {
       // 1. Check direct session token
       if (typeof window !== "undefined") {
-        const adminSession = sessionStorage.getItem("arenguade_admin_authenticated");
-        if (adminSession === "true") {
+        const adminSession = sessionStorage.getItem("arenguade_admin_authenticated") === "true" ||
+                             localStorage.getItem("arenguade_admin_authenticated") === "true";
+        if (adminSession) {
           const stored = localStorage.getItem("arenguade_user");
           if (stored) {
             try {
@@ -119,6 +120,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (validPasscodes.includes(cleanInput)) {
         if (typeof window !== "undefined") {
           sessionStorage.setItem("arenguade_admin_authenticated", "true");
+          localStorage.setItem("arenguade_admin_authenticated", "true");
           const userObj = {
             id: "admin_super",
             email: "admin@arenguade.et",
@@ -206,6 +208,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     } catch {}
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("arenguade_admin_authenticated");
+      localStorage.removeItem("arenguade_admin_authenticated");
       localStorage.removeItem("arenguade_user");
     }
     setIsAuthenticated(false);

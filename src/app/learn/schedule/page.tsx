@@ -101,6 +101,7 @@ export default function SchedulePage() {
   const [bookingName, setBookingName] = useState("");
   const [bookingPhone, setBookingPhone] = useState("");
   const [receiptUploaded, setReceiptUploaded] = useState(false);
+  const [receiptDataUrl, setReceiptDataUrl] = useState<string>("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeBanks, setActiveBanks] = useState(DataStore.getActiveBanks());
@@ -145,10 +146,22 @@ export default function SchedulePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setReceiptUploaded(true);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setReceiptDataUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleCompleteBooking = (e: React.FormEvent) => {
     e.preventDefault();
     if (!receiptUploaded) {
-      alert("Please upload your transaction screenshot to confirm your registration.");
+      alert("Please upload your transaction screenshot or payment QR code to complete registration.");
       return;
     }
     if (selectedSession) {
@@ -159,9 +172,10 @@ export default function SchedulePage() {
         sessionDate: selectedSession.date,
         sessionTime: selectedSession.time,
         location: selectedSession.location,
-        studentName: bookingName || "Student",
+        studentName: bookingName || "Craft Student",
         studentPhone: bookingPhone || "0911000000",
         priceEtb: selectedSession.price,
+        receiptUrl: receiptDataUrl || undefined,
       });
     }
     setBookingSuccess(true);
@@ -467,9 +481,9 @@ export default function SchedulePage() {
                     <label className="border-2 border-dashed border-stone-300 hover:border-[#8C4B31] bg-[#FAF7F2] p-4 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors">
                       <input 
                         type="file" 
-                        accept="image/*" 
+                        accept="image/*,application/pdf" 
                         className="hidden" 
-                        onChange={() => setReceiptUploaded(true)}
+                        onChange={handleReceiptUpload}
                       />
                       <Upload size={18} className="text-[#8C4B31]" />
                       <span className="text-xs font-medium text-stone-700">

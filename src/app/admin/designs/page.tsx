@@ -29,67 +29,14 @@ interface SubmittedDesign {
   notes: string;
 }
 
-const INITIAL_DESIGNS: SubmittedDesign[] = [
-  {
-    id: "DSG-2026-9102",
-    clientName: "Bethlehem Mengistu",
-    clientCompany: "Bole Luxury Couture",
-    clientContact: "bethlehem@bolecouture.com • 0922456789",
-    dimensions: "24 × 32 + 10 cm",
-    paperWeight: "220 GSM Heavy Kraft",
-    paperShade: "Matte Jet Black",
-    quantity: 5000,
-    handleType: "Woven Cotton Rope + Brass Eyelets",
-    status: "reviewing",
-    submittedDate: "Sept 04, 2026",
-    fileName: "Bole_Luxury_Dieline_v2.ai",
-    notes: "Requires gold hot foil stamping on front and rear panels. Gusset must have Ethiopian cross pattern embossed."
-  },
-  {
-    id: "DSG-2026-8840",
-    clientName: "Dawit Haile",
-    clientCompany: "Oromia Specialty Coffee",
-    clientContact: "dawit@oromiacoffee.et • 0911234567",
-    dimensions: "16 × 24 + 8 cm",
-    paperWeight: "250 GSM Unbleached Virgin Kraft",
-    paperShade: "Artisan Brown Kraft",
-    quantity: 15000,
-    handleType: "Heat-Seal Valve Lip (No handle)",
-    status: "proof_ready",
-    submittedDate: "Sept 03, 2026",
-    fileName: "Sidama_Roast_Packaging_Dieline.pdf",
-    notes: "Degassing valve must be centered 3cm below the upper seal line."
-  },
-  {
-    id: "DSG-2026-7731",
-    clientName: "Dr. Aster Lemma",
-    clientCompany: "Addis Organic Apothecary",
-    clientContact: "aster@apothecary.et • 0933901234",
-    dimensions: "18 × 28 + 9 cm",
-    paperWeight: "180 GSM Recycled White",
-    paperShade: "Bleached Pure White",
-    quantity: 8000,
-    handleType: "Twisted White Paper Cord",
-    status: "new",
-    submittedDate: "Sept 04, 2026",
-    fileName: "Apothecary_Branded_Bag_Print.pdf",
-    notes: "Two-color botanical green screen print. Eco-certified soy ink required."
-  }
-];
-
 import { useEffect } from "react";
 import { DataStore } from "@/utils/dataStore";
 
 export default function AdminDesignsPage() {
-  const [designs, setDesigns] = useState<SubmittedDesign[]>(INITIAL_DESIGNS);
+  const [designs, setDesigns] = useState<SubmittedDesign[]>([]);
 
   const loadDesigns = () => {
-    const custom = DataStore.getDesigns();
-    if (custom.length > 0) {
-      setDesigns([...(custom as any), ...INITIAL_DESIGNS]);
-    } else {
-      setDesigns(INITIAL_DESIGNS);
-    }
+    setDesigns(DataStore.getDesigns() as any);
   };
 
   useEffect(() => {
@@ -228,9 +175,17 @@ export default function AdminDesignsPage() {
                 </button>
               </div>
             </div>
-
           </div>
         ))}
+        {designs.length === 0 && (
+          <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center text-stone-500">
+            <FileText size={36} className="mx-auto text-stone-400 mb-2" />
+            <h4 className="font-serif text-lg font-bold text-stone-800">No Custom Dieline Submissions Yet</h4>
+            <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+              Client requests submitted via the custom packaging form (/design-submission) will appear here for engineering inspection and 3D proofing.
+            </p>
+          </div>
+        )}
       </div>
 
     </div>

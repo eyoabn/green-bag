@@ -102,6 +102,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
     setIsSubmitting(true);
     try {
+      let receiptBase64 = "";
+      if (uploadedFile) {
+        receiptBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string || "");
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(uploadedFile);
+        });
+      }
+
       const savedOrder = await DataStore.addOrder({
         customerName: customerName || "Customer",
         customerPhone: customerPhone || "0911000000",
@@ -110,6 +120,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         quantityBundles: quantity,
         totalEtb: totalPrice,
         bankName: selectedBank.name,
+        receiptUrl: receiptBase64 || undefined,
       });
 
       setOrderRef(savedOrder.id);

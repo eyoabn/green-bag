@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { CurrencyProvider } from "@/components/CurrencyContext";
 
 export const metadata: Metadata = {
   title: "Ethiopia Arenguade Paper Product — Sustainable Packaging & Craft Academy",
@@ -27,9 +28,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col font-sans text-stone-900 bg-[#F9F6F0]">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <CurrencyProvider>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </CurrencyProvider>
       </body>
     </html>
   );

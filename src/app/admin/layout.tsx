@@ -412,6 +412,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/orders", label: "Orders & Verification", icon: ShoppingBag },
     { href: "/admin/products", label: "Product Catalog", icon: Package },
     { href: "/admin/classes", label: "Classrooms & Workshops", icon: Users },
+    { href: "/admin/users", label: "Users & Accounts", icon: Users },
     { href: "/admin/designs", label: "Design Submissions", icon: PenTool },
     { href: "/admin/bank-accounts", label: "Banking & Settlement", icon: CreditCard },
   ];

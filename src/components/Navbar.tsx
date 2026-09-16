@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCurrency } from "./CurrencyContext";
 import { 
   ShoppingBag, 
   BookOpen, 
@@ -18,7 +19,7 @@ import {
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [currency, setCurrency] = useState<"ETB" | "USD">("ETB");
+  const { currency, setCurrency } = useCurrency();
   const [user, setUser] = useState<{ role: string; full_name?: string } | null>(null);
   const pathname = usePathname();
 
@@ -108,11 +109,11 @@ export default function Navbar() {
             {/* Account / Dashboard link */}
             {user ? (
               <Link
-                href={user.role === "admin" ? "/admin" : "/dashboard"}
+                href="/dashboard"
                 className="text-xs font-semibold text-stone-800 hover:text-[#1E3B2E] px-3.5 py-1.5 rounded-full bg-stone-200/50 hover:bg-stone-200 transition-colors flex items-center gap-1.5"
               >
                 <User size={13} className="text-[#8C4B31]" />
-                <span>{user.role === "admin" ? "Admin Console" : "My Orders"}</span>
+                <span>My Orders</span>
               </Link>
             ) : (
               <Link

@@ -30,3 +30,32 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* Premium Styling Classes */
+.premium-glow {
+  animation: glowPulse 8s infinite alternate ease-in-out;
+  mix-blend-mode: multiply;
+}
+
+@keyframes glowPulse {
+  0% { transform: scale(1) translate(0px, 0px); opacity: 0.2; }
+  50% { transform: scale(1.1) translate(20px, -20px); opacity: 0.35; }
+  100% { transform: scale(0.95) translate(-10px, 10px); opacity: 0.2; }
+}
+
+.premium-glass {
+  background: linear-gradient(135deg, rgba(242, 236, 225, 0.7) 0%, rgba(233, 223, 207, 0.4) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(30, 59, 46, 0.1);
+}
+
+.hover-lift {
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(140, 75, 49, 0.15);
+}

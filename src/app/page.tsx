@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import { useCurrency } from "@/components/CurrencyContext";
 import WorksPortfolioSection from "@/components/WorksPortfolioSection";
 import { 
   ShoppingBag, 
@@ -42,6 +43,8 @@ const ThreeBagScene = dynamic(() => import("@/components/ThreeBag"), {
 });
 
 export default function Home() {
+  const { formatPrice } = useCurrency();
+  
   // Interactive ESG & Volume Calculator State
   const [bagVolume, setBagVolume] = useState<number>(15000);
   const [selectedBagType, setSelectedBagType] = useState<"standard" | "coffee" | "luxury">("standard");
@@ -63,10 +66,10 @@ export default function Home() {
       <section className="relative w-full min-h-[92vh] flex items-center justify-center pt-8 pb-16 overflow-hidden">
         
         {/* Ambient Craft Glow Background */}
-        <div className="absolute top-12 right-0 w-[550px] h-[550px] bg-[#D7A977]/20 rounded-full blur-3xl -z-10 pointer-events-none" />
-        <div className="absolute bottom-10 left-10 w-[450px] h-[450px] bg-[#2C4A3B]/10 rounded-full blur-3xl -z-10 pointer-events-none" />
+        <div className="absolute top-12 right-0 w-[550px] h-[550px] bg-[#D7A977]/20 rounded-full blur-3xl -z-10 pointer-events-none premium-glow" />
+        <div className="absolute bottom-10 left-10 w-[450px] h-[450px] bg-[#2C4A3B]/10 rounded-full blur-3xl -z-10 pointer-events-none premium-glow" />
         
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             {/* Left Column: Editorial & Value Proposition */}
@@ -140,9 +143,9 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.9, delay: 0.15 }}
-              className="lg:col-span-6 relative"
+              className="lg:col-span-6 relative hover-lift"
             >
-              <div className="relative h-[580px] sm:h-[640px] w-full rounded-3xl bg-gradient-to-b from-[#F2ECE1] to-[#E9DFCF] flex items-center justify-center overflow-hidden border border-stone-300/80 shadow-2xl shadow-stone-900/10">
+              <div className="relative h-[580px] sm:h-[640px] w-full rounded-3xl premium-glass flex items-center justify-center overflow-hidden border border-white/40 shadow-2xl shadow-[#1E3B2E]/10">
                 
                 {/* 3D Scene Component */}
                 <ThreeBagScene />
@@ -261,7 +264,7 @@ export default function Home() {
               <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-stone-500 block">Bundle of 100</span>
-                  <span className="text-xl font-bold text-[#8C4B31]">180 ETB</span>
+                  <span className="text-xl font-bold text-[#8C4B31]">{formatPrice(180)}</span>
                 </div>
                 <Link 
                   href="/products/1" 
@@ -306,7 +309,7 @@ export default function Home() {
               <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-stone-500 block">Bundle of 100</span>
-                  <span className="text-xl font-bold text-[#8C4B31]">260 ETB</span>
+                  <span className="text-xl font-bold text-[#8C4B31]">{formatPrice(260)}</span>
                 </div>
                 <Link 
                   href="/products/2" 
@@ -351,7 +354,7 @@ export default function Home() {
               <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-stone-500 block">Bundle of 100</span>
-                  <span className="text-xl font-bold text-[#8C4B31]">220 ETB</span>
+                  <span className="text-xl font-bold text-[#8C4B31]">{formatPrice(220)}</span>
                 </div>
                 <Link 
                   href="/products/6" 
@@ -452,7 +455,7 @@ export default function Home() {
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-3 text-sm text-stone-700">
                     <CheckCircle2 size={18} className="text-[#8C4B31] shrink-0" />
-                    <span>In-person Addis Ababa workshops (500 ETB - 1,000 ETB / student)</span>
+                    <span>In-person Addis Ababa workshops ({formatPrice(500)} - {formatPrice(1000)} / student)</span>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-stone-700">
                     <CheckCircle2 size={18} className="text-[#8C4B31] shrink-0" />
@@ -504,7 +507,7 @@ export default function Home() {
             </div>
 
             <p className="text-stone-600 text-sm sm:text-base mb-8">
-              Adjust the monthly packaging volume below to see your wholesale cost in ETB alongside immediate ESG plastic-avoidance metrics.
+              Adjust the monthly packaging volume below to see your wholesale cost alongside immediate ESG plastic-avoidance metrics.
             </p>
 
             {/* Controls */}
@@ -574,8 +577,8 @@ export default function Home() {
               </div>
               <div className="text-center sm:text-left sm:pl-2">
                 <span className="text-xs text-stone-500 font-medium">Estimated Wholesale Rate</span>
-                <p className="font-serif text-2xl font-bold text-stone-900 mt-1">{unitPrice.toFixed(2)} ETB / unit</p>
-                <span className="text-[11px] text-stone-500">Est. Total: {totalEstimateEtb.toLocaleString()} ETB</span>
+                <p className="font-serif text-2xl font-bold text-stone-900 mt-1">{formatPrice(unitPrice)} / unit</p>
+                <span className="text-[11px] text-stone-500">Est. Total: {formatPrice(totalEstimateEtb)}</span>
               </div>
             </div>
 
@@ -639,7 +642,7 @@ export default function Home() {
               </div>
 
               <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0">
-                <span className="font-serif text-lg font-bold text-[#8C4B31]">500 ETB</span>
+                <span className="font-serif text-lg font-bold text-[#8C4B31]">{formatPrice(500)}</span>
                 <Link 
                   href="/learn/schedule" 
                   className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"
@@ -669,7 +672,7 @@ export default function Home() {
               </div>
 
               <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0">
-                <span className="font-serif text-lg font-bold text-[#8C4B31]">300 ETB</span>
+                <span className="font-serif text-lg font-bold text-[#8C4B31]">{formatPrice(300)}</span>
                 <Link 
                   href="/learn/schedule" 
                   className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"

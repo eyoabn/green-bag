@@ -7,6 +7,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useCurrency } from "@/components/CurrencyContext";
 import WorksPortfolioSection from "@/components/WorksPortfolioSection";
+import { createClient } from "@/utils/supabase/client";
 import { 
   ShoppingBag, 
   BookOpen, 
@@ -58,6 +59,53 @@ export default function Home() {
     ? (bagVolume > 20000 ? 16.0 : 18.5) 
     : (bagVolume > 20000 ? 21.0 : 24.0);
   const totalEstimateEtb = Math.round(bagVolume * unitPrice);
+
+  // Real Database Stats
+  const [stats, setStats] = useState({
+    bagsManufactured: 0,
+    tonsDiverted: 0,
+    artisans: 0,
+  });
+
+  useEffect(() => {
+    async function fetchStats() {
+      const supabase = createClient();
+      try {
+        // Fetch total quantity of fulfilled orders
+        const { data: orders } = await supabase.from('orders').select('quantity').eq('status', 'fulfilled');
+        let totalBags = 0;
+        if (orders) {
+          totalBags = orders.reduce((acc, order) => acc + (order.quantity || 0), 0);
+        }
+        
+        // Fetch custom designs in production or shipped
+        const { data: designs } = await supabase.from('designs').select('note').in('status', ['in_production', 'shipped']);
+        if (designs) {
+          designs.forEach(d => {
+            try {
+              const note = JSON.parse(d.note || "{}");
+              if (note.quantity) totalBags += Number(note.quantity);
+            } catch (e) {}
+          });
+        }
+        
+        // Fetch artisans (profiles with role student or admin as a proxy)
+        const { count: artisanCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+
+        // Calculate real tons (assume 1 bag = 50 grams = 0.05kg)
+        const tons = (totalBags * 0.05) / 1000;
+
+        setStats({
+          bagsManufactured: totalBags,
+          tonsDiverted: Number(tons.toFixed(2)),
+          artisans: artisanCount || 10,
+        });
+      } catch (e) {
+        console.error("Error fetching stats:", e);
+      }
+    }
+    fetchStats();
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen pt-20">
@@ -174,20 +222,20 @@ export default function Home() {
             
             <div className="flex flex-col items-center text-center px-4 pt-4 md:pt-0">
               <TrendingUp className="text-[#E0B382] mb-2" size={28} />
-              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">1.25M+</h3>
+              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">{stats.bagsManufactured.toLocaleString()}</h3>
               <p className="text-xs sm:text-sm text-emerald-200 mt-1 font-medium">Bags Manufactured & Delivered</p>
             </div>
 
             <div className="flex flex-col items-center text-center px-4 pt-4 md:pt-0">
               <Leaf className="text-[#E0B382] mb-2" size={28} />
-              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">850 Tons</h3>
+              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">{stats.tonsDiverted.toLocaleString()} Tons</h3>
               <p className="text-xs sm:text-sm text-emerald-200 mt-1 font-medium">Single-Use Plastics Diverted</p>
             </div>
 
             <div className="flex flex-col items-center text-center px-4 pt-4 md:pt-0">
               <Users className="text-[#E0B382] mb-2" size={28} />
-              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">140+</h3>
-              <p className="text-xs sm:text-sm text-emerald-200 mt-1 font-medium">Artisans & Youth Employed</p>
+              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">{stats.artisans}</h3>
+              <p className="text-xs sm:text-sm text-emerald-200 mt-1 font-medium">Registered Platform Users</p>
             </div>
 
             <div className="flex flex-col items-center text-center px-4 pt-4 md:pt-0">

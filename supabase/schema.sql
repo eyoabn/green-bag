@@ -89,7 +89,8 @@ CREATE TABLE designs (
   submitted_by UUID REFERENCES profiles(id) NOT NULL,
   file_url TEXT NOT NULL,
   note TEXT,
-  status TEXT CHECK (status IN ('new', 'reviewed')) DEFAULT 'new',
+  payment_screenshot_url TEXT,
+  status TEXT CHECK (status IN ('new', 'engineering_review', 'approved_pending_payment', 'payment_review', 'in_production', 'shipped')) DEFAULT 'new',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

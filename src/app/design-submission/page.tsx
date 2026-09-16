@@ -16,6 +16,7 @@ import {
   Type,
   Palette,
   Eye,
+  RotateCw,
   RefreshCw,
   Coffee,
   Crown,
@@ -29,7 +30,20 @@ import {
   Mail,
   SlidersHorizontal
 } from "lucide-react";
-import { DataStore } from "@/utils/dataStore";
+import { createClient } from "@/utils/supabase/client";
+import dynamic from "next/dynamic";
+
+const DynamicThreeBagScene = dynamic(() => import("@/components/DynamicThreeBag"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full min-h-[520px] flex flex-col items-center justify-center text-stone-400 bg-stone-100/60 rounded-3xl animate-pulse">
+      <div className="w-20 h-24 border-2 border-dashed border-stone-300 rounded-lg flex items-center justify-center mb-4">
+        <Sparkles size={28} className="text-[#8C4B31] animate-spin" />
+      </div>
+      <p className="font-serif text-base font-semibold text-stone-600">Initializing 3D Studio Canvas...</p>
+    </div>
+  ),
+});
 
 export default function DesignSubmissionPage() {
   // Main Studio Mode: "design" (Design for Yourself) vs "upload" (Upload Existing Artwork)
@@ -189,26 +203,40 @@ export default function DesignSubmissionPage() {
   const co2AvoidedKg = Math.round(quantity * 0.082);
 
   // Form Submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const saved = DataStore.addDesign({
-        clientName: companyName || "Client Partner",
-        clientCompany: companyName || "Bespoke Ethiopian Client",
-        clientContact: `${contactEmail || "info@client.et"} • ${contactPhone || "0911000000"}`,
-        dimensions: `${bagWidth} × ${bagHeight} + ${bagGusset} cm`,
-        paperWeight: `${paperWeight} GSM Kraft`,
-        paperShade: bagColorName,
-        quantity: quantity,
-        handleType: `${handleType} Handle`,
-        fileName: dielineFile?.name || (activeMode === "design" ? "Vector_Generated_Spec.pdf" : "Custom_Dieline.ai"),
-        notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}.` : "Uploaded bespoke dieline artwork."),
-      });
-      setSubmittedRef(saved.id);
-    } catch (err) {
-      const randomTicket = `AR-${activeMode === "design" ? "DSG" : "UPL"}-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-      setSubmittedRef(randomTicket);
+      const supabase = createClient();
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in to submit a design. Please sign in.");
+      }
+
+      const { data, error } = await supabase.from("designs").insert({
+        submitted_by: user.id,
+        file_url: dielineFile?.name || (activeMode === "design" ? "Vector_Generated_Spec.pdf" : "Custom_Dieline.ai"),
+        note: JSON.stringify({
+          clientCompany: companyName || "Bespoke Ethiopian Client",
+          clientContact: `${contactEmail || "info@client.et"} • ${contactPhone || "0911000000"}`,
+          dimensions: `${bagWidth} × ${bagHeight} + ${bagGusset} cm`,
+          paperWeight: `${paperWeight} GSM Kraft`,
+          paperShade: bagColorName,
+          quantity: quantity,
+          handleType: `${handleType} Handle`,
+          notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}.` : "Uploaded bespoke dieline artwork."),
+          totalEstEtb: totalEstEtb,
+        }),
+        status: "new"
+      }).select().single();
+
+      if (error) throw error;
+      
+      setSubmittedRef(data.id);
+    } catch (err: any) {
+      alert(err.message || "Failed to submit design");
     } finally {
       setIsSubmitting(false);
     }
@@ -386,152 +414,26 @@ export default function DesignSubmissionPage() {
                     </div>
 
                     {/* =================================================================== */}
-                    {/* DYNAMIC BAG VISUAL CONTAINER                                       */}
+                    {/* DYNAMIC BAG VISUAL CONTAINER (3D)                                  */}
                     {/* =================================================================== */}
-                    <div className="flex flex-col items-center pt-8 pb-4 relative select-none">
-                      
-                      {/* Top Handle Representation */}
-                      <div className="relative flex justify-center -mb-2 z-20">
-                        {handleType === "twisted" && (
-                          <div 
-                            className="w-24 sm:w-28 h-20 rounded-t-full border-4 shadow-sm transition-all duration-300"
-                            style={{ borderColor: handleColor }}
-                          />
-                        )}
-
-                        {handleType === "cotton" && (
-                          <div className="relative">
-                            <div 
-                              className="w-28 sm:w-32 h-24 rounded-t-full border-[6px] shadow-md transition-all duration-300"
-                              style={{ borderColor: handleColor }}
-                            />
-                            {/* Eyelet Rings */}
-                            <div className="absolute -bottom-2 left-1 w-3 h-3 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
-                            <div className="absolute -bottom-2 right-1 w-3 h-3 rounded-full bg-amber-400 border border-amber-600 shadow-sm" />
-                          </div>
-                        )}
-
-                        {handleType === "flat" && (
-                          <div 
-                            className="w-20 sm:w-24 h-16 rounded-t-md border-t-8 border-x-4 shadow-sm transition-all duration-300"
-                            style={{ borderColor: handleColor }}
-                          />
-                        )}
-
-                        {handleType === "ribbon" && (
-                          <div 
-                            className="w-24 sm:w-28 h-20 rounded-t-full border-[5px] opacity-90 shadow-sm transition-all duration-300"
-                            style={{ borderColor: handleColor }}
-                          />
-                        )}
-
-                        {handleType === "diecut" && (
-                          <div className="h-6" /> /* Spacing placeholder for handle cut in bag */
-                        )}
-                      </div>
-
-                      {/* Main Bag Body */}
-                      <div 
-                        className="w-64 sm:w-80 h-72 sm:h-84 rounded-t-sm shadow-2xl relative flex flex-col items-center justify-between p-6 transition-all duration-300 border-t-2 border-stone-400/30 overflow-hidden"
-                        style={{ backgroundColor: bagBaseColor }}
-                      >
-                        {/* Realistic Side Gusset Creases */}
-                        <div className="absolute top-0 bottom-0 left-4 w-px bg-black/10 shadow-sm" />
-                        <div className="absolute top-0 bottom-0 right-4 w-px bg-black/10 shadow-sm" />
-                        <div className="absolute top-0 left-0 right-0 h-4 bg-black/5 border-b border-black/10" />
-
-                        {/* If Diecut Handle: cut out an oval near the top */}
-                        {handleType === "diecut" && (
-                          <div className="w-20 h-7 rounded-full bg-[#EFE8DC] border-2 border-black/20 shadow-inner mt-2 mb-2" />
-                        )}
-
-                        {/* Top Collar / Spacer */}
-                        <div className="w-full flex justify-between items-center opacity-40 text-[9px] uppercase tracking-widest text-stone-700 px-2 pt-1">
-                          <span>{bagColorName}</span>
-                          <span>{paperWeight} GSM</span>
-                        </div>
-
-                        {/* Central Brand Artwork Layout */}
-                        <div className={`flex flex-col items-center text-center max-w-[85%] transition-all duration-300 my-auto ${
-                          textPosition === "top" ? "mb-auto mt-4" : textPosition === "bottom" ? "mt-auto mb-4" : "my-auto"
-                        }`}>
-                          
-                          {/* Logo / Emblem Rendering */}
-                          {emblemType === "custom" && customLogoUrl ? (
-                            <div className="w-16 h-16 relative mb-3">
-                              <Image 
-                                src={customLogoUrl} 
-                                alt="Custom Logo" 
-                                fill 
-                                className="object-contain" 
-                              />
-                            </div>
-                          ) : emblemType === "coffee" ? (
-                            <div className="w-12 h-12 rounded-full border-2 flex items-center justify-center mb-2 shadow-sm transition-all" style={{ borderColor: textColor, color: textColor }}>
-                              <Coffee size={22} />
-                            </div>
-                          ) : emblemType === "crown" ? (
-                            <div className="w-12 h-12 flex items-center justify-center mb-2 transition-all" style={{ color: textColor }}>
-                              <Crown size={28} />
-                            </div>
-                          ) : emblemType === "leaf" ? (
-                            <div className="w-12 h-12 flex items-center justify-center mb-2 transition-all" style={{ color: textColor }}>
-                              <Leaf size={28} />
-                            </div>
-                          ) : emblemType === "star" ? (
-                            <div className="w-12 h-12 flex items-center justify-center mb-2 transition-all" style={{ color: textColor }}>
-                              <Star size={28} />
-                            </div>
-                          ) : null}
-
-                          {/* Brand Title */}
-                          <h3 
-                            className={`font-bold tracking-tight uppercase transition-all duration-200 drop-shadow-sm ${
-                              fontFamily === "serif" 
-                                ? "font-serif" 
-                                : fontFamily === "sans" 
-                                ? "font-sans font-black" 
-                                : fontFamily === "display" 
-                                ? "font-serif tracking-widest font-black" 
-                                : "font-serif italic"
-                            } ${
-                              fontSize === "sm" ? "text-lg sm:text-xl" : fontSize === "md" ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
-                            }`}
-                            style={{ 
-                              color: textColor,
-                              textShadow: textColor === "#D4AF37" ? "0 1px 2px rgba(212,175,55,0.4)" : undefined
-                            }}
-                          >
-                            {brandTitle || "YOUR BRAND NAME"}
-                          </h3>
-
-                          {/* Brand Subtitle / Slogan */}
-                          {brandSubtitle && (
-                            <p 
-                              className="text-[10px] sm:text-[11px] font-semibold tracking-widest uppercase mt-1 opacity-90"
-                              style={{ color: textColor }}
-                            >
-                              {brandSubtitle}
-                            </p>
-                          )}
-
-                        </div>
-
-                        {/* Bottom Fold Crease & Eco Badge */}
-                        <div className="w-full flex justify-between items-center text-[8px] uppercase tracking-wider opacity-50 border-t border-black/10 pt-2 px-2">
-                          <span>100% Biodegradable</span>
-                          <span>Arenguade • Addis Ababa</span>
-                        </div>
-
-                      </div>
-
-                      {/* Bottom Shadow */}
-                      <div className="w-60 sm:w-72 h-4 bg-stone-900/20 rounded-full blur-md -mt-2 -z-10" />
-
+                    <div className="w-full flex-1 flex flex-col items-center justify-center relative select-none">
+                      <DynamicThreeBagScene
+                        bagProps={{
+                          bagColor: bagBaseColor,
+                          handleColor: handleColor,
+                          textColor: textColor,
+                          brandTitle: brandTitle || "YOUR BRAND",
+                          brandSubtitle: brandSubtitle,
+                          fontFamily: fontFamily,
+                          emblemType: emblemType,
+                          customLogoUrl: customLogoUrl,
+                          handleType: handleType
+                        }}
+                      />
                     </div>
 
-                    <p className="text-[11px] text-stone-500 text-center mt-2">
-                      Live interactive preview • Changes below update your packaging in real time
+                    <p className="text-[11px] text-stone-500 text-center mt-2 absolute bottom-4">
+                      Live interactive 3D preview • Rotate with mouse • Changes below update in real time
                     </p>
 
                   </div>

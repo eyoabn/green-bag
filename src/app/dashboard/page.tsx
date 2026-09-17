@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { 
   ShoppingBag, 
   BookOpen, 
@@ -13,11 +13,13 @@ import {
   CheckCircle2,
   Clock,
   MapPin,
-  Camera
+  Camera,
+  LogOut
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 function CustomerDashboardContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const urlTab = searchParams.get("tab") as "orders" | "classes" | "designs" | null;
   const [activeTab, setActiveTab] = useState<"orders" | "classes" | "designs">(urlTab || "designs");
@@ -88,6 +90,18 @@ function CustomerDashboardContent() {
     return index === -1 ? 0 : index;
   };
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("arenguade_user");
+      }
+      router.push("/login");
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
     <div className="flex flex-col max-w-6xl mx-auto space-y-8 pb-12 pt-8">
       
@@ -107,6 +121,13 @@ function CustomerDashboardContent() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleSignOut}
+            className="bg-stone-800 hover:bg-stone-900 text-stone-200 text-xs font-bold px-4 py-3 rounded-full transition-all shadow-md flex items-center gap-1.5"
+          >
+            <LogOut size={15} />
+            <span className="hidden sm:inline">Sign Out</span>
+          </button>
           <Link
             href="/design-submission"
             className="bg-[#8C4B31] hover:bg-[#A3593B] text-white text-xs font-bold px-5 py-3 rounded-full transition-all shadow-md flex items-center gap-1.5"

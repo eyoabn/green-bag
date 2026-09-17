@@ -41,12 +41,7 @@ function RealisticDynamicBag({ props }: { props: DynamicBagProps }) {
     }
   });
 
-  // Map the font family
-  const fontUrl = props.fontFamily === "sans" 
-    ? "https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2"
-    : props.fontFamily === "display"
-    ? "https://fonts.gstatic.com/s/oswald/v49/TK3_WkUHHAIjg75cFRf3bXL8LICs1_FvsUtiZTaR.woff2"
-    : "https://fonts.gstatic.com/s/playfairdisplay/v30/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtM.woff2"; // Serif / default
+  // Using default troika font (Roboto TTF) as woff2 fonts can cause crashes
 
   return (
     <group
@@ -127,7 +122,6 @@ function RealisticDynamicBag({ props }: { props: DynamicBagProps }) {
         <Text
           position={[0, -0.2, 0.02]}
           fontSize={0.2}
-          font={fontUrl}
           color={props.textColor}
           anchorX="center"
           anchorY="middle"
@@ -141,7 +135,6 @@ function RealisticDynamicBag({ props }: { props: DynamicBagProps }) {
           <Text
             position={[0, -0.45, 0.02]}
             fontSize={0.08}
-            font={fontUrl}
             color={props.textColor}
             anchorX="center"
             anchorY="middle"

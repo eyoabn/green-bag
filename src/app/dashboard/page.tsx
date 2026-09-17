@@ -29,6 +29,7 @@ function CustomerDashboardContent() {
   const [loading, setLoading] = useState(true);
   const [uploadingPaymentId, setUploadingPaymentId] = useState<string | null>(null);
   const [paymentUrl, setPaymentUrl] = useState("");
+  const [orders, setOrders] = useState<any[]>([]);
 
   const supabase = createClient();
 
@@ -47,6 +48,17 @@ function CustomerDashboardContent() {
           
         if (dbDesigns) {
           setDesigns(dbDesigns);
+        }
+
+        // Fetch retail orders from Supabase
+        const { data: dbOrders, error: orderError } = await supabase
+          .from("orders")
+          .select("*, products(name)")
+          .eq("buyer_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (dbOrders) {
+          setOrders(dbOrders);
         }
       }
     } catch (e) {
@@ -142,7 +154,7 @@ function CustomerDashboardContent() {
       <div className="flex items-center gap-2 border-b border-stone-200 pb-2">
         {[
           { id: "designs", label: "Custom 3D Designs & Map", count: designs.length },
-          { id: "orders", label: "My Orders & Receipts", count: 0 },
+          { id: "orders", label: "My Orders & Receipts", count: orders.length },
           { id: "classes", label: "My Academy Workshops", count: 0 },
         ].map((tab) => (
           <button
@@ -306,12 +318,74 @@ function CustomerDashboardContent() {
             </div>
           )}
 
-          {/* Fallbacks for removed fake data */}
+          {/* Tab Content: ORDERS (Retail) */}
           {activeTab === "orders" && (
-            <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center">
-              <Package size={40} className="text-stone-300 mx-auto mb-3" />
-              <h3 className="font-serif text-xl font-bold text-stone-900 mb-1">No Active Retail Orders</h3>
-              <p className="text-xs text-stone-500 mb-6">You have no active retail orders in the database.</p>
+            <div className="space-y-6">
+              {orders.length > 0 ? (
+                orders.map((o) => {
+                  const currentStep = ["pending_verification", "approved", "fulfilled"].indexOf(o.status);
+                  
+                  return (
+                    <div key={o.id} className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col gap-6">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Retail Order #{o.id.substring(0,8)}</span>
+                          <h3 className="font-serif text-2xl font-bold text-stone-900 mt-1">
+                            {o.products?.name || "Premium Bag Bundle"}
+                          </h3>
+                          <p className="text-xs text-stone-500 mt-1">
+                            {o.quantity} Bundles • {o.total_price} ETB
+                          </p>
+                        </div>
+                        <span className="text-xs font-bold text-[#1E3B2E] bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full uppercase tracking-widest">
+                          {o.status.replace(/_/g, " ")}
+                        </span>
+                      </div>
+
+                      {/* WORKFLOW TRACKER MAP */}
+                      <div className="relative pt-6 pb-2 max-w-xl mx-auto w-full">
+                        <div className="absolute top-10 left-8 right-8 h-1 bg-stone-100 -z-10 rounded-full" />
+                        <div 
+                          className="absolute top-10 left-8 h-1 bg-emerald-700 -z-10 rounded-full transition-all duration-1000" 
+                          style={{ width: `calc(${Math.min(currentStep / 2 * 100, 100)}% - 2rem)` }} 
+                        />
+                        
+                        <div className="flex justify-between relative">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 0 ? "bg-emerald-700" : "bg-stone-200 text-stone-400"}`}>
+                              {currentStep > 0 ? <CheckCircle2 size={16} /> : "1"}
+                            </div>
+                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Verifying</span>
+                          </div>
+                          <div className="flex flex-col items-center gap-2">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 1 ? "bg-emerald-700" : "bg-stone-200 text-stone-400"}`}>
+                              {currentStep > 1 ? <CheckCircle2 size={16} /> : "2"}
+                            </div>
+                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Approved &<br/>Processing</span>
+                          </div>
+                          <div className="flex flex-col items-center gap-2">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 2 ? "bg-emerald-700" : "bg-stone-200 text-stone-400"}`}>
+                              {currentStep >= 2 ? <CheckCircle2 size={16} /> : "3"}
+                            </div>
+                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Fulfilled</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="bg-white rounded-3xl p-12 border border-stone-200 shadow-sm text-center">
+                  <ShoppingBag size={48} className="mx-auto text-stone-300 mb-4" />
+                  <h3 className="font-serif text-2xl font-bold text-stone-900 mb-2">No Retail Orders Yet</h3>
+                  <p className="text-stone-500 mb-6 max-w-md mx-auto">
+                    You haven&apos;t placed any standard bag orders from our catalog.
+                  </p>
+                  <Link href="/products" className="inline-block bg-[#1E3B2E] text-white px-6 py-3 rounded-full text-sm font-bold shadow-md hover:bg-[#8C4B31] transition-all">
+                    Browse Catalog
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 

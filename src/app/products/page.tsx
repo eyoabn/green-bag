@@ -18,7 +18,8 @@ import {
   ShoppingBag,
   ExternalLink
 } from "lucide-react";
-import { DataStore, StoredProduct } from "@/utils/dataStore";
+import { createClient } from "@/utils/supabase/client";
+import { DataStore } from "@/utils/dataStore";
 
 export interface Product {
   id: string;
@@ -243,36 +244,43 @@ const CATEGORIES = [
 
 export default function ProductsPage() {
   const [productsList, setProductsList] = useState<Product[]>(PRODUCTS_CATALOG);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price-low" | "price-high">("featured");
   const [lightboxProduct, setLightboxProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    const loadProducts = () => {
-      const stored = DataStore.getProducts();
-      if (stored && stored.length > 0) {
-        setProductsList(stored.map((s) => ({
-          id: s.id,
-          name: s.name,
-          client: s.client || "Arenguade Custom Line",
-          category: s.category,
-          price: s.price,
-          bundleSize: s.bundleSize || 100,
-          gsm: s.gsm || 200,
-          handleType: s.handleType || "Twisted Kraft Cord",
-          image: s.image || "/images/photo_6_2026-09-05_00-36-03.jpg",
-          gallery: s.gallery && s.gallery.length > 0 ? s.gallery : [s.image],
-          badge: s.inStock ? s.badge : "Out of Stock",
-          description: s.description || "",
-          dimensions: s.dimensions || "24cm × 30cm + 10cm gusset",
-          material: s.material || "100% Ethiopian Virgin Kraft",
-        })));
+    async function loadProducts() {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('products').select('*');
+      
+      if (!error && data && data.length > 0) {
+        // Map Supabase columns to frontend Product interface
+        const mappedProducts = data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          client: p.client || "Arenguade Standard Catalog",
+          category: p.category || "Standard Retail",
+          price: p.price,
+          bundleSize: p.bundle_size || 100,
+          gsm: p.gsm || 150,
+          handleType: p.handle_type || "Flat Paper Handle",
+          image: p.image_urls && p.image_urls.length > 0 ? p.image_urls[0] : "/images/placeholder.jpg",
+          gallery: p.image_urls || [],
+          badge: p.badge,
+          description: p.description || "",
+          dimensions: p.dimensions || "Standard",
+          material: p.material || "Recycled Kraft"
+        }));
+        setProductsList(mappedProducts);
+      } else {
+        // Fallback to hardcoded catalog if DB is empty or fails
+        setProductsList(PRODUCTS_CATALOG);
       }
-    };
+      setLoading(false);
+    }
     loadProducts();
-    window.addEventListener("arenguade_datastore_change", loadProducts);
-    return () => window.removeEventListener("arenguade_datastore_change", loadProducts);
   }, []);
 
   const filteredProducts = productsList.filter((product) => {
@@ -382,7 +390,12 @@ export default function ProductsPage() {
 
         {/* Products Grid with REAL PHOTOGRAPHS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
+          {loading ? (
+            <div className="col-span-full py-20 text-center text-stone-500 font-bold animate-pulse">
+              Loading eco-friendly catalog...
+            </div>
+          ) : filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
             <div 
               key={product.id}
               className="group bg-white rounded-3xl border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
@@ -466,7 +479,12 @@ export default function ProductsPage() {
                 </Link>
               </div>
             </div>
-          ))}
+          ))
+          ) : (
+            <div className="col-span-full py-20 text-center text-stone-500 font-bold">
+              No products found matching your criteria.
+            </div>
+          )}
         </div>
 
       </section>

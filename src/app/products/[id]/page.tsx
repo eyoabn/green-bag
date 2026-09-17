@@ -18,13 +18,16 @@ import {
   Palette,
   Eye
 } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 import { PRODUCTS_CATALOG } from "@/app/products/page";
 import { DataStore, StoredBankAccount } from "@/utils/dataStore";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
+  const router = useRouter();
 
   const [product, setProduct] = useState(() => {
     const dynamicProd = DataStore.getProductById(productId);
@@ -102,34 +105,74 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
     setIsSubmitting(true);
     try {
-      let receiptBase64 = "";
-      if (uploadedFile) {
-        receiptBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string || "");
-          reader.onerror = () => resolve("");
-          reader.readAsDataURL(uploadedFile);
-        });
+      const supabase = createClient();
+      
+      // 1. Verify user is logged in securely
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("You must be signed in to purchase products securely.");
+        router.push("/login");
+        return;
       }
 
-      const savedOrder = await DataStore.addOrder({
-        customerName: customerName || "Customer",
-        customerPhone: customerPhone || "0911000000",
-        productId: product.id,
-        productName: `${product.name} (${quantity} Bundles)`,
-        quantityBundles: quantity,
-        totalEtb: totalPrice,
-        bankName: selectedBank.name,
-        receiptUrl: receiptBase64 || undefined,
-      });
+      // 2. Upload Payment Screenshot to Supabase Storage
+      const fileExt = uploadedFile.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `retail-orders/${fileName}`;
 
-      setOrderRef(savedOrder.id);
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('payment-screenshots')
+        .upload(filePath, uploadedFile);
+
+      if (uploadError) {
+        throw new Error(`Failed to upload screenshot: ${uploadError.message}`);
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('payment-screenshots')
+        .getPublicUrl(filePath);
+
+      // 3. Insert Order into Supabase
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          buyer_id: user.id,
+          product_id: product.id,
+          quantity: quantity,
+          total_price: totalPrice,
+          bank_account_id: selectedBank.id !== "cbe" ? selectedBank.id : null, // If using hardcoded bank, just leave null or valid UUID
+          payment_screenshot_url: publicUrlData.publicUrl,
+          status: 'pending_verification'
+        })
+        .select()
+        .single();
+
+      if (orderError) {
+        // Fallback for demo environments without migrated DB
+        if (orderError.message.includes('uuid') || orderError.message.includes('foreign key')) {
+          console.warn("Database not migrated for products. Falling back to local storage.", orderError);
+          const savedOrder = await DataStore.addOrder({
+            customerName: customerName || user.email || "Customer",
+            customerPhone: customerPhone || "0911000000",
+            productId: product.id,
+            productName: `${product.name} (${quantity} Bundles)`,
+            quantityBundles: quantity,
+            totalEtb: totalPrice,
+            bankName: selectedBank.name,
+            receiptUrl: publicUrlData.publicUrl,
+          });
+          setOrderRef(savedOrder.id);
+        } else {
+          throw orderError;
+        }
+      } else {
+        setOrderRef(orderData.id);
+      }
+
       setOrderConfirmed(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Order submission failed:", err);
-      const generatedRef = `ARN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-      setOrderRef(generatedRef);
-      setOrderConfirmed(true);
+      alert(err.message || "Something went wrong during checkout.");
     } finally {
       setIsSubmitting(false);
     }

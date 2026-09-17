@@ -18,15 +18,44 @@ import {
 
 import { useEffect } from "react";
 import { DataStore, StoredOrder } from "@/utils/dataStore";
+import { createClient } from "@/utils/supabase/client";
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<StoredOrder[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [viewingReceiptOrder, setViewingReceiptOrder] = useState<StoredOrder | null>(null);
+  const [viewingReceiptOrder, setViewingReceiptOrder] = useState<any | null>(null);
 
-  const loadOrders = () => {
-    setOrders(DataStore.getOrders());
+  const supabase = createClient();
+
+  const loadOrders = async () => {
+    // We will fetch from both local DataStore (legacy) and Supabase orders
+    const localOrders = DataStore.getOrders();
+    
+    const { data: supabaseOrders, error } = await supabase
+      .from("orders")
+      .select("*, profiles(email, phone), products(name)")
+      .order("created_at", { ascending: false });
+      
+    if (supabaseOrders) {
+      // Map Supabase orders to match the legacy format for the UI
+      const mappedSupabaseOrders = supabaseOrders.map((o: any) => ({
+        id: o.id,
+        customerName: o.profiles?.email || "Unknown User",
+        customerPhone: o.profiles?.phone || "N/A",
+        productName: o.products?.name || "Premium Bag Bundle",
+        quantityBundles: o.quantity,
+        totalEtb: o.total_price,
+        bankName: o.bank_account_id ? "Transfer" : "System",
+        status: o.status,
+        receiptUrl: o.payment_screenshot_url,
+        timestamp: new Date(o.created_at).toLocaleString(),
+        isSupabase: true
+      }));
+      setOrders([...mappedSupabaseOrders, ...localOrders]);
+    } else {
+      setOrders(localOrders);
+    }
   };
 
   useEffect(() => {
@@ -36,13 +65,21 @@ export default function AdminOrdersPage() {
     return () => window.removeEventListener("arenguade_datastore_change", handleUpdate);
   }, []);
 
-  const handleApprove = (id: string) => {
-    DataStore.updateOrderStatus(id, "approved");
+  const handleApprove = async (id: string, isSupabase?: boolean) => {
+    if (isSupabase) {
+      await supabase.from("orders").update({ status: "approved" }).eq("id", id);
+    } else {
+      DataStore.updateOrderStatus(id, "approved");
+    }
     loadOrders();
   };
 
-  const handleReject = (id: string) => {
-    DataStore.updateOrderStatus(id, "rejected");
+  const handleReject = async (id: string, isSupabase?: boolean) => {
+    if (isSupabase) {
+      await supabase.from("orders").update({ status: "rejected" }).eq("id", id);
+    } else {
+      DataStore.updateOrderStatus(id, "rejected");
+    }
     loadOrders();
   };
 
@@ -186,7 +223,7 @@ export default function AdminOrdersPage() {
                     <div className="flex items-center justify-end gap-1.5">
                       {order.status !== "approved" && (
                         <button
-                          onClick={() => handleApprove(order.id)}
+                          onClick={() => handleApprove(order.id, order.isSupabase)}
                           className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold transition-colors"
                           title="Approve & Send to Manufacturing"
                         >
@@ -195,7 +232,7 @@ export default function AdminOrdersPage() {
                       )}
                       {order.status !== "rejected" && (
                         <button
-                          onClick={() => handleReject(order.id)}
+                          onClick={() => handleReject(order.id, order.isSupabase)}
                           className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-bold transition-colors"
                           title="Reject Payment"
                         >
@@ -282,7 +319,7 @@ export default function AdminOrdersPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  handleApprove(viewingReceiptOrder.id);
+                  handleApprove(viewingReceiptOrder.id, viewingReceiptOrder.isSupabase);
                   setViewingReceiptOrder(null);
                 }}
                 className="flex-1 py-3 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5"
@@ -292,7 +329,7 @@ export default function AdminOrdersPage() {
               </button>
               <button
                 onClick={() => {
-                  handleReject(viewingReceiptOrder.id);
+                  handleReject(viewingReceiptOrder.id, viewingReceiptOrder.isSupabase);
                   setViewingReceiptOrder(null);
                 }}
                 className="px-5 py-3 rounded-full bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-all"

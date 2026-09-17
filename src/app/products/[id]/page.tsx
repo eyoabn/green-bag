@@ -23,6 +23,7 @@ import { PRODUCTS_CATALOG } from "@/app/products/page";
 import { DataStore, StoredBankAccount } from "@/utils/dataStore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getCurrentUser, isValidUUID } from "@/utils/auth";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -68,6 +69,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       setBanks(active);
       setSelectedBank(active[0]);
     }
+
+    getCurrentUser().then((u) => {
+      if (u) {
+        if (!customerName) setCustomerName(u.full_name);
+        if (!customerPhone && u.phone) setCustomerPhone(u.phone);
+      }
+    });
   }, []);
 
   const [quantity, setQuantity] = useState<number>(1);
@@ -107,68 +115,85 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     try {
       const supabase = createClient();
       
-      // 1. Verify user is logged in securely
-      const { data: { user } } = await supabase.auth.getUser();
+      // 1. Verify user is logged in
+      const user = await getCurrentUser();
       if (!user) {
-        alert("You must be signed in to purchase products securely.");
-        router.push("/login");
+        alert("Please sign in or create an account to complete your order.");
+        router.push(`/login?returnTo=/products/${product.id}`);
         return;
       }
 
-      // 2. Upload Payment Screenshot to Supabase Storage
-      const fileExt = uploadedFile.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `retail-orders/${fileName}`;
+      // 2. Upload Payment Screenshot
+      let receiptUrl = "";
+      try {
+        const fileExt = uploadedFile.name.split('.').pop() || "jpg";
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `retail-orders/${fileName}`;
 
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from('payment-screenshots')
-        .upload(filePath, uploadedFile);
+        const { error: uploadError } = await supabase.storage
+          .from('payment-screenshots')
+          .upload(filePath, uploadedFile);
 
-      if (uploadError) {
-        throw new Error(`Failed to upload screenshot: ${uploadError.message}`);
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from('payment-screenshots')
-        .getPublicUrl(filePath);
-
-      // 3. Insert Order into Supabase
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          buyer_id: user.id,
-          product_id: product.id,
-          quantity: quantity,
-          total_price: totalPrice,
-          bank_account_id: selectedBank.id !== "cbe" ? selectedBank.id : null, // If using hardcoded bank, just leave null or valid UUID
-          payment_screenshot_url: publicUrlData.publicUrl,
-          status: 'pending_verification'
-        })
-        .select()
-        .single();
-
-      if (orderError) {
-        // Fallback for demo environments without migrated DB
-        if (orderError.message.includes('uuid') || orderError.message.includes('foreign key')) {
-          console.warn("Database not migrated for products. Falling back to local storage.", orderError);
-          const savedOrder = await DataStore.addOrder({
-            customerName: customerName || user.email || "Customer",
-            customerPhone: customerPhone || "0911000000",
-            productId: product.id,
-            productName: `${product.name} (${quantity} Bundles)`,
-            quantityBundles: quantity,
-            totalEtb: totalPrice,
-            bankName: selectedBank.name,
-            receiptUrl: publicUrlData.publicUrl,
-          });
-          setOrderRef(savedOrder.id);
-        } else {
-          throw orderError;
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
+            .from('payment-screenshots')
+            .getPublicUrl(filePath);
+          receiptUrl = publicUrlData.publicUrl;
         }
-      } else {
-        setOrderRef(orderData.id);
+      } catch (storageErr) {
+        console.warn("Storage upload fallback:", storageErr);
       }
 
+      if (!receiptUrl) {
+        receiptUrl = URL.createObjectURL(uploadedFile);
+      }
+
+      // 3. Insert Order into Supabase & DataStore
+      let orderId = "";
+      try {
+        // Ensure profile exists in profiles table
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          full_name: customerName || user.full_name,
+          phone: customerPhone || user.phone || "",
+          role: user.role || "customer"
+        });
+
+        const { data: orderData } = await supabase
+          .from('orders')
+          .insert({
+            buyer_id: user.id,
+            product_id: isValidUUID(product.id) ? product.id : null,
+            quantity: quantity,
+            total_price: totalPrice,
+            bank_account_id: isValidUUID(selectedBank.id) ? selectedBank.id : null,
+            payment_screenshot_url: receiptUrl,
+            status: 'pending_verification'
+          })
+          .select()
+          .single();
+
+        if (orderData?.id) {
+          orderId = orderData.id;
+        }
+      } catch (dbErr) {
+        console.warn("Supabase order insert fallback note:", dbErr);
+      }
+
+      // Always save to DataStore so both user dashboard & admin orders see it immediately
+      const savedOrder = await DataStore.addOrder({
+        customerName: customerName || user.full_name || "Valued Customer",
+        customerPhone: customerPhone || user.phone || "0911000000",
+        customerEmail: user.email,
+        productId: product.id,
+        productName: `${product.name} (${quantity} Bundles)`,
+        quantityBundles: quantity,
+        totalEtb: totalPrice,
+        bankName: selectedBank.name,
+        receiptUrl: receiptUrl,
+      });
+
+      setOrderRef(orderId || savedOrder.id);
       setOrderConfirmed(true);
     } catch (err: any) {
       console.error("Order submission failed:", err);

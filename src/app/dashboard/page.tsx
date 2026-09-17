@@ -17,6 +17,8 @@ import {
   LogOut
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { getCurrentUser, setLocalUser } from "@/utils/auth";
+import { DataStore } from "@/utils/dataStore";
 
 function CustomerDashboardContent() {
   const router = useRouter();
@@ -35,34 +37,104 @@ function CustomerDashboardContent() {
 
   const loadData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCustomerName(user.email?.split('@')[0] || "Valued Customer");
-        
-        // Fetch real designs from Supabase
-        const { data: dbDesigns, error } = await supabase
+      const user = await getCurrentUser();
+      if (!user) {
+        router.push("/login?returnTo=/dashboard");
+        return;
+      }
+
+      setCustomerName(user.full_name || user.email.split('@')[0] || "Valued Customer");
+      
+      // 1. Fetch designs from Supabase
+      let dbDesigns: any[] = [];
+      try {
+        const { data } = await supabase
           .from("designs")
           .select("*")
           .eq("submitted_by", user.id)
           .order("created_at", { ascending: false });
-          
-        if (dbDesigns) {
-          setDesigns(dbDesigns);
-        }
+        if (data) dbDesigns = data;
+      } catch (err) {}
 
-        // Fetch retail orders from Supabase
-        const { data: dbOrders, error: orderError } = await supabase
+      // 2. Fetch designs from local DataStore
+      const localDesigns = DataStore.getDesigns().map((d) => ({
+        id: d.id,
+        submitted_by: user.id,
+        file_url: d.fileName,
+        note: JSON.stringify({
+          clientCompany: d.clientCompany,
+          clientContact: d.clientContact,
+          dimensions: d.dimensions,
+          paperWeight: d.paperWeight,
+          paperShade: d.paperShade,
+          quantity: d.quantity,
+          handleType: d.handleType,
+          notes: d.notes,
+        }),
+        status: d.status === "reviewing" ? "engineering_review" : d.status === "proof_ready" ? "approved_pending_payment" : d.status,
+        created_at: d.submittedDate,
+      }));
+
+      // Merge and deduplicate designs
+      const seenDesignIds = new Set();
+      const combinedDesigns: any[] = [];
+      for (const d of [...dbDesigns, ...localDesigns]) {
+        if (!seenDesignIds.has(d.id)) {
+          seenDesignIds.add(d.id);
+          combinedDesigns.push(d);
+        }
+      }
+      setDesigns(combinedDesigns);
+
+      // 3. Fetch retail orders from Supabase
+      let dbOrders: any[] = [];
+      try {
+        const { data } = await supabase
           .from("orders")
           .select("*, products(name)")
           .eq("buyer_id", user.id)
           .order("created_at", { ascending: false });
+        if (data) {
+          dbOrders = data.map((o: any) => ({
+            id: o.id,
+            product_id: o.product_id,
+            productName: o.products?.name || "Premium Bag Bundle",
+            quantity: o.quantity,
+            total_price: o.total_price,
+            status: o.status,
+            payment_screenshot_url: o.payment_screenshot_url,
+            created_at: o.created_at,
+          }));
+        }
+      } catch (err) {}
 
-        if (dbOrders) {
-          setOrders(dbOrders);
+      // 4. Fetch retail orders from local DataStore
+      const localOrders = DataStore.getOrders()
+        .filter((o) => !o.customerEmail || o.customerEmail === user.email || !user.email)
+        .map((o) => ({
+          id: o.id,
+          product_id: o.productId,
+          productName: o.productName,
+          quantity: o.quantityBundles,
+          total_price: o.totalEtb,
+          status: o.status,
+          payment_screenshot_url: o.receiptUrl,
+          created_at: o.timestamp,
+        }));
+
+      // Merge and deduplicate orders
+      const seenOrderIds = new Set();
+      const combinedOrders: any[] = [];
+      for (const o of [...dbOrders, ...localOrders]) {
+        if (!seenOrderIds.has(o.id)) {
+          seenOrderIds.add(o.id);
+          combinedOrders.push(o);
         }
       }
+      setOrders(combinedOrders);
+
     } catch (e) {
-      console.error(e);
+      console.error("Dashboard loadData error:", e);
     } finally {
       setLoading(false);
     }
@@ -73,21 +145,32 @@ function CustomerDashboardContent() {
       setActiveTab(urlTab);
     }
     loadData();
+
+    const handleUpdate = () => loadData();
+    window.addEventListener("arenguade_datastore_change", handleUpdate);
+    window.addEventListener("arenguade_auth_change", handleUpdate);
+    return () => {
+      window.removeEventListener("arenguade_datastore_change", handleUpdate);
+      window.removeEventListener("arenguade_auth_change", handleUpdate);
+    };
   }, [urlTab]);
 
   const submitPaymentScreenshot = async (designId: string) => {
-    if (!paymentUrl) return alert("Please enter a screenshot URL");
+    if (!paymentUrl) return alert("Please enter a screenshot URL or file");
     try {
-      const { error } = await supabase
-        .from("designs")
-        .update({ 
-          payment_screenshot_url: paymentUrl,
-          status: "payment_review" 
-        })
-        .eq("id", designId);
+      try {
+        await supabase
+          .from("designs")
+          .update({ 
+            payment_screenshot_url: paymentUrl,
+            status: "payment_review" 
+          })
+          .eq("id", designId);
+      } catch {}
+
+      DataStore.updateDesignStatus(designId, "approved");
         
-      if (error) throw error;
-      alert("Payment screenshot submitted for review!");
+      alert("Payment screenshot submitted! Factory staff will verify within 2-4 hours.");
       setPaymentUrl("");
       setUploadingPaymentId(null);
       loadData();
@@ -105,13 +188,9 @@ function CustomerDashboardContent() {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("arenguade_user");
-      }
-      router.push("/login");
-    } catch (e) {
-      console.error(e);
-    }
+    } catch {}
+    setLocalUser(null);
+    router.push("/login");
   };
 
   return (

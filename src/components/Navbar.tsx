@@ -17,21 +17,21 @@ import {
   Award
 } from "lucide-react";
 
+import { getCurrentUser, AppUser } from "@/utils/auth";
+
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { currency, setCurrency } = useCurrency();
-  const [user, setUser] = useState<{ role: string; full_name?: string } | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("arenguade_user");
-      if (stored) {
-        try {
-          setUser(JSON.parse(stored));
-        } catch {}
-      }
-    }
+    const updateUser = () => {
+      getCurrentUser().then((u) => setUser(u));
+    };
+    updateUser();
+    window.addEventListener("arenguade_auth_change", updateUser);
+    return () => window.removeEventListener("arenguade_auth_change", updateUser);
   }, [pathname]);
 
   // Hide on admin and dashboard internal pages to prevent double navigation

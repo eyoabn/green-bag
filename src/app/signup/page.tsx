@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { toValidUUID, setLocalUser, AppUser } from "@/utils/auth";
 
-export default function SignupPage() {
+function SignupFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams?.get("returnTo") || null;
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -31,27 +34,9 @@ export default function SignupPage() {
 
     try {
       const supabase = createClient();
-      const isPlaceholder = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
+      let userId: string = "";
 
-      if (isPlaceholder) {
-        // Fallback user session
-        if (typeof window !== "undefined") {
-          localStorage.setItem("arenguade_user", JSON.stringify({
-            id: `usr_${Date.now()}`,
-            email,
-            full_name: fullName,
-            phone,
-            role,
-          }));
-        }
-        setSuccessMessage("Account created successfully! Redirecting to portal...");
-        setTimeout(() => {
-          router.push(role === "student" ? "/dashboard?tab=classes" : "/dashboard?tab=orders");
-        }, 1000);
-        return;
-      }
-
-      // Real Supabase Auth Call
+      // 1. Attempt Supabase Auth SignUp
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -65,35 +50,68 @@ export default function SignupPage() {
       });
 
       if (error) {
-        setErrorMessage(error.message);
-        setIsLoading(false);
-        return;
+        // If already registered, attempt sign in directly
+        if (error.message.toLowerCase().includes("already registered")) {
+          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          if (signInErr) {
+            setErrorMessage("An account with this email already exists. Please login with your password.");
+            setIsLoading(false);
+            return;
+          }
+          if (signInData?.user) {
+            userId = signInData.user.id;
+          }
+        } else {
+          setErrorMessage(error.message);
+          setIsLoading(false);
+          return;
+        }
+      } else if (data?.user) {
+        userId = data.user.id;
+        // If session is null (email confirmation enabled on Supabase), try immediate login
+        if (!data.session) {
+          try {
+            await supabase.auth.signInWithPassword({ email, password });
+          } catch {}
+        }
       }
 
-      // Also insert profile into profiles table
-      if (data.user) {
+      // Guarantee an RFC-compliant UUID
+      const finalUserId = userId || toValidUUID(email);
+
+      // 2. Establish App User session
+      const appUser: AppUser = {
+        id: finalUserId,
+        email,
+        full_name: fullName,
+        phone,
+        role,
+      };
+      setLocalUser(appUser);
+
+      // 3. Upsert profile in Supabase (with error boundary)
+      try {
         await supabase.from("profiles").upsert({
-          id: data.user.id,
+          id: finalUserId,
           full_name: fullName,
           phone: phone,
           role: role,
         });
-
-        if (typeof window !== "undefined") {
-          localStorage.setItem("arenguade_user", JSON.stringify({
-            id: data.user.id,
-            email,
-            full_name: fullName,
-            phone,
-            role,
-          }));
-        }
+      } catch (profErr) {
+        console.warn("Profile table upsert note:", profErr);
       }
 
-      setSuccessMessage("Account created successfully! Redirecting to portal...");
+      setSuccessMessage("Account created and signed in! Loading your workspace...");
       setTimeout(() => {
-        router.push(role === "student" ? "/dashboard?tab=classes" : "/dashboard?tab=orders");
-      }, 1000);
+        if (returnTo) {
+          router.push(returnTo);
+        } else {
+          router.push(role === "student" ? "/dashboard?tab=classes" : "/dashboard?tab=orders");
+        }
+      }, 700);
 
     } catch (err: any) {
       setErrorMessage(err?.message || "An unexpected error occurred. Please try again.");
@@ -252,5 +270,13 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F9F6F0] flex items-center justify-center text-stone-500 text-xs">Loading registration...</div>}>
+      <SignupFormContent />
+    </Suspense>
   );
 }

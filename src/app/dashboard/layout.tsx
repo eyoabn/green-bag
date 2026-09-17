@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { User, ShoppingBag, BookOpen, LogOut, Menu, X, ArrowLeft, Sparkles, Layers } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { getCurrentUser, setLocalUser } from "@/utils/auth";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -12,20 +13,22 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const currentTab = searchParams?.get("tab") || "orders";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const [userName, setUserName] = useState("Customer");
   const [userRole, setUserRole] = useState("Customer");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("arenguade_user");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed.full_name) setUserName(parsed.full_name);
-          if (parsed.role) setUserRole(parsed.role === "admin" ? "Factory Admin" : "Customer & Student");
-        } catch {}
-      }
-    }
+    const updateUser = () => {
+      getCurrentUser().then((u) => {
+        if (u) {
+          setUserName(u.full_name || "Customer");
+          setUserRole(u.role === "admin" ? "Factory Admin" : "Customer & Student");
+        }
+      });
+    };
+    updateUser();
+    window.addEventListener("arenguade_auth_change", updateUser);
+    return () => window.removeEventListener("arenguade_auth_change", updateUser);
   }, []);
 
   const handleSignOut = async () => {
@@ -33,9 +36,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       const supabase = createClient();
       await supabase.auth.signOut();
     } catch {}
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("arenguade_user");
-    }
+    setLocalUser(null);
     router.push("/login");
   };
 

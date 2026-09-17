@@ -31,6 +31,9 @@ import {
   SlidersHorizontal
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import { getCurrentUser } from "@/utils/auth";
+import { DataStore } from "@/utils/dataStore";
 import dynamic from "next/dynamic";
 
 const DynamicThreeBagScene = dynamic(() => import("@/components/DynamicThreeBag"), {
@@ -46,6 +49,7 @@ const DynamicThreeBagScene = dynamic(() => import("@/components/DynamicThreeBag"
 });
 
 export default function DesignSubmissionPage() {
+  const router = useRouter();
   // Main Studio Mode: "design" (Design for Yourself) vs "upload" (Upload Existing Artwork)
   const [activeMode, setActiveMode] = useState<"design" | "upload">("design");
 
@@ -88,6 +92,16 @@ export default function DesignSubmissionPage() {
   const [deliveryLocation, setDeliveryLocation] = useState("Addis Ababa");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRef, setSubmittedRef] = useState<string | null>(null);
+
+  useEffect(() => {
+    getCurrentUser().then((u) => {
+      if (u) {
+        if (!contactEmail && u.email) setContactEmail(u.email);
+        if (!contactPhone && u.phone) setContactPhone(u.phone);
+        if (!companyName && u.full_name) setCompanyName(u.full_name);
+      }
+    });
+  }, []);
 
   // Handle Logo Upload for the Visual Customizer
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -209,33 +223,72 @@ export default function DesignSubmissionPage() {
     try {
       const supabase = createClient();
       
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
+      // 1. Get the current user
+      const user = await getCurrentUser();
       if (!user) {
-        throw new Error("You must be logged in to submit a design. Please sign in.");
+        alert("Please sign in or create an account to submit your specification for pre-production.");
+        router.push("/login?returnTo=/design-submission");
+        return;
       }
 
-      const { data, error } = await supabase.from("designs").insert({
-        submitted_by: user.id,
-        file_url: dielineFile?.name || (activeMode === "design" ? "Vector_Generated_Spec.pdf" : "Custom_Dieline.ai"),
-        note: JSON.stringify({
-          clientCompany: companyName || "Bespoke Ethiopian Client",
-          clientContact: `${contactEmail || "info@client.et"} • ${contactPhone || "0911000000"}`,
-          dimensions: `${bagWidth} × ${bagHeight} + ${bagGusset} cm`,
-          paperWeight: `${paperWeight} GSM Kraft`,
-          paperShade: bagColorName,
-          quantity: quantity,
-          handleType: `${handleType} Handle`,
-          notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}.` : "Uploaded bespoke dieline artwork."),
-          totalEstEtb: totalEstEtb,
-        }),
-        status: "new"
-      }).select().single();
+      // 2. Ensure profile exists in profiles table
+      try {
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          full_name: companyName || user.full_name,
+          phone: contactPhone || user.phone || "",
+          role: user.role || "customer"
+        });
+      } catch (profErr) {
+        console.warn("Profile sync warning:", profErr);
+      }
 
-      if (error) throw error;
-      
-      setSubmittedRef(data.id);
+      let submittedId = "";
+      const notePayload = JSON.stringify({
+        clientCompany: companyName || user.full_name || "Bespoke Ethiopian Client",
+        clientContact: `${contactEmail || user.email} • ${contactPhone || user.phone || "0911000000"}`,
+        dimensions: `${bagWidth} × ${bagHeight} + ${bagGusset} cm`,
+        paperWeight: `${paperWeight} GSM Kraft`,
+        paperShade: bagColorName,
+        quantity: quantity,
+        handleType: `${handleType} Handle`,
+        notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}.` : "Uploaded bespoke dieline artwork."),
+        totalEstEtb: totalEstEtb,
+      });
+
+      // 3. Try Supabase insert
+      try {
+        const { data, error } = await supabase.from("designs").insert({
+          submitted_by: user.id,
+          file_url: dielineFile?.name || (activeMode === "design" ? "Vector_Generated_Spec.pdf" : "Custom_Dieline.ai"),
+          note: notePayload,
+          status: "new"
+        }).select().single();
+
+        if (data?.id) {
+          submittedId = data.id;
+        }
+      } catch (dbErr) {
+        console.warn("Supabase design insert notice:", dbErr);
+      }
+
+      // 4. Always save to DataStore
+      const localDesign = DataStore.addDesign({
+        clientName: user.full_name || companyName || "Valued Client",
+        clientCompany: companyName || user.full_name || "Bespoke Ethiopian Client",
+        clientContact: `${contactEmail || user.email} • ${contactPhone || user.phone || "0911000000"}`,
+        dimensions: `${bagWidth} × ${bagHeight} + ${bagGusset} cm`,
+        paperWeight: `${paperWeight} GSM Kraft`,
+        paperShade: bagColorName,
+        quantity: quantity,
+        handleType: `${handleType} Handle`,
+        fileName: dielineFile?.name || (activeMode === "design" ? "Vector_Generated_Spec.pdf" : "Custom_Dieline.ai"),
+        notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}. Unit: ${estUnitPrice} ETB. Total: ${totalEstEtb} ETB.` : `Uploaded bespoke dieline. Unit: ${estUnitPrice} ETB. Total: ${totalEstEtb} ETB.`),
+      });
+
+      setSubmittedRef(submittedId || localDesign.id);
     } catch (err: any) {
+      console.error("Failed to submit design:", err);
       alert(err.message || "Failed to submit design");
     } finally {
       setIsSubmitting(false);

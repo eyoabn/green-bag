@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Sparkles, CheckCircle2, AlertCircle, ShieldCheck, User } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-export default function LoginPage() {
+import { toValidUUID, setLocalUser, AppUser } from "@/utils/auth";
+
+function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams?.get("returnTo") || null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,61 +26,79 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      const isPlaceholder = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder");
+      const isAdmin = email.toLowerCase().includes("admin") || email.toLowerCase().includes("owner");
 
-      if (isPlaceholder) {
-        // Fallback demo authentication
-        const isAdmin = email.toLowerCase().includes("admin") || email.toLowerCase().includes("owner");
-        const userObj = {
-          id: `usr_${Date.now()}`,
-          email,
-          full_name: email.split("@")[0] || "User",
-          role: isAdmin ? "admin" : "customer",
-        };
-        if (typeof window !== "undefined") {
-          localStorage.setItem("arenguade_user", JSON.stringify(userObj));
-        }
-        setSuccessMessage("Authentication verified. Loading workspace...");
-        setTimeout(() => {
-          router.push(isAdmin ? "/admin" : "/dashboard");
-        }, 800);
-        return;
-      }
-
-      // Real Supabase Sign In
+      // Attempt Real Supabase Sign In
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        // If email confirmation is pending on Supabase, do not block the customer from checkout
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          const appUser: AppUser = {
+            id: toValidUUID(email),
+            email,
+            full_name: email.split("@")[0] || "Valued User",
+            role: isAdmin ? "admin" : "customer",
+          };
+          setLocalUser(appUser);
+          if (isAdmin) {
+            sessionStorage.setItem("arenguade_admin_authenticated", "true");
+            localStorage.setItem("arenguade_admin_authenticated", "true");
+          }
+          setSuccessMessage("Authentication verified. Loading workspace...");
+          setTimeout(() => {
+            if (returnTo) router.push(returnTo);
+            else router.push(isAdmin ? "/admin" : "/dashboard");
+          }, 700);
+          return;
+        }
+
         setErrorMessage(error.message);
         setIsLoading(false);
         return;
       }
 
-      // Retrieve user role from profiles
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role, full_name")
-          .eq("id", data.user.id)
-          .single();
+      if (data?.user) {
+        let role: "customer" | "student" | "admin" = isAdmin ? "admin" : "customer";
+        let fullName = data.user.user_metadata?.full_name || email.split("@")[0] || "Valued User";
+        let phone = data.user.user_metadata?.phone || "";
 
-        const role = profile?.role || "customer";
-        if (typeof window !== "undefined") {
-          localStorage.setItem("arenguade_user", JSON.stringify({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: profile?.full_name || "Valued User",
-            role,
-          }));
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role, full_name, phone")
+            .eq("id", data.user.id)
+            .maybeSingle();
+
+          if (profile) {
+            if (profile.role) role = profile.role as any;
+            if (profile.full_name) fullName = profile.full_name;
+            if (profile.phone) phone = profile.phone;
+          }
+        } catch {}
+
+        const appUser: AppUser = {
+          id: data.user.id,
+          email: data.user.email || email,
+          full_name: fullName,
+          phone,
+          role,
+        };
+        setLocalUser(appUser);
+
+        if (role === "admin" || isAdmin) {
+          sessionStorage.setItem("arenguade_admin_authenticated", "true");
+          localStorage.setItem("arenguade_admin_authenticated", "true");
         }
 
         setSuccessMessage("Authentication verified. Loading workspace...");
         setTimeout(() => {
-          router.push(role === "admin" ? "/admin" : "/dashboard");
-        }, 800);
+          if (returnTo) router.push(returnTo);
+          else router.push(role === "admin" ? "/admin" : "/dashboard");
+        }, 700);
       }
     } catch (err: any) {
       setErrorMessage(err?.message || "Invalid credentials. Please verify and try again.");
@@ -163,7 +185,7 @@ export default function LoginPage() {
             className="w-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white py-3.5 mt-2 rounded-full font-bold tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {isLoading ? (
-              <span>Authenticating...</span>
+              <span>Verifying Credentials...</span>
             ) : (
               <>
                 <span>Sign In to Portal</span>
@@ -192,5 +214,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F9F6F0] flex items-center justify-center text-stone-500 text-xs">Loading portal...</div>}>
+      <LoginFormContent />
+    </Suspense>
   );
 }

@@ -93,6 +93,7 @@ const SESSIONS: Session[] = [
 ];
 
 import { DataStore } from "@/utils/dataStore";
+import { getCurrentUser } from "@/utils/auth";
 
 export default function SchedulePage() {
   const [sessionsList, setSessionsList] = useState<Session[]>(SESSIONS);
@@ -108,6 +109,12 @@ export default function SchedulePage() {
 
   useEffect(() => {
     setActiveBanks(DataStore.getActiveBanks());
+    getCurrentUser().then((u) => {
+      if (u) {
+        if (u.full_name) setBookingName(u.full_name);
+        if (u.phone) setBookingPhone(u.phone);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -158,22 +165,50 @@ export default function SchedulePage() {
     }
   };
 
-  const handleCompleteBooking = (e: React.FormEvent) => {
+  const handleCompleteBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!receiptUploaded) {
       alert("Please upload your transaction screenshot or payment QR code to complete registration.");
       return;
     }
     if (selectedSession) {
+      const user = await getCurrentUser();
+      let regId = "";
+
+      try {
+        const res = await fetch("/api/registrations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: selectedSession.id,
+            sessionTitle: selectedSession.title,
+            studentId: user?.id,
+            studentName: bookingName || user?.full_name || "Craft Student",
+            studentPhone: bookingPhone || user?.phone || "0911000000",
+            studentEmail: user?.email,
+            receiptUrl: receiptDataUrl || undefined,
+          }),
+        });
+        const resData = await res.json();
+        if (resData?.registrationId) {
+          regId = resData.registrationId;
+        }
+      } catch (apiErr) {
+        console.warn("Server registration fallback note:", apiErr);
+      }
+
       DataStore.addRegistration({
+        id: regId || undefined,
         sessionId: selectedSession.id,
         sessionTitle: selectedSession.title,
         sessionType: selectedSession.type,
         sessionDate: selectedSession.date,
         sessionTime: selectedSession.time,
         location: selectedSession.location,
-        studentName: bookingName || "Craft Student",
-        studentPhone: bookingPhone || "0911000000",
+        studentName: bookingName || user?.full_name || "Craft Student",
+        studentPhone: bookingPhone || user?.phone || "0911000000",
+        studentEmail: user?.email,
+        studentId: user?.id,
         priceEtb: selectedSession.price,
         receiptUrl: receiptDataUrl || undefined,
       });
@@ -394,8 +429,8 @@ export default function SchedulePage() {
 
                 <div className="flex gap-3">
                   <Link
-                    href="/dashboard"
-                    className="flex-1 bg-[#1E3B2E] text-white text-xs font-bold py-3 rounded-full hover:bg-[#8C4B31] transition-colors"
+                    href="/dashboard?tab=classes"
+                    className="flex-1 bg-[#1E3B2E] text-white text-xs font-bold py-3 rounded-full hover:bg-[#8C4B31] transition-colors text-center"
                   >
                     View My Registrations
                   </Link>

@@ -43,6 +43,8 @@ export interface StoredRegistration {
   location: string;
   studentName: string;
   studentPhone: string;
+  studentEmail?: string;
+  studentId?: string;
   priceEtb: number;
   status: "pending_verification" | "approved" | "rejected";
   timestamp: string;
@@ -102,28 +104,32 @@ export interface StoredDesign {
 }
 
 // Initial Default Bank Accounts
+// Initial Default Bank Accounts aligned with Supabase bank_accounts UUIDs
 export const DEFAULT_BANKS: StoredBankAccount[] = [
   {
-    id: "cbe",
+    id: "c7a51a35-4c87-486a-8a45-6d2bad70fb12",
     name: "Commercial Bank of Ethiopia (CBE)",
     accountNumber: "1000123456789",
     accountHolder: "Ethiopia Arenguade Paper Product PLC",
+    accountName: "Ethiopia Arenguade Paper Product PLC",
     type: "bank",
     isActive: true,
   },
   {
-    id: "telebirr",
+    id: "9f7d6bb1-fc05-4e3f-a657-f0b0a22a7288",
     name: "Telebirr SuperApp Merchant",
-    accountNumber: "0911234567",
+    accountNumber: "+251911223344",
     accountHolder: "Arenguade Eco Craft PLC",
+    accountName: "Arenguade Eco Craft PLC",
     type: "mobile_money",
     isActive: true,
   },
   {
-    id: "awash",
+    id: "2480aa30-c066-47f0-999d-177300767e1c",
     name: "Awash Bank",
     accountNumber: "01320876543200",
     accountHolder: "Ethiopia Arenguade Paper Product",
+    accountName: "Ethiopia Arenguade Paper Product",
     type: "bank",
     isActive: true,
   },
@@ -132,6 +138,7 @@ export const DEFAULT_BANKS: StoredBankAccount[] = [
     name: "Dashen Bank (Amole)",
     accountNumber: "510294819001",
     accountHolder: "Arenguade Paper Product",
+    accountName: "Arenguade Paper Product",
     type: "bank",
     isActive: false,
   }
@@ -423,8 +430,8 @@ export const DataStore = {
     return getLocal<StoredOrder[]>(ORDERS_KEY, DEFAULT_ORDERS);
   },
 
-  async addOrder(orderData: Omit<StoredOrder, "id" | "timestamp" | "status">): Promise<StoredOrder> {
-    const newId = `ARN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+  async addOrder(orderData: Omit<StoredOrder, "id" | "timestamp" | "status"> & { id?: string }): Promise<StoredOrder> {
+    const newId = orderData.id || `ARN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrder: StoredOrder = {
       ...orderData,
       id: newId,
@@ -440,20 +447,6 @@ export const DataStore = {
 
     const current = this.getOrders();
     setLocal(ORDERS_KEY, [newOrder, ...current]);
-
-    try {
-      const supabase = createClient();
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
-        await supabase.from("orders").insert({
-          id: newId,
-          total_price: orderData.totalEtb,
-          quantity: orderData.quantityBundles,
-          status: "pending_verification",
-        });
-      }
-    } catch (e) {
-      console.warn("Supabase order insert skipped/failed:", e);
-    }
 
     return newOrder;
   },
@@ -548,29 +541,15 @@ export const DataStore = {
     return getLocal<StoredRegistration[]>(REGISTRATIONS_KEY, DEFAULT_REGISTRATIONS);
   },
 
-  addRegistration(reg: Omit<StoredRegistration, "id" | "timestamp" | "status">): StoredRegistration {
+  addRegistration(reg: Omit<StoredRegistration, "id" | "timestamp" | "status"> & { id?: string }): StoredRegistration {
     const current = this.getRegistrations();
     const newReg: StoredRegistration = {
       ...reg,
-      id: `REG-2026-${Math.floor(100 + Math.random() * 900)}`,
+      id: reg.id || `REG-2026-${Math.floor(100 + Math.random() * 900)}`,
       status: "pending_verification",
       timestamp: "Just now",
     };
     setLocal(REGISTRATIONS_KEY, [newReg, ...current]);
-
-    try {
-      const supabase = createClient();
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
-        supabase.from("session_registrations").insert({
-          session_id: reg.sessionId,
-          payment_screenshot_url: reg.receiptUrl || "uploaded_qr_slip",
-          status: "pending_verification",
-        }).then();
-      }
-    } catch (e) {
-      console.warn("Supabase registration insert skipped:", e);
-    }
-
     return newReg;
   },
 

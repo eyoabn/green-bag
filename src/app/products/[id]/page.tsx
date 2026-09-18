@@ -64,19 +64,81 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   });
 
   useEffect(() => {
-    const active = DataStore.getActiveBanks();
-    if (active.length > 0) {
-      setBanks(active);
-      setSelectedBank(active[0]);
+    async function loadProductAndBanks() {
+      const supabase = createClient();
+
+      // 1. Fetch real active banks from Supabase
+      try {
+        const { data: dbBanks } = await supabase.from("bank_accounts").select("*").eq("is_active", true);
+        if (dbBanks && dbBanks.length > 0) {
+          const mappedBanks: StoredBankAccount[] = dbBanks.map((b: any) => ({
+            id: b.id,
+            name: b.bank_name,
+            accountNumber: b.account_number,
+            accountHolder: b.account_name,
+            accountName: b.account_name,
+            type: "bank",
+            isActive: true,
+          }));
+          setBanks(mappedBanks);
+          setSelectedBank(mappedBanks[0]);
+        }
+      } catch {}
+
+      // 2. Fetch product from Supabase if valid UUID
+      if (isValidUUID(productId)) {
+        try {
+          const { data: p } = await supabase.from("products").select("*").eq("id", productId).maybeSingle();
+          if (p) {
+            setProduct({
+              id: p.id,
+              name: p.name,
+              client: p.client || "Arenguade Standard Catalog",
+              category: p.category || "Standard Retail",
+              price: p.price,
+              bundleSize: p.bundle_size || 100,
+              gsm: p.gsm || 200,
+              handleType: p.handle_type || "Twisted Kraft Cord",
+              image: p.image_urls && p.image_urls.length > 0 ? p.image_urls[0] : "/images/photo_6_2026-09-05_00-36-03.jpg",
+              gallery: p.image_urls && p.image_urls.length > 0 ? p.image_urls : ["/images/photo_6_2026-09-05_00-36-03.jpg"],
+              badge: p.badge || "Verified Production Batch",
+              description: p.description || "",
+              dimensions: p.dimensions || "24cm × 30cm + 10cm gusset",
+              material: p.material || "100% Ethiopian Virgin Kraft",
+            });
+            if (p.image_urls && p.image_urls.length > 0) {
+              setSelectedImage(p.image_urls[0]);
+            }
+          }
+        } catch {}
+      } else {
+        // Fallback for numeric IDs: map to Supabase products if possible
+        const catProd = PRODUCTS_CATALOG.find((p) => p.id === productId);
+        if (catProd) {
+          try {
+            const { data: dbProds } = await supabase.from("products").select("id, name");
+            if (dbProds && dbProds.length > 0) {
+              const match = dbProds.find((dbp) => dbp.name.toLowerCase().includes(catProd.name.toLowerCase().slice(0, 10)));
+              if (match) {
+                setProduct((prev) => ({ ...prev, id: match.id }));
+              }
+            }
+          } catch {}
+        }
+      }
+
+      // 3. Auto-populate logged-in user information
+      try {
+        const u = await getCurrentUser();
+        if (u) {
+          if (u.full_name) setCustomerName(u.full_name);
+          if (u.phone) setCustomerPhone(u.phone);
+        }
+      } catch {}
     }
 
-    getCurrentUser().then((u) => {
-      if (u) {
-        if (!customerName) setCustomerName(u.full_name);
-        if (!customerPhone && u.phone) setCustomerPhone(u.phone);
-      }
-    });
-  }, []);
+    loadProductAndBanks();
+  }, [productId]);
 
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedImage, setSelectedImage] = useState<string>(product.image);
@@ -113,75 +175,76 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
     setIsSubmitting(true);
     try {
-      const supabase = createClient();
-      
       // 1. Verify user is logged in
       const user = await getCurrentUser();
       if (!user) {
         alert("Please sign in or create an account to complete your order.");
-        router.push(`/login?returnTo=/products/${product.id}`);
+        router.push(`/login?returnTo=/products/${productId}`);
         return;
       }
 
-      // 2. Upload Payment Screenshot
+      // 2. Prepare receipt image (upload to Supabase storage or convert to persistent DataURL)
+      const fileDataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(uploadedFile);
+      });
+
       let receiptUrl = "";
       try {
+        const supabase = createClient();
         const fileExt = uploadedFile.name.split('.').pop() || "jpg";
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
         const filePath = `retail-orders/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('payment-screenshots')
+          .from('payment-proofs')
           .upload(filePath, uploadedFile);
 
         if (!uploadError) {
           const { data: publicUrlData } = supabase.storage
-            .from('payment-screenshots')
+            .from('payment-proofs')
             .getPublicUrl(filePath);
           receiptUrl = publicUrlData.publicUrl;
         }
       } catch (storageErr) {
-        console.warn("Storage upload fallback:", storageErr);
+        console.warn("Storage upload note:", storageErr);
       }
 
       if (!receiptUrl) {
-        receiptUrl = URL.createObjectURL(uploadedFile);
+        receiptUrl = fileDataUrl;
       }
 
-      // 3. Insert Order into Supabase & DataStore
+      // 3. Post order to Server API endpoint
       let orderId = "";
       try {
-        // Ensure profile exists in profiles table
-        await supabase.from("profiles").upsert({
-          id: user.id,
-          full_name: customerName || user.full_name,
-          phone: customerPhone || user.phone || "",
-          role: user.role || "customer"
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: product.id,
+            productName: product.name,
+            buyerId: user.id,
+            customerName: customerName || user.full_name,
+            customerPhone: customerPhone || user.phone,
+            customerEmail: user.email,
+            quantity,
+            totalPrice,
+            bankAccountId: selectedBank.id,
+            receiptUrl,
+          }),
         });
-
-        const { data: orderData } = await supabase
-          .from('orders')
-          .insert({
-            buyer_id: user.id,
-            product_id: isValidUUID(product.id) ? product.id : null,
-            quantity: quantity,
-            total_price: totalPrice,
-            bank_account_id: isValidUUID(selectedBank.id) ? selectedBank.id : null,
-            payment_screenshot_url: receiptUrl,
-            status: 'pending_verification'
-          })
-          .select()
-          .single();
-
-        if (orderData?.id) {
-          orderId = orderData.id;
+        const resData = await res.json();
+        if (resData?.orderId) {
+          orderId = resData.orderId;
         }
-      } catch (dbErr) {
-        console.warn("Supabase order insert fallback note:", dbErr);
+      } catch (apiErr) {
+        console.warn("Server order API fallback:", apiErr);
       }
 
-      // Always save to DataStore so both user dashboard & admin orders see it immediately
+      // 4. Also register order in DataStore so dashboard updates immediately
       const savedOrder = await DataStore.addOrder({
+        id: orderId || undefined,
         customerName: customerName || user.full_name || "Valued Customer",
         customerPhone: customerPhone || user.phone || "0911000000",
         customerEmail: user.email,
@@ -257,7 +320,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link 
-                href="/dashboard" 
+                href="/dashboard?tab=orders" 
                 className="w-full sm:w-auto bg-[#1E3B2E] hover:bg-[#8C4B31] text-white px-8 py-3.5 rounded-full text-xs font-bold transition-all shadow-md"
               >
                 Track Order in Dashboard

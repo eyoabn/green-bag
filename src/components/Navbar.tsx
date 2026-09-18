@@ -168,20 +168,42 @@ export default function Navbar() {
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <Link
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-xs font-semibold text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-100"
-              >
-                Log In
-              </Link>
-              <Link
-                href="/signup"
-                onClick={() => setMobileMenuOpen(false)}
-                className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2.5 rounded-full"
-              >
-                Sign Up
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-xs font-bold text-[#1E3B2E] px-4 py-2 rounded-xl bg-stone-200/60 hover:bg-stone-200 flex items-center gap-1.5"
+                  >
+                    <User size={13} className="text-[#8C4B31]" />
+                    <span>My Orders ({user.full_name.split(' ')[0]})</span>
+                  </Link>
+                  <Link
+                    href="/products"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2 rounded-full"
+                  >
+                    Order Bags
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-xs font-semibold text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-100"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2.5 rounded-full"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

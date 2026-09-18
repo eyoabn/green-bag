@@ -14,6 +14,7 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { DataStore, StoredDesign } from "@/utils/dataStore";
 import Image from "next/image";
 
 export default function AdminDesignsPage() {
@@ -24,15 +25,47 @@ export default function AdminDesignsPage() {
 
   const loadDesigns = async () => {
     try {
-      const { data, error } = await supabase
-        .from("designs")
-        .select(`
-          *,
-          profiles:submitted_by (full_name, email, phone)
-        `)
-        .order("created_at", { ascending: false });
-        
-      if (data) setDesigns(data);
+      let dbDesigns: any[] = [];
+      try {
+        const { data, error } = await supabase
+          .from("designs")
+          .select(`
+            *,
+            profiles:submitted_by (full_name, phone)
+          `)
+          .order("created_at", { ascending: false });
+          
+        if (data) dbDesigns = data;
+      } catch (err) {
+        console.warn("Supabase loadDesigns error:", err);
+      }
+
+      // Also merge local DataStore designs
+      const localDesigns = DataStore.getDesigns().map((d: StoredDesign) => ({
+        id: d.id,
+        submitted_by: "local-user",
+        file_url: d.fileName,
+        note: JSON.stringify({
+          clientCompany: d.clientCompany,
+          clientContact: d.clientContact,
+          dimensions: d.dimensions,
+          paperWeight: d.paperWeight,
+          paperShade: d.paperShade,
+          quantity: d.quantity,
+          handleType: d.handleType,
+          notes: d.notes,
+        }),
+        status: d.status === "reviewing" ? "engineering_review" : d.status === "proof_ready" ? "approved_pending_payment" : d.status,
+        created_at: d.submittedDate,
+        profiles: {
+          full_name: d.clientName,
+          phone: d.clientContact,
+        }
+      }));
+
+      const seenIds = new Set(dbDesigns.map((d: any) => d.id));
+      const dedupedLocal = localDesigns.filter((d: any) => !seenIds.has(d.id));
+      setDesigns([...dbDesigns, ...dedupedLocal]);
     } catch (e) {
       console.error(e);
     } finally {
@@ -42,6 +75,9 @@ export default function AdminDesignsPage() {
 
   useEffect(() => {
     loadDesigns();
+    const handleUpdate = () => loadDesigns();
+    window.addEventListener("arenguade_datastore_change", handleUpdate);
+    return () => window.removeEventListener("arenguade_datastore_change", handleUpdate);
   }, []);
 
   const updateStatus = async (id: string, newStatus: string) => {
@@ -117,7 +153,7 @@ export default function AdminDesignsPage() {
                       {parsedNote.clientCompany || design.profiles?.full_name || "Unknown Client"}
                     </h3>
                     <p className="text-xs text-stone-500">
-                      {design.profiles?.email} • {design.profiles?.phone}
+                      {parsedNote.clientContact || (design.profiles?.phone ? `Contact: ${design.profiles.phone}` : "Addis Ababa Client")}
                     </p>
                   </div>
 

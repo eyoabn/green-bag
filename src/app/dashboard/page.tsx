@@ -24,7 +24,7 @@ function CustomerDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlTab = searchParams.get("tab") as "orders" | "classes" | "designs" | null;
-  const [activeTab, setActiveTab] = useState<"orders" | "classes" | "designs">(urlTab || "designs");
+  const [activeTab, setActiveTab] = useState<"orders" | "classes" | "designs">(urlTab || "orders");
   
   const [designs, setDesigns] = useState<any[]>([]);
   const [customerName, setCustomerName] = useState("Valued Customer");
@@ -32,6 +32,7 @@ function CustomerDashboardContent() {
   const [uploadingPaymentId, setUploadingPaymentId] = useState<string | null>(null);
   const [paymentUrl, setPaymentUrl] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
+  const [registrations, setRegistrations] = useState<any[]>([]);
 
   const supabase = createClient();
 
@@ -133,6 +134,58 @@ function CustomerDashboardContent() {
       }
       setOrders(combinedOrders);
 
+      // 5. Fetch workshop registrations from Supabase
+      let dbRegistrations: any[] = [];
+      try {
+        const { data } = await supabase
+          .from("session_registrations")
+          .select("*, class_sessions(*)")
+          .eq("student_id", user.id)
+          .order("created_at", { ascending: false });
+        if (data) {
+          dbRegistrations = data.map((r: any) => ({
+            id: r.id,
+            sessionId: r.session_id,
+            sessionTitle: r.class_sessions?.title || "Craft Academy Masterclass",
+            sessionType: r.class_sessions?.type || "live",
+            sessionDate: r.class_sessions?.start_time ? new Date(r.class_sessions.start_time).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Upcoming",
+            sessionTime: r.class_sessions?.start_time ? new Date(r.class_sessions.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "2:00 PM",
+            location: r.class_sessions?.location || "LiveKit Interactive Classroom",
+            livekitRoom: r.class_sessions?.livekit_room_name,
+            status: r.status,
+            priceEtb: r.class_sessions?.price || 300,
+            receiptUrl: r.payment_screenshot_url,
+          }));
+        }
+      } catch (err) {}
+
+      // 6. Fetch workshop registrations from local DataStore
+      const localRegs = DataStore.getRegistrations()
+        .filter((r) => !r.studentEmail || r.studentEmail === user.email || r.studentId === user.id)
+        .map((r) => ({
+          id: r.id,
+          sessionId: r.sessionId,
+          sessionTitle: r.sessionTitle,
+          sessionType: r.sessionType,
+          sessionDate: r.sessionDate,
+          sessionTime: r.sessionTime,
+          location: r.location,
+          status: r.status,
+          priceEtb: r.priceEtb,
+          receiptUrl: r.receiptUrl,
+        }));
+
+      // Merge and deduplicate registrations
+      const seenRegIds = new Set();
+      const combinedRegs: any[] = [];
+      for (const r of [...dbRegistrations, ...localRegs]) {
+        if (!seenRegIds.has(r.id)) {
+          seenRegIds.add(r.id);
+          combinedRegs.push(r);
+        }
+      }
+      setRegistrations(combinedRegs);
+
     } catch (e) {
       console.error("Dashboard loadData error:", e);
     } finally {
@@ -232,9 +285,9 @@ function CustomerDashboardContent() {
       {/* Tab Navigation */}
       <div className="flex items-center gap-2 border-b border-stone-200 pb-2">
         {[
-          { id: "designs", label: "Custom 3D Designs & Map", count: designs.length },
           { id: "orders", label: "My Orders & Receipts", count: orders.length },
-          { id: "classes", label: "My Academy Workshops", count: 0 },
+          { id: "classes", label: "My Academy Workshops", count: registrations.length },
+          { id: "designs", label: "Custom 3D Designs & Map", count: designs.length },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -410,7 +463,7 @@ function CustomerDashboardContent() {
                         <div>
                           <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Retail Order #{o.id.substring(0,8)}</span>
                           <h3 className="font-serif text-2xl font-bold text-stone-900 mt-1">
-                            {o.products?.name || "Premium Bag Bundle"}
+                            {o.productName || o.products?.name || "Premium Bag Bundle"}
                           </h3>
                           <p className="text-xs text-stone-500 mt-1">
                             {o.quantity} Bundles • {o.total_price} ETB
@@ -468,11 +521,78 @@ function CustomerDashboardContent() {
             </div>
           )}
 
+          {/* Tab Content: ACADEMY WORKSHOPS */}
           {activeTab === "classes" && (
-            <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center">
-              <BookOpen size={40} className="text-stone-300 mx-auto mb-3" />
-              <h3 className="font-serif text-xl font-bold text-stone-900 mb-1">No Academy Bookings</h3>
-              <p className="text-xs text-stone-500 mb-6">You have not booked any LiveKit workshops yet.</p>
+            <div className="space-y-6">
+              {registrations.length > 0 ? (
+                registrations.map((r) => (
+                  <div key={r.id} className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col gap-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                            r.sessionType === "live" ? "bg-[#1E3B2E]/10 text-[#1E3B2E]" : "bg-[#8C4B31]/10 text-[#8C4B31]"
+                          }`}>
+                            {r.sessionType === "live" ? "LiveKit WebRTC Class" : "Studio In-Person"}
+                          </span>
+                          <span className="text-stone-400 text-xs">•</span>
+                          <span className="text-xs text-stone-500 font-mono">Reg #{r.id.substring(0,8)}</span>
+                        </div>
+                        <h3 className="font-serif text-2xl font-bold text-stone-900">{r.sessionTitle}</h3>
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-stone-600 mt-2">
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <Clock size={14} className="text-[#8C4B31]" />
+                            {r.sessionDate} • {r.sessionTime}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <MapPin size={14} className="text-[#1E3B2E]" />
+                            {r.location}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider ${
+                          r.status === "approved"
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            : r.status === "rejected"
+                            ? "bg-red-50 text-red-800 border border-red-200"
+                            : "bg-amber-50 text-amber-800 border border-amber-200"
+                        }`}>
+                          {r.status === "approved" ? "Seat Confirmed" : r.status.replace(/_/g, " ")}
+                        </span>
+
+                        {r.sessionType === "live" && (
+                          <Link
+                            href={`/dashboard/sessions/${r.sessionId}`}
+                            className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-5 py-2 rounded-full transition-all shadow-sm flex items-center gap-1.5"
+                          >
+                            <span>Join Classroom</span>
+                            <ArrowRight size={13} />
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-stone-100 flex items-center justify-between text-xs text-stone-600">
+                      <span>Tuition Fee: <strong className="text-stone-900">{r.priceEtb} ETB</strong></span>
+                      <span className="text-emerald-700 font-medium">Payment Screenshot Received</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center">
+                  <BookOpen size={40} className="text-stone-300 mx-auto mb-3" />
+                  <h3 className="font-serif text-xl font-bold text-stone-900 mb-1">No Academy Bookings Yet</h3>
+                  <p className="text-xs text-stone-500 mb-6">Explore our craft paper bag masterclasses and interactive live sessions.</p>
+                  <Link
+                    href="/learn/schedule"
+                    className="inline-block bg-[#1E3B2E] text-white text-xs font-bold px-6 py-3 rounded-full hover:bg-[#8C4B31] transition-colors"
+                  >
+                    View Workshop Schedule
+                  </Link>
+                </div>
+              )}
             </div>
           )}
         </>

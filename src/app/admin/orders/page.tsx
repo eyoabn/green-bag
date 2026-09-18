@@ -29,31 +29,39 @@ export default function AdminOrdersPage() {
   const supabase = createClient();
 
   const loadOrders = async () => {
-    // We will fetch from both local DataStore (legacy) and Supabase orders
+    // We will fetch from both local DataStore and Supabase orders
     const localOrders = DataStore.getOrders();
     
-    const { data: supabaseOrders, error } = await supabase
-      .from("orders")
-      .select("*, profiles(email, phone), products(name)")
-      .order("created_at", { ascending: false });
-      
-    if (supabaseOrders) {
-      // Map Supabase orders to match the legacy format for the UI
-      const mappedSupabaseOrders = supabaseOrders.map((o: any) => ({
-        id: o.id,
-        customerName: o.profiles?.email || "Unknown User",
-        customerPhone: o.profiles?.phone || "N/A",
-        productName: o.products?.name || "Premium Bag Bundle",
-        quantityBundles: o.quantity,
-        totalEtb: o.total_price,
-        bankName: o.bank_account_id ? "Transfer" : "System",
-        status: o.status,
-        receiptUrl: o.payment_screenshot_url,
-        timestamp: new Date(o.created_at).toLocaleString(),
-        isSupabase: true
-      }));
-      setOrders([...mappedSupabaseOrders, ...localOrders]);
-    } else {
+    try {
+      const { data: supabaseOrders, error } = await supabase
+        .from("orders")
+        .select("*, profiles(full_name, phone), products(name)")
+        .order("created_at", { ascending: false });
+        
+      if (supabaseOrders && supabaseOrders.length > 0) {
+        // Map Supabase orders to match the format for the UI
+        const mappedSupabaseOrders = supabaseOrders.map((o: any) => ({
+          id: o.id,
+          customerName: o.profiles?.full_name || "Valued Customer",
+          customerPhone: o.profiles?.phone || "N/A",
+          productName: o.products?.name || "Premium Bag Bundle",
+          quantityBundles: o.quantity,
+          totalEtb: o.total_price,
+          bankName: o.bank_account_id ? "Direct Bank Settlement" : "Official Settlement Account",
+          status: o.status,
+          receiptUrl: o.payment_screenshot_url,
+          timestamp: new Date(o.created_at).toLocaleString(),
+          isSupabase: true
+        }));
+        
+        const seenIds = new Set(mappedSupabaseOrders.map((m: any) => m.id));
+        const dedupedLocal = localOrders.filter((lo) => !seenIds.has(lo.id));
+        setOrders([...mappedSupabaseOrders, ...dedupedLocal]);
+      } else {
+        setOrders(localOrders);
+      }
+    } catch (e) {
+      console.warn("Failed to query Supabase orders:", e);
       setOrders(localOrders);
     }
   };

@@ -13,191 +13,46 @@ import {
   Menu,
   X,
   ArrowLeft,
-  ShieldCheck,
   ShieldAlert,
+  ShieldCheck,
   Package,
   Lock,
-  KeyRound,
-  Eye,
-  EyeOff,
-  Sparkles,
-  CheckCircle2
+  ArrowRight
 } from "lucide-react";
+import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import { createClient } from "@/utils/supabase/client";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [adminName, setAdminName] = useState("Factory Executive");
   
-  // Security Gate State
-  const [isChecking, setIsChecking] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
-  const [emailInput, setEmailInput] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loginMethod, setLoginMethod] = useState<"passcode" | "credentials">("passcode");
-  const [authError, setAuthError] = useState("");
-  const [isAuthorizing, setIsAuthorizing] = useState(false);
+  // Real RBAC State
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
-    checkAdminAccess();
+    verifyAdminRole();
+    const handleAuthChange = () => verifyAdminRole();
+    window.addEventListener("arenguade_auth_change", handleAuthChange);
+    return () => window.removeEventListener("arenguade_auth_change", handleAuthChange);
   }, []);
 
-  const checkAdminAccess = async () => {
-    setIsChecking(true);
+  const verifyAdminRole = async () => {
+    setIsVerifying(true);
     try {
-      // 1. Check direct session token
-      if (typeof window !== "undefined") {
-        const adminSession = sessionStorage.getItem("arenguade_admin_authenticated") === "true" ||
-                             localStorage.getItem("arenguade_admin_authenticated") === "true";
-        if (adminSession) {
-          const stored = localStorage.getItem("arenguade_user");
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              if (parsed.full_name) setAdminName(parsed.full_name);
-            } catch {}
-          }
-          setIsAuthenticated(true);
-          setIsChecking(false);
-          return;
-        }
+      const user = await getCurrentUser();
+      setCurrentUser(user);
 
-        // 2. Check local user role
-        const storedUser = localStorage.getItem("arenguade_user");
-        if (storedUser) {
-          try {
-            const parsed = JSON.parse(storedUser);
-            if (parsed.role === "admin") {
-              sessionStorage.setItem("arenguade_admin_authenticated", "true");
-              if (parsed.full_name) setAdminName(parsed.full_name);
-              setIsAuthenticated(true);
-              setIsChecking(false);
-              return;
-            }
-          } catch {}
-        }
-      }
-
-      // 3. Check Supabase server session
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role, full_name")
-          .eq("id", data.user.id)
-          .single();
-
-        if (profile && profile.role === "admin") {
-          sessionStorage.setItem("arenguade_admin_authenticated", "true");
-          setAdminName(profile.full_name || "Factory Administrator");
-          setIsAuthenticated(true);
-          setIsChecking(false);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn("Admin verification check exception:", err);
-    }
-    
-    setIsAuthenticated(false);
-    setIsChecking(false);
-  };
-
-  const handlePasscodeUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError("");
-    setIsAuthorizing(true);
-
-    const cleanInput = passwordInput.trim();
-    // Accept the project master keys
-    const validPasscodes = ["2122Eyoab2122", "ArenguadeAdmin2026", "greenwork2026", "admin123"];
-
-    setTimeout(() => {
-      if (validPasscodes.includes(cleanInput)) {
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("arenguade_admin_authenticated", "true");
-          localStorage.setItem("arenguade_admin_authenticated", "true");
-          const userObj = {
-            id: "admin_super",
-            email: "admin@arenguade.et",
-            full_name: "Eyoab (Lead Administrator)",
-            role: "admin"
-          };
-          localStorage.setItem("arenguade_user", JSON.stringify(userObj));
-          setAdminName(userObj.full_name);
-        }
-        setIsAuthenticated(true);
-        setPasswordInput("");
-        setIsAuthorizing(false);
-      } else {
-        setAuthError("Incorrect Admin Security Password. Access Denied.");
-        setIsAuthorizing(false);
-      }
-    }, 400);
-  };
-
-  const handleCredentialsLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError("");
-    setIsAuthorizing(true);
-
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailInput.trim(),
-        password: passwordInput,
-      });
-
-      if (error) {
-        // Check if matching the admin master passcode directly
-        if (["2122Eyoab2122", "ArenguadeAdmin2026"].includes(passwordInput.trim())) {
-          sessionStorage.setItem("arenguade_admin_authenticated", "true");
-          const userObj = {
-            id: "admin_super",
-            email: emailInput.trim() || "admin@arenguade.et",
-            full_name: "Executive Administrator",
-            role: "admin"
-          };
-          localStorage.setItem("arenguade_user", JSON.stringify(userObj));
-          setAdminName(userObj.full_name);
-          setIsAuthenticated(true);
-          setIsAuthorizing(false);
-          return;
-        }
-        setAuthError(error.message || "Failed to authenticate administrator.");
-        setIsAuthorizing(false);
+      if (!user) {
+        // Not signed in: redirect to login
+        router.push(`/login?returnTo=${encodeURIComponent(pathname)}`);
         return;
       }
-
-      if (data?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role, full_name")
-          .eq("id", data.user.id)
-          .single();
-
-        if (profile && profile.role === "admin") {
-          sessionStorage.setItem("arenguade_admin_authenticated", "true");
-          localStorage.setItem("arenguade_user", JSON.stringify({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: profile.full_name || "Administrator",
-            role: "admin"
-          }));
-          setAdminName(profile.full_name || "Administrator");
-          setIsAuthenticated(true);
-        } else {
-          setAuthError("Access Restricted: This account does not possess Factory Admin privileges.");
-        }
-      }
-    } catch (err: any) {
-      setAuthError(err?.message || "An unexpected error occurred during admin authorization.");
+    } catch (err) {
+      console.warn("RBAC verification check exception:", err);
     } finally {
-      setIsAuthorizing(false);
+      setIsVerifying(false);
     }
   };
 
@@ -206,199 +61,86 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const supabase = createClient();
       await supabase.auth.signOut();
     } catch {}
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("arenguade_admin_authenticated");
-      localStorage.removeItem("arenguade_admin_authenticated");
-      localStorage.removeItem("arenguade_user");
-    }
-    setIsAuthenticated(false);
+    setLocalUser(null);
     router.push("/login");
   };
 
-  // --- LOADING SCREEN ---
-  if (isChecking) {
+  // 1. Loading State
+  if (isVerifying) {
     return (
       <div className="min-h-screen bg-[#1E3B2E] flex flex-col items-center justify-center p-6 text-white">
         <div className="w-12 h-12 rounded-2xl bg-[#E0B382]/20 border border-[#E0B382]/40 flex items-center justify-center mb-4 animate-spin">
           <ShieldCheck className="text-[#E0B382]" size={24} />
         </div>
-        <p className="font-serif text-lg font-bold tracking-wide text-[#E0B382]">Verifying Executive Clearance...</p>
-        <span className="text-xs text-stone-400 mt-1">Checking encryption tokens & admin role privileges</span>
+        <p className="font-serif text-lg font-bold tracking-wide text-[#E0B382]">Verifying Administrator Clearance...</p>
+        <span className="text-xs text-stone-400 mt-1">Validating database role and permissions</span>
       </div>
     );
   }
 
-  // --- ACCESS RESTRICTED / SECURITY GATE SCREEN ---
-  if (!isAuthenticated) {
+  // 2. Unauthenticated: Waiting for redirect
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-[#F9F6F0] flex flex-col items-center justify-center p-6">
+        <p className="text-sm font-semibold text-stone-600">Redirecting to login portal...</p>
+      </div>
+    );
+  }
+
+  // 3. Strict 403 Access Denied: User is signed in, but their real role is NOT admin
+  if (currentUser.role !== "admin") {
     return (
       <div className="min-h-screen bg-stone-950 text-white flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
         {/* Ambient background glow */}
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-[#1E3B2E]/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-red-950/40 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-[#8C4B31]/30 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-md bg-stone-900/90 border border-stone-800 rounded-3xl p-8 backdrop-blur-xl shadow-2xl relative z-10">
+        <div className="w-full max-w-md bg-stone-900/90 border border-stone-800 rounded-3xl p-8 backdrop-blur-xl shadow-2xl relative z-10 text-center">
           
-          {/* Top Brand Lock Badge */}
-          <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-[#1E3B2E] border border-[#E0B382]/40 flex items-center justify-center mb-3 shadow-lg shadow-black/40">
-              <Lock className="text-[#E0B382]" size={28} />
-            </div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/80 border border-red-800/60 text-red-300 text-[11px] font-bold uppercase tracking-wider mb-2">
-              <ShieldAlert size={13} />
-              <span>Restricted Command Zone</span>
-            </div>
-            <h1 className="font-serif text-2xl font-bold text-white tracking-tight">
-              Arenguade Executive Terminal
-            </h1>
-            <p className="text-xs text-stone-400 mt-1">
-              Authentication required to access production queues, banking settlement, and catalog controls.
-            </p>
+          <div className="w-16 h-16 rounded-2xl bg-red-950 border border-red-800/80 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-black/40">
+            <ShieldAlert className="text-red-400" size={32} />
           </div>
 
-          {/* Toggle Login Mode */}
-          <div className="flex bg-stone-950/80 p-1 rounded-2xl mb-6 border border-stone-800 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => { setLoginMethod("passcode"); setAuthError(""); }}
-              className={`flex-1 py-2 rounded-xl transition-all cursor-pointer ${
-                loginMethod === "passcode" 
-                  ? "bg-[#1E3B2E] text-white shadow-sm" 
-                  : "text-stone-400 hover:text-white"
-              }`}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/80 border border-red-800/60 text-red-300 text-[11px] font-bold uppercase tracking-wider mb-3">
+            <span>403 — Access Restricted</span>
+          </div>
+
+          <h1 className="font-serif text-2xl font-bold text-white tracking-tight mb-2">
+            Executive Clearance Required
+          </h1>
+
+          <p className="text-xs text-stone-400 leading-relaxed mb-6">
+            You are currently signed in as <strong className="text-white">{currentUser.full_name}</strong> with the account role{" "}
+            <span className="inline-block px-2 py-0.5 rounded bg-stone-800 text-stone-200 uppercase font-bold text-[10px]">
+              {currentUser.role === "student" ? "Academy Student" : "Packaging Buyer"}
+            </span>.
+            Access to manufacturing queues, user accounts, and factory controls is restricted to verified Plant Administrators.
+          </p>
+
+          <div className="space-y-3">
+            <Link
+              href={currentUser.role === "student" ? "/dashboard?tab=classes" : "/dashboard?tab=orders"}
+              className="w-full py-3.5 px-4 rounded-2xl bg-[#1E3B2E] hover:bg-[#8C4B31] text-[#E0B382] hover:text-white font-bold text-xs tracking-wide transition-all shadow-lg flex items-center justify-center gap-2"
             >
-              Master Passcode
-            </button>
+              <span>Go to My {currentUser.role === "student" ? "Student Academy" : "Customer Portal"}</span>
+              <ArrowRight size={15} />
+            </Link>
+
             <button
-              type="button"
-              onClick={() => { setLoginMethod("credentials"); setAuthError(""); }}
-              className={`flex-1 py-2 rounded-xl transition-all cursor-pointer ${
-                loginMethod === "credentials" 
-                  ? "bg-[#1E3B2E] text-white shadow-sm" 
-                  : "text-stone-400 hover:text-white"
-              }`}
+              onClick={handleSignOut}
+              className="w-full py-3 px-4 rounded-2xl border border-stone-800 hover:bg-stone-800/80 text-stone-400 hover:text-white font-semibold text-xs transition-colors cursor-pointer"
             >
-              Admin Email & Password
+              Sign Out & Switch Account
             </button>
           </div>
 
-          {/* Form: Passcode Mode */}
-          {loginMethod === "passcode" ? (
-            <form onSubmit={handlePasscodeUnlock} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-2">
-                  Enter Admin Master Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="Enter security key..."
-                    required
-                    autoFocus
-                    className="w-full px-4 py-3.5 rounded-2xl bg-stone-950 border border-stone-700 text-white text-sm focus:outline-none focus:border-[#E0B382] transition-colors pr-11"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white p-1"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                <p className="text-[11px] text-stone-500 mt-1.5">
-                  Authorized for plant managers & executive administrators.
-                </p>
-              </div>
-
-              {authError && (
-                <div className="p-3.5 rounded-2xl bg-red-950/80 border border-red-800/80 text-red-200 text-xs flex items-center gap-2">
-                  <ShieldAlert size={16} className="text-red-400 shrink-0" />
-                  <span>{authError}</span>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isAuthorizing}
-                className="w-full py-3.5 rounded-2xl bg-[#1E3B2E] hover:bg-[#8C4B31] text-[#E0B382] hover:text-white font-bold text-sm tracking-wide transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <KeyRound size={17} />
-                <span>{isAuthorizing ? "Authorizing Key..." : "Unlock Command Suite"}</span>
-              </button>
-            </form>
-          ) : (
-            /* Form: Email & Password Mode */
-            <form onSubmit={handleCredentialsLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-1.5">
-                  Admin Email Address
-                </label>
-                <input
-                  type="email"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="admin@arenguade.et"
-                  required
-                  className="w-full px-4 py-3 rounded-2xl bg-stone-950 border border-stone-700 text-white text-sm focus:outline-none focus:border-[#E0B382]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-1.5">
-                  Admin Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="••••••••••••"
-                    required
-                    className="w-full px-4 py-3 rounded-2xl bg-stone-950 border border-stone-700 text-white text-sm focus:outline-none focus:border-[#E0B382] pr-11"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white p-1"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              {authError && (
-                <div className="p-3 rounded-2xl bg-red-950/80 border border-red-800/80 text-red-200 text-xs flex items-center gap-2">
-                  <ShieldAlert size={16} className="text-red-400 shrink-0" />
-                  <span>{authError}</span>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isAuthorizing}
-                className="w-full py-3.5 rounded-2xl bg-[#1E3B2E] hover:bg-[#8C4B31] text-[#E0B382] hover:text-white font-bold text-sm tracking-wide transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <ShieldCheck size={17} />
-                <span>{isAuthorizing ? "Verifying Credentials..." : "Authenticate Admin"}</span>
-              </button>
-            </form>
-          )}
-
-          {/* Return to Public Site */}
-          <div className="mt-6 pt-4 border-t border-stone-800/80 flex items-center justify-between text-xs text-stone-500">
+          <div className="mt-6 pt-4 border-t border-stone-800/80">
             <Link 
               href="/" 
-              className="hover:text-stone-300 flex items-center gap-1.5 transition-colors"
+              className="text-xs text-stone-500 hover:text-stone-300 inline-flex items-center gap-1.5 transition-colors"
             >
-              <ArrowLeft size={14} />
-              <span>Back to Public Store</span>
-            </Link>
-            <Link
-              href="/login"
-              className="text-[#E0B382] hover:underline"
-            >
-              Regular Customer Login &rarr;
+              <ArrowLeft size={13} />
+              <span>Return to Public Homepage</span>
             </Link>
           </div>
         </div>
@@ -406,7 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // --- AUTHENTICATED ADMIN LAYOUT ---
+  // 4. Authenticated Admin Console Layout
   const navLinks = [
     { href: "/admin", label: "Dashboard Overview", icon: LayoutDashboard },
     { href: "/admin/orders", label: "Orders & Verification", icon: ShoppingBag },
@@ -428,7 +170,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div>
             <span className="font-serif font-bold text-stone-900 text-sm block leading-tight">Arenguade Admin</span>
-            <span className="text-[10px] text-stone-500">{adminName}</span>
+            <span className="text-[10px] text-stone-500">{currentUser.full_name}</span>
           </div>
         </div>
 
@@ -459,7 +201,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-[10px] font-bold text-[#8C4B31] uppercase tracking-wider">
-                  Live Terminal
+                  Executive Suite
                 </span>
               </div>
             </div>
@@ -492,11 +234,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Bottom Actions */}
         <div className="p-4 border-t border-stone-200 mt-auto space-y-2">
           <div className="px-3 py-2 rounded-xl bg-stone-50 border border-stone-100 flex items-center justify-between">
-            <div className="flex flex-col">
+            <div className="flex flex-col overflow-hidden">
               <span className="text-[10px] text-stone-400 font-medium">Logged in as</span>
-              <span className="text-xs font-bold text-stone-800 truncate max-w-[130px]">{adminName}</span>
+              <span className="text-xs font-bold text-stone-800 truncate max-w-[130px]">{currentUser.full_name}</span>
             </div>
-            <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold uppercase">
+            <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 text-[9px] font-bold uppercase tracking-wider">
               Admin
             </span>
           </div>
@@ -514,7 +256,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="flex items-center gap-2.5 px-4 py-2.5 w-full rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
           >
             <LogOut size={15} />
-            <span>Lock Console & Sign Out</span>
+            <span>Sign Out of Console</span>
           </button>
         </div>
       </aside>

@@ -1,0 +1,79 @@
+[
+  {
+    "id": "0f632557-4222-4222-8222-0f6325570000",
+    "email": "meron.admin@arenguade.et",
+    "passwordHash": "c63e88aaf304f6c3b057617a92088cb76548a99b27757b95ce4515b7bfc5c66e4e88fe5eaf1c18a448e7820bce650d864503e3a9adac684ba6dac20e2854e67d",
+    "salt": "3185c8014996902b4939ba27b141f2b7",
+    "full_name": "Meron Kassahun",
+    "phone": "0933778899",
+    "role": "admin",
+    "created_at": "2026-09-18T20:09:17.253Z",
+    "status": "verified"
+  },
+  {
+    "id": "39dc1b78-4222-4222-8222-39dc1b780000",
+    "email": "tariku.student@arenguade.et",
+    "passwordHash": "986870d6a06279eaac33123576e1803aaf8051daee1c60039551524ec0d6b8035fce0a8c841dae91a9889d1fecbcd516516e72fc9a2fced625ddc216196ab4ce",
+    "salt": "a82a71d3d42e5c76e7d8ad60cca1942d",
+    "full_name": "Tariku Lemma",
+    "phone": "0922446688",
+    "role": "student",
+    "created_at": "2026-09-18T20:09:16.178Z",
+    "status": "verified"
+  },
+  {
+    "id": "0d0438b5-4222-4222-8222-0d0438b50000",
+    "email": "blen.buyer@arenguade.et",
+    "passwordHash": "ce617c21682a25ef9349b5e0469281022cb3364393b1c1d135a17033da3a7535c194422e6258bf357fef6e70d9288315c82a1bf1b2c329525930a2a9022f33b1",
+    "salt": "306071c4052a38f5c151aec9663cefa3",
+    "full_name": "Blen Tadesse",
+    "phone": "0911554433",
+    "role": "admin",
+    "created_at": "2026-09-18T20:09:13.364Z",
+    "status": "verified"
+  },
+  {
+    "id": "bcc8f197-159c-4c69-a777-a2c00bdd1c47",
+    "email": "joabniguise@gmail.com",
+    "passwordHash": "ab6e33fd1077d1403b47aa1f995046299660316074eacad1d03d5100a4299dd07fefd9db0fbe767a2b331fe373b6470d51f5ceb7c9f875f75404be3531ee4e72",
+    "salt": "8c78bee4832f0b42709e4515f0428da8",
+    "full_name": "Eyoab Niguise",
+    "phone": "0911000001",
+    "role": "admin",
+    "created_at": "2026-09-17T10:00:00.000Z",
+    "status": "verified"
+  },
+  {
+    "id": "354605a8-91a6-4a42-924b-d932e2b5aa64",
+    "email": "eyoabniguise@gmail.com",
+    "passwordHash": "5097708ae5ad44ac00e5f548a9eaea2e964487acb6227a2c30d5b112f3dbf935d09c345954c219899eccf42278f89ade33e0dc3e7a5cbf52d065b39397afaa10",
+    "salt": "426a4c34470e8f036a51cad6f1248631",
+    "full_name": "Eyoab Niguise (Owner)",
+    "phone": "0911000002",
+    "role": "admin",
+    "created_at": "2026-09-17T11:00:00.000Z",
+    "status": "verified"
+  },
+  {
+    "id": "04aee2d7-c774-4008-930d-72a84e5d46f3",
+    "email": "tadesse@oromiaroast.et",
+    "passwordHash": "f6b979afed83a100634f53ade21bfcc103930ab63652c8015f8618ac933feb611536e2b1a042358ca59d9530d543a7dba0e97392b40a0c1271200d96cf56cc05",
+    "salt": "52890ad0f7a6900bd8c6a1884f45412a",
+    "full_name": "Tadesse Gemechu",
+    "phone": "0911223344",
+    "role": "student",
+    "created_at": "2026-09-17T17:54:15.514Z",
+    "status": "verified"
+  },
+  {
+    "id": "26645f1f-cec8-4219-be8b-5522fc94e3b3",
+    "email": "test.customer@arenguade.et",
+    "passwordHash": "35606eeee2700c8516119746ed88742e5cbcf9fc2b3f82c9b70366c02ec2d9d028173180e9b47addf7f1f52d9ad7943f0e36091b14a5601ebf852ef7688952d7",
+    "salt": "2f7089fa9b85e46f24327a829c294116",
+    "full_name": "Test Customer",
+    "phone": "0911001122",
+    "role": "customer",
+    "created_at": "2026-09-18T15:44:12.319Z",
+    "status": "verified"
+  }
+]

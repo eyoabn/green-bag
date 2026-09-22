@@ -3,27 +3,24 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCurrency } from "./CurrencyContext";
 import { 
   ShoppingBag, 
-  BookOpen, 
   Sparkles, 
+  BookOpen, 
   Menu, 
   X, 
   ArrowRight, 
-  ShieldCheck, 
   User, 
-  Layers,
-  Award
+  Award,
+  ShieldCheck
 } from "lucide-react";
-
 import { getCurrentUser, AppUser } from "@/utils/auth";
 
 export default function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { currency, setCurrency } = useCurrency();
-  const [user, setUser] = useState<AppUser | null>(null);
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currency, setCurrency] = useState<"ETB" | "USD">("ETB");
+  const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
     const updateUser = () => {
@@ -106,15 +103,33 @@ export default function Navbar() {
               <span className="font-bold text-[#1E3B2E]">{currency}</span>
             </button>
 
-            {/* Account / Dashboard link */}
+            {/* Role-Based Account Link */}
             {user ? (
-              <Link
-                href="/dashboard"
-                className="text-xs font-semibold text-stone-800 hover:text-[#1E3B2E] px-3.5 py-1.5 rounded-full bg-stone-200/50 hover:bg-stone-200 transition-colors flex items-center gap-1.5"
-              >
-                <User size={13} className="text-[#8C4B31]" />
-                <span>My Orders</span>
-              </Link>
+              user.role === "admin" ? (
+                <Link
+                  href="/admin"
+                  className="text-xs font-bold text-red-950 px-3.5 py-1.5 rounded-full bg-red-100 hover:bg-red-200 transition-colors flex items-center gap-1.5 border border-red-200"
+                >
+                  <ShieldCheck size={14} className="text-red-700" />
+                  <span>Admin Console</span>
+                </Link>
+              ) : user.role === "student" ? (
+                <Link
+                  href="/dashboard?tab=classes"
+                  className="text-xs font-semibold text-amber-950 px-3.5 py-1.5 rounded-full bg-amber-100/70 hover:bg-amber-200 transition-colors flex items-center gap-1.5 border border-amber-200"
+                >
+                  <BookOpen size={13} className="text-[#8C4B31]" />
+                  <span>My Academy</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/dashboard?tab=orders"
+                  className="text-xs font-semibold text-stone-800 hover:text-[#1E3B2E] px-3.5 py-1.5 rounded-full bg-stone-200/60 hover:bg-stone-200 transition-colors flex items-center gap-1.5 border border-stone-300/50"
+                >
+                  <ShoppingBag size={13} className="text-[#1E3B2E]" />
+                  <span>My Orders</span>
+                </Link>
+              )
             ) : (
               <Link
                 href="/login"
@@ -169,41 +184,60 @@ export default function Navbar() {
 
             <div className="flex items-center justify-between pt-1">
               {user ? (
-                <>
+                user.role === "admin" ? (
                   <Link
-                    href="/dashboard"
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-xs font-bold text-red-950 px-4 py-2 rounded-xl bg-red-100 hover:bg-red-200 flex items-center gap-1.5"
+                  >
+                    <ShieldCheck size={14} className="text-red-700" />
+                    <span>Admin Console ({user.full_name.split(" ")[0]})</span>
+                  </Link>
+                ) : user.role === "student" ? (
+                  <Link
+                    href="/dashboard?tab=classes"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-xs font-bold text-amber-950 px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 flex items-center gap-1.5"
+                  >
+                    <BookOpen size={13} className="text-[#8C4B31]" />
+                    <span>My Workshops ({user.full_name.split(" ")[0]})</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/dashboard?tab=orders"
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold text-[#1E3B2E] px-4 py-2 rounded-xl bg-stone-200/60 hover:bg-stone-200 flex items-center gap-1.5"
                   >
-                    <User size={13} className="text-[#8C4B31]" />
-                    <span>My Orders ({user.full_name.split(' ')[0]})</span>
+                    <ShoppingBag size={13} className="text-[#1E3B2E]" />
+                    <span>My Orders ({user.full_name.split(" ")[0]})</span>
                   </Link>
-                  <Link
-                    href="/products"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2 rounded-full"
-                  >
-                    Order Bags
-                  </Link>
-                </>
+                )
               ) : (
-                <>
+                <div className="flex gap-2">
                   <Link
                     href="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-semibold text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-100"
+                    className="text-xs font-bold text-stone-800 px-4 py-2 rounded-xl bg-stone-200/60 hover:bg-stone-200"
                   >
                     Log In
                   </Link>
                   <Link
                     href="/signup"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2.5 rounded-full"
+                    className="text-xs font-bold text-[#8C4B31] px-4 py-2 rounded-xl bg-[#8C4B31]/10 hover:bg-[#8C4B31]/20"
                   >
-                    Sign Up
+                    Register
                   </Link>
-                </>
+                </div>
               )}
+
+              <Link
+                href="/products"
+                onClick={() => setMobileMenuOpen(false)}
+                className="bg-[#1E3B2E] text-white text-xs font-bold px-4 py-2 rounded-xl"
+              >
+                Order Bags
+              </Link>
             </div>
           </div>
         )}

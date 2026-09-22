@@ -1,126 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { toValidUUID } from "@/utils/uuid";
+import { UserStore } from "@/utils/userStore";
 
-function getServerSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
-  return createSupabaseClient(url, key);
-}
-
-function formatNameFromEmail(email: string): string {
-  const username = email.split("@")[0] || "Valued User";
-  return username
-    .replace(/[._-]/g, " ")
-    .split(" ")
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
-}
+const VALID_ADMIN_KEYS = ["ArenguadeAdmin2026", "2122Eyoab2122", "greenwork2026", "admin123"];
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { email, password, fullName, phone, role = "customer" } = body;
+    const { email, password, fullName, phone, role = "customer", adminSecurityKey } = body;
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
     }
 
+    if (String(password).length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters long." }, { status: 400 });
+    }
+
     const trimmedEmail = String(email).trim().toLowerCase();
-    const displayName = (fullName && fullName.trim()) || formatNameFromEmail(trimmedEmail);
-    const isAdmin =
-      trimmedEmail.includes("admin") ||
-      trimmedEmail.includes("owner") ||
-      trimmedEmail.includes("eyoab") ||
-      trimmedEmail.includes("joab") ||
-      trimmedEmail.includes("yoab") ||
-      trimmedEmail.includes("niguise");
+    const displayName = (fullName && fullName.trim()) || trimmedEmail.split("@")[0];
 
-    const assignedRole = isAdmin ? "admin" : role;
-    const fallbackUserId = toValidUUID(trimmedEmail);
-    const supabase = getServerSupabase();
+    // Explicit Role Classification
+    let assignedRole: "admin" | "customer" | "student" = "customer";
 
-    let userId: string = "";
-
-    // 1. Attempt Supabase Auth SignUp on server with 3-second timeout race
-    try {
-      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: "network timeout" } }), 3000)
-      );
-
-      const { data, error } = await Promise.race([
-        supabase.auth.signUp({
-          email: trimmedEmail,
-          password: String(password),
-          options: {
-            data: {
-              full_name: displayName,
-              phone: phone || "",
-              role: assignedRole,
-            },
-          },
-        }),
-        timeoutPromise,
-      ]);
-
-      if (error) {
-        const errMsg = (error.message || "").toLowerCase();
-
-        // If user already registered, attempt direct sign in
-        if (errMsg.includes("already registered") || errMsg.includes("already exists")) {
-          try {
-            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-              email: trimmedEmail,
-              password: String(password),
-            });
-
-            if (signInErr) {
-              return NextResponse.json(
-                { error: "An account with this email already exists. Please login with your password." },
-                { status: 400 }
-              );
-            }
-
-            if (signInData?.user) {
-              userId = signInData.user.id;
-            }
-          } catch {
-            userId = fallbackUserId;
-          }
-        } else {
-          // If error is network, fetch, timeout, or rate limit: DO NOT FAIL THE USER
-          userId = fallbackUserId;
-        }
-      } else if (data?.user) {
-        userId = data.user.id;
+    if (role === "admin") {
+      // Validate Admin Authorization Security Key
+      if (!adminSecurityKey || !VALID_ADMIN_KEYS.includes(String(adminSecurityKey).trim())) {
+        return NextResponse.json(
+          { error: "Invalid Admin Security Passphrase. Factory Executive clearance required." },
+          { status: 403 }
+        );
       }
-    } catch (authErr: any) {
-      console.warn("Supabase server signup notice:", authErr);
-      userId = fallbackUserId;
+      assignedRole = "admin";
+    } else if (role === "student") {
+      assignedRole = "student";
+    } else {
+      assignedRole = "customer";
     }
 
-    const finalUserId = userId || fallbackUserId;
-
-    // 2. Ensure profile exists in profiles table
-    try {
-      await supabase.from("profiles").upsert({
-        id: finalUserId,
-        full_name: displayName,
-        phone: phone || "",
-        role: assignedRole,
-      });
-    } catch (profErr) {
-      console.warn("Profile table upsert note:", profErr);
+    // Owner check: Always grant executive admin role to project founder
+    if (
+      trimmedEmail.includes("joabniguise") ||
+      trimmedEmail.includes("eyoabniguise") ||
+      trimmedEmail === "admin@arenguade.et"
+    ) {
+      assignedRole = "admin";
     }
+
+    // Persist real user in persistent store and database
+    const user = await UserStore.registerUser({
+      email: trimmedEmail,
+      password: String(password),
+      fullName: displayName,
+      phone: phone || "",
+      role: assignedRole,
+    });
 
     return NextResponse.json({
       success: true,
       user: {
-        id: finalUserId,
-        email: trimmedEmail,
-        full_name: displayName,
-        phone: phone || "",
-        role: assignedRole,
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        phone: user.phone,
+        role: user.role,
       },
     });
   } catch (err: any) {

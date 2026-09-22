@@ -3,9 +3,9 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { User, ShoppingBag, BookOpen, LogOut, Menu, X, ArrowLeft, Sparkles, Layers } from "lucide-react";
+import { User, ShoppingBag, BookOpen, LogOut, Menu, X, ArrowLeft, Sparkles, Layers, ShieldCheck, ArrowRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { getCurrentUser, setLocalUser } from "@/utils/auth";
+import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -14,16 +14,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const currentTab = searchParams?.get("tab") || "orders";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [userName, setUserName] = useState("Customer");
-  const [userRole, setUserRole] = useState("Customer");
+  const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
     const updateUser = () => {
       getCurrentUser().then((u) => {
-        if (u) {
-          setUserName(u.full_name || "Customer");
-          setUserRole(u.role === "admin" ? "Factory Admin" : "Customer & Student");
-        }
+        setUser(u);
       });
     };
     updateUser();
@@ -46,24 +42,34 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     { href: "/dashboard?tab=designs", tabId: "designs", label: "Custom 3D Designs", icon: Sparkles },
   ];
 
+  const userName = user?.full_name || "Valued User";
+  const roleLabel =
+    user?.role === "admin"
+      ? "Plant Administrator"
+      : user?.role === "student"
+      ? "Craft Academy Student"
+      : "Packaging Buyer";
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#F9F6F0] pt-20">
       
       {/* Mobile Top App Bar */}
       <div className="md:hidden bg-white px-6 py-3 border-b border-stone-200 flex items-center justify-between sticky top-20 z-30 shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-serif font-bold text-xs">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-serif font-bold text-xs ${
+            user?.role === "admin" ? "bg-red-900 text-white" : user?.role === "student" ? "bg-[#8C4B31] text-white" : "bg-[#1E3B2E] text-[#E0B382]"
+          }`}>
             {userName.charAt(0)}
           </div>
           <div>
             <p className="text-xs font-bold text-stone-900">{userName}</p>
-            <p className="text-[10px] text-stone-500">{userRole}</p>
+            <p className="text-[10px] text-stone-500">{roleLabel}</p>
           </div>
         </div>
 
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-xl text-stone-700 bg-stone-100 hover:bg-stone-200"
+          className="p-2 rounded-xl text-stone-700 bg-stone-100 hover:bg-stone-200 cursor-pointer"
           aria-label="Toggle Portal Menu"
         >
           {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -78,15 +84,33 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         {/* User Card */}
         <div className="p-6 border-b border-stone-100">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-serif font-bold text-lg shadow-sm">
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-serif font-bold text-lg shadow-sm ${
+              user?.role === "admin" ? "bg-red-900 text-white" : user?.role === "student" ? "bg-[#8C4B31] text-white" : "bg-[#1E3B2E] text-[#E0B382]"
+            }`}>
               {userName.charAt(0)}
             </div>
             <div className="overflow-hidden">
               <p className="font-bold text-stone-900 text-sm truncate">{userName}</p>
-              <p className="text-[11px] text-[#8C4B31] font-medium">{userRole}</p>
+              <p className="text-[11px] text-[#8C4B31] font-semibold">{roleLabel}</p>
             </div>
           </div>
         </div>
+
+        {/* Administrator Quick Switch Banner */}
+        {user?.role === "admin" && (
+          <div className="px-4 pt-3 pb-1">
+            <Link
+              href="/admin"
+              className="p-2.5 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-[11px] font-bold flex items-center justify-between hover:bg-red-100 transition-colors shadow-2xs"
+            >
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-red-700" />
+                <span>Admin Console</span>
+              </div>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
+        )}
         
         {/* Navigation Items */}
         <nav className="flex-1 px-4 py-4 space-y-1.5 text-xs">

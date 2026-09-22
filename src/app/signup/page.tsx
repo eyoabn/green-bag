@@ -3,8 +3,8 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
-import { toValidUUID, setLocalUser, AppUser } from "@/utils/auth";
+import { ArrowRight, Sparkles, CheckCircle2, AlertCircle, ShieldAlert, ShieldCheck } from "lucide-react";
+import { setLocalUser, AppUser } from "@/utils/auth";
 
 function SignupFormContent() {
   const router = useRouter();
@@ -14,23 +14,24 @@ function SignupFormContent() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"customer" | "student">("customer");
+  const [role, setRole] = useState<"customer" | "student" | "admin">("customer");
+  const [adminKey, setAdminKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   const completeSignup = (user: AppUser) => {
     setLocalUser(user);
-    if (user.role === "admin") {
-      sessionStorage.setItem("arenguade_admin_authenticated", "true");
-      localStorage.setItem("arenguade_admin_authenticated", "true");
-    }
-    setSuccessMessage("Account registered successfully! Loading workspace...");
+    setSuccessMessage(`Account registered as ${user.role.toUpperCase()}! Loading workspace...`);
     setTimeout(() => {
       if (returnTo) {
         router.push(returnTo);
+      } else if (user.role === "admin") {
+        router.push("/admin");
+      } else if (user.role === "student") {
+        router.push("/dashboard?tab=classes");
       } else {
-        router.push(role === "student" ? "/dashboard?tab=classes" : "/dashboard?tab=orders");
+        router.push("/dashboard?tab=orders");
       }
     }, 600);
   };
@@ -47,14 +48,15 @@ function SignupFormContent() {
       return;
     }
 
+    if (role === "admin" && !adminKey.trim()) {
+      setErrorMessage("Admin Security Passphrase is required to register an administrator account.");
+      setIsLoading(false);
+      return;
+    }
+
     const trimmedEmail = email.trim().toLowerCase();
-    const isAdmin =
-      trimmedEmail.includes("admin") ||
-      trimmedEmail.includes("owner") ||
-      trimmedEmail.includes("eyoab");
 
     try {
-      // 1. Register via same-origin Next.js server proxy (immune to ad-blockers / CORS)
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -63,7 +65,8 @@ function SignupFormContent() {
           password,
           fullName: fullName.trim(),
           phone: phone.trim(),
-          role: isAdmin ? "admin" : role,
+          role,
+          adminSecurityKey: adminKey.trim(),
         }),
       });
 
@@ -75,43 +78,14 @@ function SignupFormContent() {
       }
 
       if (resJson?.error) {
-        const errMsg = String(resJson.error);
-        if (errMsg.toLowerCase().includes("already exists") || errMsg.toLowerCase().includes("already registered")) {
-          setErrorMessage("An account with this email already exists. Please sign in with your password.");
-          setIsLoading(false);
-          return;
-        }
-
-        // If error is an email rate limit or network warning, permit resilient registration
-        if (errMsg.toLowerCase().includes("rate limit") || errMsg.toLowerCase().includes("network")) {
-          const fallbackUser: AppUser = {
-            id: toValidUUID(trimmedEmail),
-            email: trimmedEmail,
-            full_name: fullName.trim() || trimmedEmail.split("@")[0] || "Valued User",
-            phone: phone.trim(),
-            role: isAdmin ? "admin" : role,
-          };
-          completeSignup(fallbackUser);
-          return;
-        }
-
-        setErrorMessage(errMsg);
+        setErrorMessage(String(resJson.error));
         setIsLoading(false);
         return;
       }
 
-      throw new Error("Unable to complete registration with remote service.");
+      throw new Error("Unable to complete registration. Please try again.");
     } catch (networkErr: any) {
-      console.warn("Client signup network fallback notice:", networkErr);
-      // Offline / Ad-blocker Resilient Mode: Never leave user stuck on "Failed to fetch"
-      const fallbackUser: AppUser = {
-        id: toValidUUID(trimmedEmail),
-        email: trimmedEmail,
-        full_name: fullName.trim() || trimmedEmail.split("@")[0] || "Valued User",
-        phone: phone.trim(),
-        role: isAdmin ? "admin" : role,
-      };
-      completeSignup(fallbackUser);
+      setErrorMessage(networkErr?.message || "Registration failed. Please check connection.");
     } finally {
       setIsLoading(false);
     }
@@ -124,14 +98,14 @@ function SignupFormContent() {
         {/* Subtle Background Glow */}
         <div className="absolute top-0 right-0 w-36 h-36 bg-[#8C4B31]/5 rounded-bl-full pointer-events-none" />
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider mb-2">
             <Sparkles size={13} />
             <span>Arenguade Guild</span>
           </div>
           <h1 className="font-serif text-3xl font-bold text-stone-900 mb-2">Create Account</h1>
           <p className="text-xs text-stone-500">
-            Join to order custom packaging, attend LiveKit masterclasses, and manage orders.
+            Select your platform role to configure your dedicated workspace.
           </p>
         </div>
 
@@ -159,7 +133,85 @@ function SignupFormContent() {
           </div>
         )}
         
-        <form onSubmit={handleSignup} className="flex flex-col gap-4 text-xs">
+        <form onSubmit={handleSignup} className="flex flex-col gap-3.5 text-xs">
+          
+          {/* Real Role Classification Selector */}
+          <div>
+            <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+              Select Your Platform Role
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setRole("customer")}
+                className={`py-2.5 px-2 rounded-xl border text-center transition-all cursor-pointer ${
+                  role === "customer"
+                    ? "bg-[#1E3B2E] text-white border-[#1E3B2E] shadow-sm font-bold"
+                    : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
+                }`}
+              >
+                <span className="block text-xs">Buyer</span>
+                <span className={`text-[9px] block mt-0.5 ${role === "customer" ? "text-stone-300" : "text-stone-400"}`}>
+                  Order Bags
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRole("student")}
+                className={`py-2.5 px-2 rounded-xl border text-center transition-all cursor-pointer ${
+                  role === "student"
+                    ? "bg-[#8C4B31] text-white border-[#8C4B31] shadow-sm font-bold"
+                    : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
+                }`}
+              >
+                <span className="block text-xs">Student</span>
+                <span className={`text-[9px] block mt-0.5 ${role === "student" ? "text-stone-300" : "text-stone-400"}`}>
+                  Craft Academy
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRole("admin")}
+                className={`py-2.5 px-2 rounded-xl border text-center transition-all cursor-pointer ${
+                  role === "admin"
+                    ? "bg-red-900 text-white border-red-950 shadow-sm font-bold"
+                    : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
+                }`}
+              >
+                <span className="block text-xs flex items-center justify-center gap-1">
+                  <ShieldCheck size={12} />
+                  Admin
+                </span>
+                <span className={`text-[9px] block mt-0.5 ${role === "admin" ? "text-red-200" : "text-stone-400"}`}>
+                  Plant Control
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Admin Security Key Input if Admin selected */}
+          {role === "admin" && (
+            <div className="p-3.5 rounded-2xl bg-red-50/80 border border-red-200 text-red-950 space-y-1.5 animate-fadeIn">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-red-900">
+                <ShieldAlert size={14} className="text-red-700" />
+                <span>Executive Authorization Required</span>
+              </div>
+              <p className="text-[11px] text-red-800 leading-tight">
+                Enter the factory master passphrase to establish your administrator account.
+              </p>
+              <input
+                type="password"
+                required
+                value={adminKey}
+                onChange={(e) => setAdminKey(e.target.value)}
+                placeholder="Enter Admin Security Passphrase..."
+                className="w-full border border-red-300 rounded-xl p-2.5 bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-red-700/30 text-xs mt-1"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
               Full Name / Business
@@ -217,59 +269,23 @@ function SignupFormContent() {
             />
           </div>
 
-          <div>
-            <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
-              Select Your Role
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setRole("customer")}
-                className={`py-3 px-3 rounded-xl border font-bold text-xs transition-all text-left cursor-pointer ${
-                  role === "customer"
-                    ? "bg-[#1E3B2E] text-white border-[#1E3B2E] shadow-sm"
-                    : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
-                }`}
-              >
-                <span className="block font-bold">Packaging Buyer</span>
-                <span className={`text-[10px] font-normal block mt-0.5 ${role === "customer" ? "text-stone-300" : "text-stone-500"}`}>
-                  Order bags & submit dielines
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole("student")}
-                className={`py-3 px-3 rounded-xl border font-bold text-xs transition-all text-left cursor-pointer ${
-                  role === "student"
-                    ? "bg-[#8C4B31] text-white border-[#8C4B31] shadow-sm"
-                    : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
-                }`}
-              >
-                <span className="block font-bold">Academy Student</span>
-                <span className={`text-[10px] font-normal block mt-0.5 ${role === "student" ? "text-stone-300" : "text-stone-500"}`}>
-                  Attend workshops & live classes
-                </span>
-              </button>
-            </div>
-          </div>
-          
           <button 
             type="submit"
             disabled={isLoading}
             className="w-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white py-3.5 mt-2 rounded-full font-bold tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {isLoading ? (
-              <span>Creating Account...</span>
+              <span>Registering Account...</span>
             ) : (
               <>
-                <span>Sign Up for Arenguade</span>
+                <span>Register as {role === "admin" ? "Plant Administrator" : role === "student" ? "Academy Student" : "Packaging Buyer"}</span>
                 <ArrowRight size={15} />
               </>
             )}
           </button>
         </form>
         
-        <div className="mt-8 text-center text-xs text-stone-500">
+        <div className="mt-6 text-center text-xs text-stone-500">
           Already have an account?{" "}
           <Link href="/login" className="text-[#8C4B31] font-bold hover:underline">
             Sign in

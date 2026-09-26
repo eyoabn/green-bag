@@ -105,15 +105,7 @@ export default function Navbar() {
 
             {/* Role-Based Account Link */}
             {user ? (
-              user.role === "admin" ? (
-                <Link
-                  href="/admin"
-                  className="text-xs font-bold text-red-950 px-3.5 py-1.5 rounded-full bg-red-100 hover:bg-red-200 transition-colors flex items-center gap-1.5 border border-red-200"
-                >
-                  <ShieldCheck size={14} className="text-red-700" />
-                  <span>Admin Console</span>
-                </Link>
-              ) : user.role === "student" ? (
+              user.role === "student" ? (
                 <Link
                   href="/dashboard?tab=classes"
                   className="text-xs font-semibold text-amber-950 px-3.5 py-1.5 rounded-full bg-amber-100/70 hover:bg-amber-200 transition-colors flex items-center gap-1.5 border border-amber-200"
@@ -184,16 +176,7 @@ export default function Navbar() {
 
             <div className="flex items-center justify-between pt-1">
               {user ? (
-                user.role === "admin" ? (
-                  <Link
-                    href="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold text-red-950 px-4 py-2 rounded-xl bg-red-100 hover:bg-red-200 flex items-center gap-1.5"
-                  >
-                    <ShieldCheck size={14} className="text-red-700" />
-                    <span>Admin Console ({user.full_name.split(" ")[0]})</span>
-                  </Link>
-                ) : user.role === "student" ? (
+                user.role === "student" ? (
                   <Link
                     href="/dashboard?tab=classes"
                     onClick={() => setMobileMenuOpen(false)}

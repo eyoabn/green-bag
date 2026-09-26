@@ -131,14 +131,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       try {
         const u = await getCurrentUser();
         if (u) {
+          setCurrentUser(u);
           if (u.full_name) setCustomerName(u.full_name);
           if (u.phone) setCustomerPhone(u.phone);
+        } else {
+          setCurrentUser(null);
         }
       } catch {}
     }
 
     loadProductAndBanks();
   }, [productId]);
+
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedImage, setSelectedImage] = useState<string>(product.image);
@@ -472,13 +477,46 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
 
-                {/* Checkout Form */}
+                {/* Checkout Form or Login Prompt */}
+                {!currentUser ? (
+                  <div className="mt-6 p-8 bg-stone-100 rounded-3xl border border-stone-200 text-center">
+                    <ShieldCheck size={32} className="text-stone-400 mx-auto mb-3" />
+                    <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Sign in to Request Custom Bags</h3>
+                    <p className="text-sm text-stone-600 mb-6">
+                      Create an account or log in to customize this style with your brand logo and place an order.
+                    </p>
+                    <Link
+                      href={`/login?returnTo=/products/${productId}`}
+                      className="bg-[#1E3B2E] text-white text-sm font-bold px-6 py-3 rounded-full hover:bg-[#8C4B31] transition-colors inline-flex items-center gap-2"
+                    >
+                      Log In to Customize <ArrowRight size={16} />
+                    </Link>
+                  </div>
+                ) : (
                 <form onSubmit={handleSubmitOrder} className="mt-6 space-y-6">
                   
-                  {/* Step 1: Contact Details */}
+                  {/* Step 1: Customization Request */}
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">1</span>
+                      Your Brand Customization
+                    </h4>
+                    <div className="p-4 bg-[#FAF7F2] border border-stone-200 rounded-xl mb-6">
+                      <p className="text-xs text-stone-600 mb-3 leading-relaxed">
+                        You are requesting a custom production run based on the <span className="font-bold text-stone-900">{product.name}</span> style. Please describe the branding (logo, text) you want printed instead of the current client's design.
+                      </p>
+                      <textarea
+                        placeholder="E.g., Please print our logo 'Addis Cafe' in black ink centered on the bag. We will email the vector logo."
+                        className="w-full p-3 text-xs bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 min-h-[80px]"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Step 2: Contact Details */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">2</span>
                       Your Contact Details
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -590,35 +628,40 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   </div>
 
                   {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-4 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Sparkles size={16} className="animate-spin" />
-                        <span>Submitting Order for Verification...</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag size={16} />
-                        <span>Submit Order ({totalPrice} ETB)</span>
-                      </>
-                    )}
-                  </button>
-
-                  <div className="text-center pt-2">
-                    <Link
-                      href="/design-submission"
-                      className="text-xs font-bold text-[#8C4B31] hover:underline inline-flex items-center gap-1"
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !uploadedFile}
+                      className="w-full py-4 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      <span>Need your own custom dimensions and logo? Use our Custom Studio</span>
-                      <ArrowRight size={12} />
-                    </Link>
+                      {isSubmitting ? (
+                        <>
+                          <Sparkles size={16} className="animate-spin" />
+                          <span>Processing Request...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag size={16} />
+                          <span>Request Custom Production ({totalPrice} ETB)</span>
+                        </>
+                      )}
+                    </button>
+                    <p className="text-[10px] text-center text-stone-500 mt-3 font-medium mb-4">
+                      By submitting, you agree to our Custom Manufacturing Terms. Our team will verify your payment and contact you for artwork approval before production begins.
+                    </p>
                   </div>
-
                 </form>
+                )}
+
+                <div className="text-center pt-2">
+                  <Link
+                    href="/design-submission"
+                    className="text-xs font-bold text-[#8C4B31] hover:underline inline-flex items-center gap-1"
+                  >
+                    <span>Need your own custom dimensions and logo? Use our Custom Studio</span>
+                    <ArrowRight size={12} />
+                  </Link>
+                </div>
 
               </div>
 

@@ -93,12 +93,17 @@ export default function DesignSubmissionPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRef, setSubmittedRef] = useState<string | null>(null);
 
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
   useEffect(() => {
     getCurrentUser().then((u) => {
       if (u) {
+        setCurrentUser(u);
         if (!contactEmail && u.email) setContactEmail(u.email);
         if (!contactPhone && u.phone) setContactPhone(u.phone);
         if (!companyName && u.full_name) setCompanyName(u.full_name);
+      } else {
+        setCurrentUser(null);
       }
     });
   }, []);
@@ -1036,65 +1041,83 @@ export default function DesignSubmissionPage() {
                   </div>
                 </div>
 
-                {/* Contact Information Fields */}
-                <div className="space-y-3 mb-6">
-                  <input 
-                    type="text"
-                    required
-                    placeholder="Brand / Company Name *"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
+                {/* Contact Information Fields or Login Prompt */}
+                {!currentUser ? (
+                  <div className="mb-6 p-6 bg-stone-100 rounded-2xl border border-stone-200 text-center">
+                    <ShieldCheck size={28} className="text-stone-400 mx-auto mb-3" />
+                    <h3 className="font-serif text-lg font-bold text-stone-900 mb-2">Sign in to Submit Design</h3>
+                    <p className="text-xs text-stone-600 mb-4">
+                      Create an account or log in to submit your custom packaging specification for manufacturing.
+                    </p>
+                    <Link
+                      href="/login?returnTo=/design-submission"
+                      className="bg-[#1E3B2E] text-white text-xs font-bold px-6 py-3 rounded-full hover:bg-[#8C4B31] transition-colors inline-flex items-center gap-2"
+                    >
+                      Log In to Submit <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                ) : (
+                <>
+                  <div className="space-y-3 mb-6">
                     <input 
-                      type="email"
+                      type="text"
                       required
-                      placeholder="Contact Email *"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="Brand / Company Name *"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
                       className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
                     />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input 
+                        type="email"
+                        required
+                        placeholder="Contact Email *"
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                        className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
+                      />
+                      <input 
+                        type="tel"
+                        required
+                        placeholder="Phone (09... / +251) *"
+                        value={contactPhone}
+                        onChange={(e) => setContactPhone(e.target.value)}
+                        className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
+                      />
+                    </div>
                     <input 
-                      type="tel"
-                      required
-                      placeholder="Phone (09... / +251) *"
-                      value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value)}
+                      type="text"
+                      placeholder="Delivery Location (E.g. Bole, Addis Ababa / Hawassa)"
+                      value={deliveryLocation}
+                      onChange={(e) => setDeliveryLocation(e.target.value)}
                       className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
                     />
                   </div>
-                  <input 
-                    type="text"
-                    placeholder="Delivery Location (E.g. Bole, Addis Ababa / Hawassa)"
-                    value={deliveryLocation}
-                    onChange={(e) => setDeliveryLocation(e.target.value)}
-                    className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
-                  />
-                </div>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-4 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Sparkles size={16} className="animate-spin" />
-                      <span>Submitting to Engineering Desk...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Submit Specification For Pre-Production</span>
-                      <ArrowRight size={14} />
-                    </>
-                  )}
-                </button>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-4 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Sparkles size={16} className="animate-spin" />
+                        <span>Submitting to Engineering Desk...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Submit Specification For Pre-Production</span>
+                        <ArrowRight size={14} />
+                      </>
+                    )}
+                  </button>
 
-                <p className="text-[10px] text-center text-stone-400 mt-3">
-                  Physical pre-production proof delivered in Addis Ababa within 48 hours. Verified via CBE / Telebirr.
-                </p>
+                  <p className="text-[10px] text-center text-stone-400 mt-3">
+                    Physical pre-production proof delivered in Addis Ababa within 48 hours. Verified via CBE / Telebirr.
+                  </p>
+                </>
+                )}
               </div>
 
             </div>

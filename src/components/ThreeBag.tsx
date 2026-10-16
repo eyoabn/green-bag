@@ -75,6 +75,7 @@ function RealisticPaperBag({ preset }: { preset: BagPreset }) {
   return (
     <group
       ref={groupRef}
+      scale={hovered ? 1.02 : 1}
       onPointerOver={(e) => {
         e.stopPropagation();
         setHover(true);

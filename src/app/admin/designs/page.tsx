@@ -82,15 +82,30 @@ export default function AdminDesignsPage() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from("designs")
-        .update({ status: newStatus })
-        .eq("id", id);
-        
-      if (error) throw error;
-      loadDesigns();
-    } catch (e: any) {
-      alert("Error updating status: " + e.message);
+      const localStatusMap: Record<string, StoredDesign["status"]> = {
+        new: "new",
+        engineering_review: "reviewing",
+        approved_pending_payment: "proof_ready",
+        payment_review: "proof_ready",
+        in_production: "approved",
+        shipped: "approved",
+      };
+      const localStatus: StoredDesign["status"] = localStatusMap[newStatus] || "reviewing";
+      DataStore.updateDesignStatus(id, localStatus);
+
+      try {
+        await supabase
+          .from("designs")
+          .update({ status: localStatus })
+          .eq("id", id);
+      } catch (err) {
+        console.warn("Supabase design update fallback:", err);
+      }
+
+      await loadDesigns();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error updating status";
+      alert("Error updating status: " + msg);
     }
   };
 

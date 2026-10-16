@@ -134,7 +134,7 @@ export const DEFAULT_BANKS: StoredBankAccount[] = [
     isActive: true,
   },
   {
-    id: "dashen",
+    id: "7a3f1c9e-2b4d-4e6f-8a1b-3c5d7e9f2a4b",
     name: "Dashen Bank (Amole)",
     accountNumber: "510294819001",
     accountHolder: "Arenguade Paper Product",
@@ -152,7 +152,7 @@ export const DEFAULT_REGISTRATIONS: StoredRegistration[] = [];
 
 export const DEFAULT_PRODUCTS: StoredProduct[] = [
   {
-    id: "1",
+    id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
     name: "Rare Specialty Coffee Roasters Bag",
     client: "Rare Coffee Roastery",
     category: "Coffee & Food",
@@ -169,7 +169,7 @@ export const DEFAULT_PRODUCTS: StoredProduct[] = [
     inStock: true
   },
   {
-    id: "2",
+    id: "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
     name: "Richo's Luxury Boutique Tote with Tibeb Border",
     client: "Richo's Boutique",
     category: "Luxury Retail",
@@ -186,7 +186,7 @@ export const DEFAULT_PRODUCTS: StoredProduct[] = [
     inStock: true
   },
   {
-    id: "3",
+    id: "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
     name: "Hassan Adama Luxury Fashion Shopper",
     client: "Hassan Adama",
     category: "Luxury Retail",
@@ -203,7 +203,7 @@ export const DEFAULT_PRODUCTS: StoredProduct[] = [
     inStock: true
   },
   {
-    id: "4",
+    id: "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a",
     name: "Liora Fashion Store Carrier",
     client: "Liora Fashion",
     category: "Standard Retail",
@@ -456,13 +456,15 @@ export const DataStore = {
     const updated = current.map((o) => (o.id === orderId ? { ...o, status } : o));
     setLocal(ORDERS_KEY, updated);
 
-    try {
-      const supabase = createClient();
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
-        supabase.from("orders").update({ status }).eq("id", orderId).then();
-      }
-    } catch (e) {
-      console.warn("Supabase order status update failed:", e);
+    // Fire-and-forget Supabase sync (non-blocking)
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+      createClient()
+        .from("orders")
+        .update({ status })
+        .eq("id", orderId)
+        .then(({ error }) => {
+          if (error) console.warn("Supabase order status update failed:", error.message);
+        });
     }
   },
 
@@ -487,18 +489,19 @@ export const DataStore = {
     };
     setLocal(BANKS_KEY, [...banks, newBank]);
 
-    try {
-      const supabase = createClient();
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
-        supabase.from("bank_accounts").insert({
+    // Fire-and-forget Supabase sync (non-blocking)
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+      createClient()
+        .from("bank_accounts")
+        .insert({
           bank_name: newBank.name,
           account_name: holder,
           account_number: newBank.accountNumber,
           is_active: newBank.isActive,
-        }).then();
-      }
-    } catch (e) {
-      console.warn("Supabase bank account insert failed:", e);
+        })
+        .then(({ error }) => {
+          if (error) console.warn("Supabase bank account insert failed:", error.message);
+        });
     }
 
     return newBank;
@@ -508,13 +511,15 @@ export const DataStore = {
     const banks = this.getBanks();
     setLocal(BANKS_KEY, banks.filter((b) => b.id !== bankId));
 
-    try {
-      const supabase = createClient();
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
-        supabase.from("bank_accounts").delete().eq("id", bankId).then();
-      }
-    } catch (e) {
-      console.warn("Supabase bank delete failed:", e);
+    // Fire-and-forget Supabase sync (non-blocking)
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+      createClient()
+        .from("bank_accounts")
+        .delete()
+        .eq("id", bankId)
+        .then(({ error }) => {
+          if (error) console.warn("Supabase bank delete failed:", error.message);
+        });
     }
   },
 
@@ -523,16 +528,16 @@ export const DataStore = {
     const updated = banks.map((b) => (b.id === bankId ? { ...b, isActive: !b.isActive } : b));
     setLocal(BANKS_KEY, updated);
 
-    try {
-      const target = updated.find((b) => b.id === bankId);
-      if (target) {
-        const supabase = createClient();
-        if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
-          supabase.from("bank_accounts").update({ is_active: target.isActive }).eq("account_number", target.accountNumber).then();
-        }
-      }
-    } catch (e) {
-      console.warn("Supabase bank toggle failed:", e);
+    // Fire-and-forget Supabase sync (non-blocking)
+    const target = updated.find((b) => b.id === bankId);
+    if (target && process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+      createClient()
+        .from("bank_accounts")
+        .update({ is_active: target.isActive })
+        .eq("account_number", target.accountNumber)
+        .then(({ error }) => {
+          if (error) console.warn("Supabase bank toggle failed:", error.message);
+        });
     }
   },
 
@@ -558,13 +563,15 @@ export const DataStore = {
     const updated = current.map((r) => (r.id === regId ? { ...r, status } : r));
     setLocal(REGISTRATIONS_KEY, updated);
 
-    try {
-      const supabase = createClient();
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
-        supabase.from("session_registrations").update({ status }).eq("id", regId).then();
-      }
-    } catch (e) {
-      console.warn("Supabase registration update failed:", e);
+    // Fire-and-forget Supabase sync (non-blocking)
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+      createClient()
+        .from("session_registrations")
+        .update({ status })
+        .eq("id", regId)
+        .then(({ error }) => {
+          if (error) console.warn("Supabase registration update failed:", error.message);
+        });
     }
   },
 
@@ -587,17 +594,18 @@ export const DataStore = {
     };
     setLocal(DESIGNS_KEY, [newDesign, ...current]);
 
-    try {
-      const supabase = createClient();
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
-        supabase.from("designs").insert({
+    // Fire-and-forget Supabase sync (non-blocking)
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+      createClient()
+        .from("designs")
+        .insert({
           file_url: newDesign.fileName,
           note: `${newDesign.clientCompany} - ${newDesign.dimensions} - ${newDesign.notes}`,
           status: "new",
-        }).then();
-      }
-    } catch (e) {
-      console.warn("Supabase design insert failed:", e);
+        })
+        .then(({ error }) => {
+          if (error) console.warn("Supabase design insert failed:", error.message);
+        });
     }
 
     return newDesign;
@@ -608,13 +616,15 @@ export const DataStore = {
     const updated = current.map((d) => (d.id === id ? { ...d, status } : d));
     setLocal(DESIGNS_KEY, updated);
 
-    try {
-      const supabase = createClient();
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
-        supabase.from("designs").update({ status }).eq("id", id).then();
-      }
-    } catch (e) {
-      console.warn("Supabase design update failed:", e);
+    // Fire-and-forget Supabase sync (non-blocking)
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")) {
+      createClient()
+        .from("designs")
+        .update({ status })
+        .eq("id", id)
+        .then(({ error }) => {
+          if (error) console.warn("Supabase design update failed:", error.message);
+        });
     }
   }
 };

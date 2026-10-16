@@ -2,24 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { 
-  Package, 
   Search, 
-  Filter, 
   ArrowRight, 
   Sparkles, 
-  Check, 
-  SlidersHorizontal, 
   ShieldCheck,
-  Tag,
   Eye,
   X,
-  ShoppingBag,
-  ExternalLink
+  ShoppingBag
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { DataStore } from "@/utils/dataStore";
 
 export interface Product {
   id: string;
@@ -257,7 +249,21 @@ export default function ProductsPage() {
       
       if (!error && data && data.length > 0) {
         // Map Supabase columns to frontend Product interface
-        const mappedProducts = data.map((p: any) => ({
+        const mappedProducts = (data as Array<{
+          id: string;
+          name: string;
+          client?: string;
+          category?: string;
+          price: number;
+          bundle_size?: number;
+          gsm?: number;
+          handle_type?: string;
+          image_urls?: string[];
+          badge?: string;
+          description?: string;
+          dimensions?: string;
+          material?: string;
+        }>).map((p) => ({
           id: p.id,
           name: p.name,
           client: p.client || "Arenguade Standard Catalog",
@@ -371,7 +377,7 @@ export default function ProductsPage() {
 
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as "featured" | "price-low" | "price-high")}
               className="px-3.5 py-2 text-xs font-semibold bg-white border border-stone-300 rounded-full focus:outline-none text-stone-700 cursor-pointer"
             >
               <option value="featured">Sort: Featured</option>

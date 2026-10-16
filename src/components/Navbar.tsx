@@ -10,16 +10,15 @@ import {
   Menu, 
   X, 
   ArrowRight, 
-  User, 
-  Award,
-  ShieldCheck
+  Award
 } from "lucide-react";
 import { getCurrentUser, AppUser } from "@/utils/auth";
+import { useCurrency } from "@/components/CurrencyContext";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [currency, setCurrency] = useState<"ETB" | "USD">("ETB");
+  const { currency, setCurrency } = useCurrency();
   const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UserStore } from "@/utils/userStore";
 
-const VALID_ADMIN_KEYS = ["ArenguadeAdmin2026", "2122Eyoab2122", "greenwork2026", "admin123"];
+// Admin security keys must be stored in ADMIN_SECURITY_KEYS env var (comma-separated)
+// e.g. ADMIN_SECURITY_KEYS="key1,key2,key3"
+// If not set, admin self-registration is disabled.
+const VALID_ADMIN_KEYS = process.env.ADMIN_SECURITY_KEYS
+  ? process.env.ADMIN_SECURITY_KEYS.split(",").map((k) => k.trim()).filter(Boolean)
+  : [];
+
 
 export async function POST(request: NextRequest) {
   try {

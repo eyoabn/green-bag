@@ -227,15 +227,35 @@ function CustomerDashboardContent() {
       setPaymentUrl("");
       setUploadingPaymentId(null);
       loadData();
-    } catch (e: any) {
-      alert("Error: " + e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Submission failed";
+      alert("Error: " + msg);
     }
   };
 
   const getWorkflowStep = (status: string) => {
-    const steps = ["new", "engineering_review", "approved_pending_payment", "payment_review", "in_production", "shipped"];
-    const index = steps.indexOf(status);
-    return index === -1 ? 0 : index;
+    switch (status) {
+      case "new":
+      case "submitted":
+        return 0;
+      case "reviewing":
+      case "engineering_review":
+        return 1;
+      case "proof_ready":
+      case "approved_pending_payment":
+        return 2;
+      case "payment_review":
+        return 3;
+      case "approved":
+      case "in_production":
+        return 4;
+      case "delivered":
+      case "shipped":
+      case "completed":
+        return 5;
+      default:
+        return 0;
+    }
   };
 
   const handleSignOut = async () => {

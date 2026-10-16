@@ -46,6 +46,7 @@ function RealisticDynamicBag({ props }: { props: DynamicBagProps }) {
   return (
     <group
       ref={groupRef}
+      scale={hovered ? 1.02 : 1}
       onPointerOver={(e) => {
         e.stopPropagation();
         setHover(true);

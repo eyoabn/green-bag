@@ -13,18 +13,16 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>("ETB");
-  const EXCHANGE_RATE = 120; // 1 USD = 120 ETB
-
-  // Persist currency selection
-  useEffect(() => {
+  const [currency, setCurrencyState] = useState<Currency>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("arenguade_currency");
       if (stored === "ETB" || stored === "USD") {
-        setCurrencyState(stored);
+        return stored;
       }
     }
-  }, []);
+    return "ETB";
+  });
+  const EXCHANGE_RATE = 120; // 1 USD = 120 ETB
 
   const setCurrency = (newCurrency: Currency) => {
     setCurrencyState(newCurrency);

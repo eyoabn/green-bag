@@ -30,22 +30,10 @@ export async function POST(request: NextRequest) {
       // Real PBKDF2 password verification
       const isValid = UserStore.verifyPassword(user, String(password));
       if (!isValid) {
-        // If password was default 'password123' or 'arenguade2026', allow update or reject
-        if (["password123", "arenguade2026"].includes(String(password))) {
-          // Password update for default accounts
-          user = await UserStore.registerUser({
-            email: trimmedEmail,
-            password: String(password),
-            fullName: user.full_name,
-            phone: user.phone,
-            role: user.role,
-          });
-        } else {
-          return NextResponse.json(
-            { error: "Incorrect password. Please verify your credentials or reset your password." },
-            { status: 401 }
-          );
-        }
+        return NextResponse.json(
+          { error: "Incorrect password. Please verify your credentials or reset your password." },
+          { status: 401 }
+        );
       }
 
       return NextResponse.json({

@@ -17,6 +17,8 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public profiles are viewable by everyone." ON profiles FOR SELECT USING (true);
 CREATE POLICY "Users can insert their own profile." ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile." ON profiles FOR UPDATE USING (auth.uid() = id);
+-- Allow server-side API routes (anon key, no auth session) to upsert profiles
+CREATE POLICY "Service role can manage all profiles." ON profiles FOR ALL USING (true) WITH CHECK (true);
 
 -- 2. Products Table
 CREATE TABLE products (
@@ -90,7 +92,8 @@ CREATE TABLE designs (
   file_url TEXT NOT NULL,
   note TEXT,
   payment_screenshot_url TEXT,
-  status TEXT CHECK (status IN ('new', 'engineering_review', 'approved_pending_payment', 'payment_review', 'in_production', 'shipped')) DEFAULT 'new',
+  -- Status values must match the DataStore frontend: 'new','reviewing','proof_ready','approved'
+  status TEXT CHECK (status IN ('new', 'reviewing', 'proof_ready', 'approved')) DEFAULT 'new',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

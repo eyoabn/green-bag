@@ -8,13 +8,10 @@ import {
   Eye, 
   ArrowRight, 
   X, 
-  CheckCircle2, 
   MapPin, 
   Layers, 
   Maximize2,
-  Calendar,
   Building2,
-  Tag,
   PenTool
 } from "lucide-react";
 import { PROJECTS_WORKS, ProjectWork } from "@/data/projectsData";

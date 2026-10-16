@@ -23,7 +23,7 @@ import { PRODUCTS_CATALOG } from "@/app/products/page";
 import { DataStore, StoredBankAccount } from "@/utils/dataStore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, isValidUUID } from "@/utils/auth";
+import { getCurrentUser, isValidUUID, AppUser } from "@/utils/auth";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -53,6 +53,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     return PRODUCTS_CATALOG.find((p) => p.id === productId) || PRODUCTS_CATALOG[0];
   });
 
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [selectedImage, setSelectedImage] = useState<string>(product.image);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [customerName, setCustomerName] = useState<string>("");
+  const [customerPhone, setCustomerPhone] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [orderConfirmed, setOrderConfirmed] = useState<boolean>(false);
+  const [orderRef, setOrderRef] = useState<string>("");
+
   const [banks, setBanks] = useState<StoredBankAccount[]>(DataStore.getActiveBanks());
   const [selectedBank, setSelectedBank] = useState<StoredBankAccount>(DataStore.getActiveBanks()[0] || {
     id: "cbe",
@@ -71,7 +82,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       try {
         const { data: dbBanks } = await supabase.from("bank_accounts").select("*").eq("is_active", true);
         if (dbBanks && dbBanks.length > 0) {
-          const mappedBanks: StoredBankAccount[] = dbBanks.map((b: any) => ({
+          const mappedBanks: StoredBankAccount[] = (dbBanks as Array<{
+            id: string;
+            bank_name: string;
+            account_number: string;
+            account_name: string;
+          }>).map((b) => ({
             id: b.id,
             name: b.bank_name,
             accountNumber: b.account_number,
@@ -142,18 +158,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
     loadProductAndBanks();
   }, [productId]);
-
-  const [currentUser, setCurrentUser] = useState<any>(null);
-
-  const [quantity, setQuantity] = useState<number>(1);
-  const [selectedImage, setSelectedImage] = useState<string>(product.image);
-  const [copied, setCopied] = useState<boolean>(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [customerName, setCustomerName] = useState<string>("");
-  const [customerPhone, setCustomerPhone] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [orderConfirmed, setOrderConfirmed] = useState<boolean>(false);
-  const [orderRef, setOrderRef] = useState<string>("");
 
   const basePrice = product.price;
   // Volume discount: 5% off for 3+ bundles, 12% off for 10+ bundles
@@ -263,9 +267,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
       setOrderRef(orderId || savedOrder.id);
       setOrderConfirmed(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Order submission failed:", err);
-      alert(err.message || "Something went wrong during checkout.");
+      const message = err instanceof Error ? err.message : "Something went wrong during checkout.";
+      alert(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -503,7 +508,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     </h4>
                     <div className="p-4 bg-[#FAF7F2] border border-stone-200 rounded-xl mb-6">
                       <p className="text-xs text-stone-600 mb-3 leading-relaxed">
-                        You are requesting a custom production run based on the <span className="font-bold text-stone-900">{product.name}</span> style. Please describe the branding (logo, text) you want printed instead of the current client's design.
+                        You are requesting a custom production run based on the <span className="font-bold text-stone-900">{product.name}</span> style. Please describe the branding (logo, text) you want printed instead of the current client&apos;s design.
                       </p>
                       <textarea
                         placeholder="E.g., Please print our logo 'Addis Cafe' in black ink centered on the bag. We will email the vector logo."

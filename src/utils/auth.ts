@@ -1,4 +1,5 @@
-"use client";
+// Shared auth utility — usable in both Client Components and Server contexts.
+// Do NOT add "use client" here; this file is imported from both sides.
 
 import { createClient } from "@/utils/supabase/client";
 
@@ -26,10 +27,10 @@ export async function getCurrentUser(): Promise<AppUser | null> {
 
   // 1. Try Supabase Auth getUser()
   try {
-    const { data, error } = await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
     if (data?.user) {
       const u = data.user;
-      let role: "customer" | "student" | "admin" = (u.user_metadata?.role as any) || "customer";
+      let role: AppUser["role"] = (u.user_metadata?.role as AppUser["role"]) || "customer";
       let fullName = u.user_metadata?.full_name || u.email?.split("@")[0] || "Valued User";
       let phone = u.user_metadata?.phone || "";
 
@@ -42,7 +43,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
           .maybeSingle();
 
         if (profile) {
-          if (profile.role) role = profile.role as any;
+          if (profile.role) role = profile.role as AppUser["role"];
           if (profile.full_name) fullName = profile.full_name;
           if (profile.phone) phone = profile.phone;
         }
@@ -75,7 +76,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
         email: u.email || "",
         full_name: u.user_metadata?.full_name || u.email?.split("@")[0] || "Valued User",
         phone: u.user_metadata?.phone || "",
-        role: (u.user_metadata?.role as any) || "customer",
+        role: (u.user_metadata?.role as AppUser["role"]) || "customer",
       };
       if (typeof window !== "undefined") {
         localStorage.setItem("arenguade_user", JSON.stringify(appUser));

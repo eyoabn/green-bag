@@ -42,7 +42,7 @@ export async function updateSession(request: NextRequest) {
     // Refresh the auth token safely
     await supabase.auth.getUser()
     return supabaseResponse
-  } catch (error) {
+  } catch (_error) {
     // Gracefully fallback to standard response if auth token refresh fails
     return NextResponse.next({
       request,

@@ -83,9 +83,9 @@ function SignupFormContent() {
         return;
       }
 
-      throw new Error("Unable to complete registration. Please try again.");
-    } catch (networkErr: any) {
-      setErrorMessage(networkErr?.message || "Registration failed. Please check connection.");
+    } catch (networkErr: unknown) {
+      const message = networkErr instanceof Error ? networkErr.message : "Registration failed. Please check connection.";
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }

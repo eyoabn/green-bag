@@ -19,8 +19,11 @@ export interface PlatformUser {
 const DATA_DIR = path.join(process.cwd(), "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 
+// OWASP 2023 recommended: 310,000 iterations for PBKDF2-SHA512
+const PBKDF2_ITERATIONS = 310_000;
+
 function hashPassword(password: string, salt: string): string {
-  return crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
+  return crypto.pbkdf2Sync(password, salt, PBKDF2_ITERATIONS, 64, "sha512").toString("hex");
 }
 
 function getSupabaseClient() {
@@ -35,6 +38,7 @@ function getInitialUsers(): PlatformUser[] {
   const salt2 = crypto.randomBytes(16).toString("hex");
   const salt3 = crypto.randomBytes(16).toString("hex");
   const salt4 = crypto.randomBytes(16).toString("hex");
+  const salt5 = crypto.randomBytes(16).toString("hex");
 
   return [
     {
@@ -79,6 +83,17 @@ function getInitialUsers(): PlatformUser[] {
       phone: "0911001122",
       role: "customer",
       created_at: "2026-09-18T15:44:12.319Z",
+      status: "verified",
+    },
+    {
+      id: "5e7f9a1b-3c5d-4e7f-9a1b-3c5d7e9f1a2b",
+      email: "chala.student@arenguade.et",
+      passwordHash: hashPassword("password123", salt5),
+      salt: salt5,
+      full_name: "Chala Dereje",
+      phone: "0911334455",
+      role: "student",
+      created_at: "2026-09-20T09:00:00.000Z",
       status: "verified",
     },
   ];

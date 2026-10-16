@@ -5,17 +5,41 @@ export function isValidUUID(id?: string): boolean {
   return uuidRegex.test(id);
 }
 
-// Deterministically generate a valid UUID v4-like string from an identifier
+/**
+ * Deterministically generate a spec-compliant UUID v4-format string from a seed string.
+ * - Segment 3 starts with '4' (version 4)
+ * - Segment 4 starts with '8', '9', 'a', or 'b' (RFC 4122 variant bits)
+ */
 export function toValidUUID(seed?: string): string {
   if (seed && isValidUUID(seed)) {
     return seed;
   }
-  let hash = 0;
+
+  // Generate a deterministic 32-char hex string from the seed
   const str = seed || "arenguade-user-seed";
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
   for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
   }
-  const hex = Math.abs(hash).toString(16).padStart(8, "0");
-  return `${hex.slice(0, 8)}-4222-4222-8222-${hex.padEnd(12, "0").slice(0, 12)}`;
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+
+  const a = (h1 >>> 0).toString(16).padStart(8, "0");
+  const b = (h2 >>> 0).toString(16).padStart(8, "0");
+  const combined = (a + b).padEnd(32, "0");
+
+  // Force version=4 and variant=8..b (RFC 4122)
+  const seg3 = "4" + combined.slice(13, 16);
+  const variantNibble = (parseInt(combined[16], 16) & 0x3 | 0x8).toString(16);
+  const seg4 = variantNibble + combined.slice(17, 20);
+
+  return [
+    combined.slice(0, 8),
+    combined.slice(8, 12),
+    seg3,
+    seg4,
+    combined.slice(20, 32),
+  ].join("-");
 }

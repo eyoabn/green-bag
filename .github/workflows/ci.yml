@@ -1,0 +1,36 @@
+﻿name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Production build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder-project.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
+          LIVEKIT_API_KEY: "placeholder-livekit-key"
+          LIVEKIT_API_SECRET: "placeholder-livekit-secret"
+          ADMIN_SECURITY_KEYS: "test-admin-key"
+        run: npm run build

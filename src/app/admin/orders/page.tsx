@@ -74,19 +74,25 @@ export default function AdminOrdersPage() {
   }, []);
 
   const handleApprove = async (id: string, isSupabase?: boolean) => {
+    DataStore.updateOrderStatus(id, "approved");
     if (isSupabase) {
-      await supabase.from("orders").update({ status: "approved" }).eq("id", id);
-    } else {
-      DataStore.updateOrderStatus(id, "approved");
+      try {
+        await supabase.from("orders").update({ status: "approved" }).eq("id", id);
+      } catch (err) {
+        console.warn("Supabase order approve fallback:", err);
+      }
     }
     loadOrders();
   };
 
   const handleReject = async (id: string, isSupabase?: boolean) => {
+    DataStore.updateOrderStatus(id, "rejected");
     if (isSupabase) {
-      await supabase.from("orders").update({ status: "rejected" }).eq("id", id);
-    } else {
-      DataStore.updateOrderStatus(id, "rejected");
+      try {
+        await supabase.from("orders").update({ status: "rejected" }).eq("id", id);
+      } catch (err) {
+        console.warn("Supabase order reject fallback:", err);
+      }
     }
     loadOrders();
   };

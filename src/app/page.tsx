@@ -67,6 +67,22 @@ export default function Home() {
     artisans: 0,
   });
 
+  // Dynamic Featured Products, Workshops, and Company Info
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [totalProductCount, setTotalProductCount] = useState<number>(0);
+  const [workshops, setWorkshops] = useState<any[]>([]);
+  const [companySettings, setCompanySettings] = useState<{
+    company_name: string;
+    contact_email: string;
+    contact_phone: string;
+  }>({
+    company_name: "Ethiopia Arenguade Paper Product PLC",
+    contact_email: "invest@arenguade.et",
+    contact_phone: "+251 911 223 344",
+  });
+  const [productsLoading, setProductsLoading] = useState<boolean>(true);
+  const [workshopsLoading, setWorkshopsLoading] = useState<boolean>(true);
+
   useEffect(() => {
     async function fetchStats() {
       const supabase = createClient();
@@ -104,7 +120,66 @@ export default function Home() {
         console.error("Error fetching stats:", e);
       }
     }
+
+    async function fetchFeatured() {
+      try {
+        setProductsLoading(true);
+        const res = await fetch("/api/products?featured=true&pageSize=3");
+        const json = await res.json();
+        if (json.products && json.products.length > 0) {
+          setFeaturedProducts(json.products);
+          setTotalProductCount(json.pagination?.total || json.products.length);
+        } else {
+          // Fallback to top available products if none specifically flagged as featured
+          const fallbackRes = await fetch("/api/products?pageSize=3");
+          const fallbackJson = await fallbackRes.json();
+          if (fallbackJson.products) {
+            setFeaturedProducts(fallbackJson.products);
+            setTotalProductCount(fallbackJson.pagination?.total || fallbackJson.products.length);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading featured products:", err);
+      } finally {
+        setProductsLoading(false);
+      }
+    }
+
+    async function fetchWorkshops() {
+      try {
+        setWorkshopsLoading(true);
+        const res = await fetch("/api/classes?status=scheduled");
+        const json = await res.json();
+        if (json.sessions && json.sessions.length > 0) {
+          setWorkshops(json.sessions.slice(0, 2));
+        }
+      } catch (err) {
+        console.error("Error loading workshops:", err);
+      } finally {
+        setWorkshopsLoading(false);
+      }
+    }
+
+    async function fetchCompanySettings() {
+      try {
+        const res = await fetch("/api/settings");
+        const json = await res.json();
+        if (json.settings) {
+          setCompanySettings({
+            company_name: json.settings.company_name || "Ethiopia Arenguade Paper Product PLC",
+            contact_email: json.settings.contact_email || "invest@arenguade.et",
+            contact_phone: json.settings.contact_phone || "+251 911 223 344",
+          });
+        }
+      } catch (err) {
+        console.error("Error loading company settings:", err);
+      }
+    }
+
     fetchStats();
+    fetchFeatured();
+    fetchWorkshops();
+    fetchCompanySettings();
   }, []);
 
   return (
@@ -270,148 +345,92 @@ export default function Home() {
               href="/products" 
               className="inline-flex items-center gap-2 text-[#1E3B2E] font-bold text-sm hover:text-[#8C4B31] transition-colors group self-start md:self-auto"
             >
-              <span>View All 24 Products</span>
+              <span>View All {totalProductCount > 0 ? `${totalProductCount} ` : ""}Products</span>
               <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
-          {/* Product Cards Grid with Authentic Ethiopian Craft Deliveries */}
+          {/* Product Cards Grid dynamically loaded from database */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            
-            {/* Card 1: Rare Coffee */}
-            <div className="group bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
-              <div>
-                <div className="h-64 rounded-2xl bg-stone-100 relative overflow-hidden mb-6 group-hover:scale-[1.02] transition-transform duration-300">
-                  <Image 
-                    src="/images/photo_6_2026-09-05_00-36-03.jpg"
-                    alt="Rare Specialty Coffee Roasters Bag"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
-                  <span className="absolute top-3 left-3 bg-[#1E3B2E] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
-                    Coffee Roasters Choice
-                  </span>
-                  <span className="absolute bottom-3 left-3 text-white text-xs font-semibold drop-shadow-sm">
-                    Rare Coffee Roastery • Addis Ababa
-                  </span>
+            {productsLoading ? (
+              Array.from({ length: 3 }).map((_, idx) => (
+                <div key={idx} className="bg-white rounded-3xl p-6 border border-stone-200 animate-pulse h-96 flex flex-col justify-between">
+                  <div>
+                    <div className="h-64 rounded-2xl bg-stone-200 mb-4" />
+                    <div className="h-4 bg-stone-200 rounded w-2/3 mb-2" />
+                    <div className="h-3 bg-stone-200 rounded w-full" />
+                  </div>
+                  <div className="pt-6 border-t border-stone-100 flex justify-between">
+                    <div className="h-6 bg-stone-200 rounded w-20" />
+                    <div className="h-8 bg-stone-200 rounded w-24" />
+                  </div>
                 </div>
+              ))
+            ) : featuredProducts.length > 0 ? (
+              featuredProducts.map((product) => {
+                const img = (product.images && product.images[0]) || (product.image_urls && product.image_urls[0]) || "/images/photo_6_2026-09-05_00-36-03.jpg";
+                const specsText = product.specs 
+                  ? (typeof product.specs === "object" ? Object.values(product.specs).filter((v: any) => typeof v === 'string').slice(0, 2).join(" • ") : String(product.specs))
+                  : "Virgin Kraft • Eco-Friendly";
 
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Twisted Black Cord • 220 GSM</span>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">Food Safe</span>
-                </div>
-                <h3 className="font-serif text-2xl font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors">
-                  Specialty Coffee Roasters Bag
-                </h3>
-                <p className="text-stone-600 text-sm mt-2 leading-relaxed">
-                  High-tensile virgin kraft carrier with aroma protection. Custom printed for Ethiopian single-origin specialty coffee roasters.
-                </p>
+                return (
+                  <div 
+                    key={product.id}
+                    className="group bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="h-64 rounded-2xl bg-stone-100 relative overflow-hidden mb-6 group-hover:scale-[1.02] transition-transform duration-300">
+                        <Image 
+                          src={img}
+                          alt={product.name}
+                          fill
+                          className="object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
+                        <span className="absolute top-3 left-3 bg-[#1E3B2E] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
+                          {product.category || "Eco Packaging"}
+                        </span>
+                        <span className="absolute bottom-3 left-3 text-white text-xs font-semibold drop-shadow-sm">
+                          {product.stock_quantity ? `${product.stock_quantity.toLocaleString()} in stock` : "Available Now"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide truncate max-w-[180px]">
+                          {specsText}
+                        </span>
+                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                          Food Safe
+                        </span>
+                      </div>
+                      <h3 className="font-serif text-2xl font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors line-clamp-1">
+                        {product.name}
+                      </h3>
+                      <p className="text-stone-600 text-sm mt-2 leading-relaxed line-clamp-3">
+                        {product.description || "Artisanal biodegradable packaging designed and manufactured in Addis Ababa."}
+                      </p>
+                    </div>
+
+                    <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs text-stone-500 block">Unit price</span>
+                        <span className="text-xl font-bold text-[#8C4B31]">{formatPrice(product.price)}</span>
+                      </div>
+                      <Link 
+                        href={`/products/${product.id}`} 
+                        className="px-5 py-2.5 rounded-full bg-stone-100 hover:bg-[#1E3B2E] hover:text-white text-stone-800 text-xs font-bold transition-all"
+                      >
+                        Order Flow
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="col-span-3 text-center py-12 text-stone-500 bg-stone-50 rounded-3xl border border-stone-200">
+                <p>New featured collections arriving soon. Check back shortly!</p>
               </div>
-
-              <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-stone-500 block">Bundle of 100</span>
-                  <span className="text-xl font-bold text-[#8C4B31]">{formatPrice(180)}</span>
-                </div>
-                <Link 
-                  href="/products/1" 
-                  className="px-5 py-2.5 rounded-full bg-stone-100 hover:bg-[#1E3B2E] hover:text-white text-stone-800 text-xs font-bold transition-all"
-                >
-                  Order Flow
-                </Link>
-              </div>
-            </div>
-
-            {/* Card 2: Richo's Boutique */}
-            <div className="group bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
-              <div>
-                <div className="h-64 rounded-2xl bg-stone-100 relative overflow-hidden mb-6 group-hover:scale-[1.02] transition-transform duration-300">
-                  <Image 
-                    src="/images/photo_3_2026-09-05_00-36-02.jpg"
-                    alt="Richo's Luxury Boutique Tote"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
-                  <span className="absolute top-3 left-3 bg-[#8C4B31] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
-                    Luxury Fashion
-                  </span>
-                  <span className="absolute bottom-3 left-3 text-white text-xs font-semibold drop-shadow-sm">
-                    Richo&apos;s Boutique • Bole Medhanealem
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Cotton Rope • 250 GSM</span>
-                  <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md">Tibeb Border</span>
-                </div>
-                <h3 className="font-serif text-2xl font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors">
-                  Boutique Luxury Apparel Tote
-                </h3>
-                <p className="text-stone-600 text-sm mt-2 leading-relaxed">
-                  Heavy 250 GSM white kraft with traditional Ethiopian geometric Tibeb border and soft braided cotton rope handles.
-                </p>
-              </div>
-
-              <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-stone-500 block">Bundle of 100</span>
-                  <span className="text-xl font-bold text-[#8C4B31]">{formatPrice(260)}</span>
-                </div>
-                <Link 
-                  href="/products/2" 
-                  className="px-5 py-2.5 rounded-full bg-stone-100 hover:bg-[#1E3B2E] hover:text-white text-stone-800 text-xs font-bold transition-all"
-                >
-                  Order Flow
-                </Link>
-              </div>
-            </div>
-
-            {/* Card 3: Véro Tiramisù Bakery */}
-            <div className="group bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
-              <div>
-                <div className="h-64 rounded-2xl bg-stone-100 relative overflow-hidden mb-6 group-hover:scale-[1.02] transition-transform duration-300">
-                  <Image 
-                    src="/images/photo_9_2026-09-05_00-36-03.jpg"
-                    alt="Véro Tiramisù Bakery Packaging"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
-                  <span className="absolute top-3 left-3 bg-[#2C4A3B] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
-                    Bakery & Dining
-                  </span>
-                  <span className="absolute bottom-3 left-3 text-white text-xs font-semibold drop-shadow-sm">
-                    Véro Tiramisù • Kazanchis
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Extra-Wide Gusset • 200 GSM</span>
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">Flat Base</span>
-                </div>
-                <h3 className="font-serif text-2xl font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors">
-                  Artisan Pastry & Cake Carrier
-                </h3>
-                <p className="text-stone-600 text-sm mt-2 leading-relaxed">
-                  Wide flat-base kraft bag designed for square dessert boxes and pastry packaging with zero tilt during delivery.
-                </p>
-              </div>
-
-              <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-stone-500 block">Bundle of 100</span>
-                  <span className="text-xl font-bold text-[#8C4B31]">{formatPrice(220)}</span>
-                </div>
-                <Link 
-                  href="/products/6" 
-                  className="px-5 py-2.5 rounded-full bg-stone-100 hover:bg-[#1E3B2E] hover:text-white text-stone-800 text-xs font-bold transition-all"
-                >
-                  Order Flow
-                </Link>
-              </div>
-            </div>
+            )}
 
           </div>
 
@@ -669,67 +688,56 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Workshop 1 */}
-            <div className="p-6 rounded-2xl bg-[#FAF7F2] border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-[#8C4B31]/50 transition-colors">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="bg-[#8C4B31] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
-                    In-Person Studio
-                  </span>
-                  <span className="text-xs font-semibold text-stone-500 flex items-center gap-1">
-                    <Clock size={12} /> 4 Hours Hands-on
-                  </span>
-                </div>
-                <h4 className="font-serif text-xl font-bold text-stone-900">
-                  Beginner Paper Bag Workshop & Structural Folds
-                </h4>
-                <p className="text-xs text-stone-600">
-                  Addis Ababa Studio • Bole Industrial Center • Oct 15, 2026
-                </p>
-              </div>
+            {workshopsLoading ? (
+              Array.from({ length: 2 }).map((_, idx) => (
+                <div key={idx} className="p-6 rounded-2xl bg-[#FAF7F2] border border-stone-200 animate-pulse h-40" />
+              ))
+            ) : workshops.length > 0 ? (
+              workshops.map((session) => {
+                const isLive = session.type === "live";
+                const dateStr = session.starts_at 
+                  ? new Date(session.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                  : "Upcoming";
 
-              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0">
-                <span className="font-serif text-lg font-bold text-[#8C4B31]">{formatPrice(500)}</span>
-                <Link 
-                  href="/learn/schedule" 
-                  className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"
-                >
-                  Register
-                </Link>
-              </div>
-            </div>
+                return (
+                  <div 
+                    key={session.id}
+                    className="p-6 rounded-2xl bg-[#FAF7F2] border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-[#8C4B31]/50 transition-colors"
+                  >
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`${isLive ? "bg-[#1E3B2E]" : "bg-[#8C4B31]"} text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1`}>
+                          {isLive ? <><Video size={11} /> LiveKit Online</> : "In-Person Studio"}
+                        </span>
+                        <span className="text-xs font-semibold text-stone-500 flex items-center gap-1">
+                          <Clock size={12} /> {session.capacity ? `${session.spotsLeft ?? session.capacity} spots left` : "Hands-on"}
+                        </span>
+                      </div>
+                      <h4 className="font-serif text-xl font-bold text-stone-900">
+                        {session.title}
+                      </h4>
+                      <p className="text-xs text-stone-600">
+                        {session.location || (isLive ? "Join from anywhere • High-def streaming" : "Addis Ababa Studio")} • {dateStr}
+                      </p>
+                    </div>
 
-            {/* Workshop 2 */}
-            <div className="p-6 rounded-2xl bg-[#FAF7F2] border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-[#8C4B31]/50 transition-colors">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="bg-[#1E3B2E] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1">
-                    <Video size={11} /> LiveKit Online
-                  </span>
-                  <span className="text-xs font-semibold text-stone-500 flex items-center gap-1">
-                    <Clock size={12} /> 2 Hours Streaming
-                  </span>
-                </div>
-                <h4 className="font-serif text-xl font-bold text-stone-900">
-                  Virtual: Advanced Origami Folds & Gusset Dynamics
-                </h4>
-                <p className="text-xs text-stone-600">
-                  Join from anywhere • High-def multi-camera feed • Oct 18, 2026
-                </p>
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0">
+                      <span className="font-serif text-lg font-bold text-[#8C4B31]">{formatPrice(session.price || 0)}</span>
+                      <Link 
+                        href="/learn/schedule" 
+                        className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"
+                      >
+                        Register
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="col-span-2 text-center py-8 text-stone-500 bg-[#FAF7F2] rounded-2xl border border-stone-200">
+                <p>New workshop schedules will be announced soon.</p>
               </div>
-
-              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0">
-                <span className="font-serif text-lg font-bold text-[#8C4B31]">{formatPrice(300)}</span>
-                <Link 
-                  href="/learn/schedule" 
-                  className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"
-                >
-                  Register
-                </Link>
-              </div>
-            </div>
-
+            )}
           </div>
 
         </div>
@@ -753,7 +761,7 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
               <a 
-                href="mailto:invest@arenguade.et?subject=Investor%20Pitch%20Deck%20Request"
+                href={`mailto:${companySettings.contact_email}?subject=Investor%20Pitch%20Deck%20Request`}
                 className="w-full sm:w-auto bg-[#8C4B31] hover:bg-[#A3593B] text-white text-xs font-bold px-7 py-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg"
               >
                 <Download size={15} />

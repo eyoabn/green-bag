@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { 
   Search, 
@@ -9,290 +9,117 @@ import {
   ShieldCheck,
   Eye,
   X,
-  ShoppingBag
+  ShoppingBag,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+  Filter
 } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
+import { useCurrency } from "@/components/CurrencyContext";
 
 export interface Product {
   id: string;
   name: string;
-  client: string;
+  client?: string;
   category: string;
   price: number;
-  bundleSize: number;
-  gsm: number;
-  handleType: string;
+  bundleSize?: number;
+  gsm?: number;
+  handleType?: string;
   image: string;
   gallery: string[];
   badge?: string;
   description: string;
-  dimensions: string;
-  material: string;
+  dimensions?: string;
+  material?: string;
+  is_available?: boolean;
+  is_featured?: boolean;
+  stock_quantity?: number | null;
 }
-
-export const PRODUCTS_CATALOG: Product[] = [
-  {
-    id: "1",
-    name: "Rare Specialty Coffee Roasters Bag",
-    client: "Rare Coffee Roastery (Roasted in Ethiopia)",
-    category: "Coffee & Food",
-    price: 180,
-    bundleSize: 100,
-    gsm: 220,
-    handleType: "Twisted Black Cord",
-    image: "/images/photo_6_2026-09-05_00-36-03.jpg",
-    gallery: [
-      "/images/photo_6_2026-09-05_00-36-03.jpg",
-      "/images/photo_13_2026-09-05_00-36-03.jpg"
-    ],
-    badge: "Coffee Roasters Choice",
-    description: "Signature unbleached kraft carrier bag crafted for Ethiopian specialty coffee roasters. Features custom typography, aroma seal capability, and high-tensile black twisted cord handles.",
-    dimensions: "24cm × 28cm + 10cm gusset",
-    material: "100% Ethiopian Virgin Kraft",
-  },
-  {
-    id: "2",
-    name: "Richo's Luxury Boutique Tote with Tibeb Border",
-    client: "Richo's Clothing Boutique",
-    category: "Luxury Retail",
-    price: 260,
-    bundleSize: 100,
-    gsm: 250,
-    handleType: "Woven Cotton Rope",
-    image: "/images/photo_3_2026-09-05_00-36-02.jpg",
-    gallery: [
-      "/images/photo_3_2026-09-05_00-36-02.jpg",
-      "/images/photo_4_2026-09-05_00-36-02.jpg"
-    ],
-    badge: "Bestseller",
-    description: "Premium white coated luxury retail bag featuring traditional Ethiopian Tibeb geometric pattern border, reinforced bottom card, and durable black braided rope handles for fashion boutiques.",
-    dimensions: "32cm × 36cm + 12cm gusset",
-    material: "250 GSM Bleached Matte Kraft",
-  },
-  {
-    id: "3",
-    name: "Hassan Adama Luxury Fashion Shopper",
-    client: "Hassan Adama Boutique",
-    category: "Luxury Retail",
-    price: 250,
-    bundleSize: 100,
-    gsm: 240,
-    handleType: "Braided Black Cord",
-    image: "/images/photo_4_2026-09-05_00-36-02.jpg",
-    gallery: [
-      "/images/photo_4_2026-09-05_00-36-02.jpg",
-      "/images/photo_3_2026-09-05_00-36-02.jpg"
-    ],
-    badge: "VIP Boutique",
-    description: "Clean, elegant typography with custom monogram emblem. Manufactured with rigid sidewalls and reinforced handle eyelets for suits, dresses, and footwear.",
-    dimensions: "30cm × 34cm + 12cm gusset",
-    material: "240 GSM Coated White Kraft",
-  },
-  {
-    id: "4",
-    name: "Liora Fashion Store Carrier",
-    client: "Liora Fashion Store",
-    category: "Standard Retail",
-    price: 160,
-    bundleSize: 100,
-    gsm: 180,
-    handleType: "Twisted Black Cord",
-    image: "/images/photo_13_2026-09-05_00-36-03.jpg",
-    gallery: [
-      "/images/photo_13_2026-09-05_00-36-03.jpg",
-      "/images/photo_6_2026-09-05_00-36-03.jpg"
-    ],
-    badge: "High Durability",
-    description: "Natural earth brown kraft bag printed with clean modern branding and social tags. Perfect for everyday retail, cosmetics, and lifestyle brands.",
-    dimensions: "22cm × 28cm + 10cm gusset",
-    material: "180 GSM Recycled Earth Kraft",
-  },
-  {
-    id: "5",
-    name: "Family Dental Clinic Medical Luxury Carrier",
-    client: "Family Specialized Dental Clinic",
-    category: "Healthcare & Corporate",
-    price: 220,
-    bundleSize: 100,
-    gsm: 200,
-    handleType: "Twisted Black Rope",
-    image: "/images/photo_10_2026-09-05_00-36-03.jpg",
-    gallery: [
-      "/images/photo_10_2026-09-05_00-36-03.jpg",
-      "/images/photo_7_2026-09-05_00-36-03.jpg"
-    ],
-    badge: "Medical & Gift",
-    description: "Crisp white clinic presentation bag with two-tone cyan and navy corporate print. Used for patient care kits, pharmaceutical giveaways, and executive gifts.",
-    dimensions: "25cm × 25cm + 10cm gusset",
-    material: "200 GSM Heavy Bleached Kraft",
-  },
-  {
-    id: "6",
-    name: "Véro Tiramisù Artisan Sleeve Box",
-    client: "Véro Tiramisù & Confectionery",
-    category: "Confectionery & Bakery",
-    price: 190,
-    bundleSize: 50,
-    gsm: 320,
-    handleType: "Slide-Out Rigid Sleeve",
-    image: "/images/photo_16_2026-09-05_00-36-03.jpg",
-    gallery: [
-      "/images/photo_16_2026-09-05_00-36-03.jpg",
-      "/images/photo_14_2026-09-05_00-36-03.jpg",
-      "/images/photo_18_2026-09-05_00-36-03.jpg"
-    ],
-    badge: "Custom Rigid Box",
-    description: "Luxury confectionery matchbox-style slide sleeve with rich cocoa brown and gold ink printing. Engineered for refrigerated Italian desserts, pastries, and chocolates.",
-    dimensions: "18cm × 8cm × 5cm sleeve",
-    material: "320 GSM Food-Safe Rigid Boxboard",
-  },
-  {
-    id: "7",
-    name: "Véro Artisan Tall Pastry Pouch",
-    client: "Véro Tiramisù & Bakery",
-    category: "Coffee & Food",
-    price: 120,
-    bundleSize: 100,
-    gsm: 90,
-    handleType: "Gusset Flat Fold",
-    image: "/images/photo_9_2026-09-05_00-36-03.jpg",
-    gallery: [
-      "/images/photo_9_2026-09-05_00-36-03.jpg",
-      "/images/photo_11_2026-09-05_00-36-03.jpg"
-    ],
-    badge: "Greaseproof Food Safe",
-    description: "Tall stand-up white bakery pouch with gold foil lettering. Breathable and oil-resistant for fresh sourdough, brioche, and Ethiopian pastries.",
-    dimensions: "15cm × 32cm + 8cm gusset",
-    material: "90 GSM Grease-Resistant Virgin Paper",
-  },
-  {
-    id: "8",
-    name: "Caneth Hotel Hospitality Carrier",
-    client: "Caneth Hotel / Rift Valley Hotel PLC",
-    category: "Hotels & Hospitality",
-    price: 170,
-    bundleSize: 100,
-    gsm: 190,
-    handleType: "Knotted Charcoal Cord",
-    image: "/images/photo_5_2026-09-05_00-36-02.jpg",
-    gallery: [
-      "/images/photo_5_2026-09-05_00-36-02.jpg",
-      "/images/photo_8_2026-09-05_00-36-03.jpg"
-    ],
-    badge: "Hospitality Standard",
-    description: "Custom hotel amenity and laundry bag manufactured for Rift Valley Hotel PLC with bilingual English and Amharic screen printing.",
-    dimensions: "26cm × 30cm + 10cm gusset",
-    material: "190 GSM Unbleached Virgin Kraft",
-  },
-  {
-    id: "9",
-    name: "Laaguujii Taarikee Lounge Bulk Sacks",
-    client: "Laaguujii Taarikee Hotel & Lounge",
-    category: "Hotels & Hospitality",
-    price: 150,
-    bundleSize: 100,
-    gsm: 180,
-    handleType: "Gray Twisted Cord",
-    image: "/images/photo_8_2026-09-05_00-36-03.jpg",
-    gallery: [
-      "/images/photo_8_2026-09-05_00-36-03.jpg",
-      "/images/photo_5_2026-09-05_00-36-02.jpg"
-    ],
-    badge: "Bulk Order Tier",
-    description: "Produced in large factory volumes for restaurant takeaway, hotel lounges, and events. Reinforced side gussets and uniform screen printed branding.",
-    dimensions: "24cm × 30cm + 11cm gusset",
-    material: "180 GSM Ethiopian Kraft",
-  },
-  {
-    id: "10",
-    name: "Cheru Medhanealem Grocery Carrier with Red Handles",
-    client: "Cheru Medhanealem Butchery & Grocery",
-    category: "Standard Retail",
-    price: 165,
-    bundleSize: 100,
-    gsm: 200,
-    handleType: "Vibrant Red Twisted Cord",
-    image: "/images/photo_1_2026-09-05_00-36-02.jpg",
-    gallery: [
-      "/images/photo_1_2026-09-05_00-36-02.jpg",
-      "/images/photo_2_2026-09-05_00-36-02.jpg"
-    ],
-    badge: "Heavy Tensile",
-    description: "Heavy-duty shopping bag tested for meat, provisions, and dry goods. Features eye-catching red twisted handles and Amharic brand typography.",
-    dimensions: "26cm × 32cm + 12cm gusset",
-    material: "200 GSM Reinforced Kraft",
-  },
-];
 
 const CATEGORIES = [
   "All", 
+  "Packaging",
   "Coffee & Food", 
   "Luxury Retail", 
   "Standard Retail", 
-  "Confectionery & Bakery", 
-  "Hotels & Hospitality",
-  "Healthcare & Corporate"
+  "Heavy Duty"
 ];
 
 export default function ProductsPage() {
-  const [productsList, setProductsList] = useState<Product[]>(PRODUCTS_CATALOG);
+  const { formatPrice } = useCurrency();
+  const [productsList, setProductsList] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 9;
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price-low" | "price-high">("featured");
   const [lightboxProduct, setLightboxProduct] = useState<Product | null>(null);
 
-  useEffect(() => {
-    async function loadProducts() {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/products');
-        const resJson = await res.json();
-        if (res.ok && resJson.products) {
-          const mappedProducts = (resJson.products as any[]).map((p) => {
-            const gallery = p.images && p.images.length > 0 ? p.images : ["/images/photo_6_2026-09-05_00-36-03.jpg"];
-            return {
-              id: p.id,
-              name: p.name,
-              client: p.client || "Arenguade Standard Catalog",
-              category: p.category || "Standard Retail",
-              price: Number(p.price),
-              bundleSize: p.bundle_size || 100,
-              gsm: p.gsm || 200,
-              handleType: p.handle_type || "Twisted Kraft Cord",
-              image: gallery[0],
-              gallery,
-              badge: p.badge || (p.stock_quantity ? "In Stock" : "Bespoke Order"),
-              description: p.description || "",
-              dimensions: p.dimensions || "Standard Retail",
-              material: p.material || "100% Ethiopian Virgin Kraft",
-            };
-          });
-          setProductsList(mappedProducts);
-        } else {
-          setProductsList([]);
-        }
-      } catch (err) {
-        console.error("Failed to load products from API:", err);
-        setProductsList([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProducts();
-  }, []);
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("pageSize", String(pageSize));
+      if (selectedCategory !== "All") params.set("category", selectedCategory);
+      if (searchQuery.trim()) params.set("search", searchQuery.trim());
 
-  const filteredProducts = productsList.filter((product) => {
-    const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  }).sort((a, b) => {
-    if (sortBy === "price-low") return a.price - b.price;
-    if (sortBy === "price-high") return b.price - a.price;
-    return 0;
-  });
+      const res = await fetch(`/api/products?${params.toString()}`);
+      const resJson = await res.json();
+      if (res.ok && resJson.products) {
+        const mappedProducts: Product[] = (resJson.products as any[]).map((p) => {
+          const gallery = p.images && p.images.length > 0 ? p.images : (p.image_urls || ["/images/photo_6_2026-09-05_00-36-03.jpg"]);
+          return {
+            id: p.id,
+            name: p.name,
+            client: p.client || "Arenguade Standard Catalog",
+            category: p.category || "Packaging",
+            price: Number(p.price),
+            bundleSize: p.bundle_size || 100,
+            gsm: p.gsm || 200,
+            handleType: p.handle_type || "Twisted Kraft Cord",
+            image: gallery[0],
+            gallery,
+            badge: p.is_featured ? "Featured Selection" : (p.is_available ? "In Stock" : "Made-to-Order"),
+            description: p.description || "",
+            dimensions: p.dimensions || "Standard Retail Dimensions",
+            material: p.material || "100% Ethiopian Virgin Kraft",
+            is_available: p.is_available,
+            is_featured: p.is_featured,
+            stock_quantity: p.stock_quantity,
+          };
+        });
+
+        // Client sort within the page if needed
+        if (sortBy === "price-low") {
+          mappedProducts.sort((a, b) => a.price - b.price);
+        } else if (sortBy === "price-high") {
+          mappedProducts.sort((a, b) => b.price - a.price);
+        }
+
+        setProductsList(mappedProducts);
+        setTotalCount(resJson.totalCount ?? mappedProducts.length);
+      } else {
+        setProductsList([]);
+        setTotalCount(0);
+      }
+    } catch (err) {
+      console.error("Failed to load products from API:", err);
+      setProductsList([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, selectedCategory, searchQuery, sortBy]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
     <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
@@ -338,238 +165,263 @@ export default function ProductsPage() {
       <section className="max-w-7xl mx-auto px-6 sm:px-8 py-8 w-full">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 pb-6 border-b border-stone-200">
           
-          {/* Categories Pill Nav */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
-            {CATEGORIES.map((category) => (
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
+            {CATEGORIES.map((cat) => (
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedCategory === category
-                    ? "bg-[#1E3B2E] text-white shadow-sm"
-                    : "bg-white text-stone-700 hover:bg-stone-100 border border-stone-200"
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                  setPage(1);
+                }}
+                className={`text-xs font-bold px-4 py-2 rounded-full whitespace-nowrap transition-all cursor-pointer ${
+                  selectedCategory === cat
+                    ? "bg-[#1E3B2E] text-[#E0B382] shadow-sm"
+                    : "bg-white text-stone-600 hover:bg-stone-200/70 border border-stone-200"
                 }`}
               >
-                {category}
+                {cat}
               </button>
             ))}
           </div>
 
-          {/* Search & Sort Controls */}
+          {/* Search Input & Sort Dropdown */}
           <div className="flex items-center gap-3">
             <div className="relative flex-1 sm:w-64">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
               <input
                 type="text"
-                placeholder="Search bags, clients, GSM..."
+                placeholder="Search catalog..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-stone-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 focus:border-[#8C4B31]"
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-white border border-stone-200 rounded-full pl-9 pr-4 py-2 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]/20"
               />
             </div>
 
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "featured" | "price-low" | "price-high")}
-              className="px-3.5 py-2 text-xs font-semibold bg-white border border-stone-300 rounded-full focus:outline-none text-stone-700 cursor-pointer"
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="bg-white border border-stone-200 rounded-full px-4 py-2 text-xs font-semibold text-stone-700 cursor-pointer focus:outline-none"
             >
-              <option value="featured">Sort: Featured</option>
+              <option value="featured">Featured First</option>
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
             </select>
           </div>
-
         </div>
 
         {/* Results Counter */}
-        <div className="pt-4 pb-8 flex items-center justify-between text-xs text-stone-500 font-medium">
-          <span>Showing {filteredProducts.length} authentic Ethiopian packaging models</span>
-          <span className="text-[#8C4B31] font-semibold">Click &ldquo;Quick View&rdquo; to see full-resolution photo</span>
-        </div>
-
-        {/* Products Grid with REAL PHOTOGRAPHS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {loading ? (
-            <div className="col-span-full py-20 text-center text-stone-500 font-bold animate-pulse">
-              Loading eco-friendly catalog...
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
-            <div 
-              key={product.id}
-              className="group bg-white rounded-3xl border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
-            >
-              <div>
-                {/* Real Photograph Thumbnail */}
-                <div className="aspect-[4/3] bg-stone-100 relative overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-
-                  {/* Badge */}
-                  {product.badge && (
-                    <span className="absolute top-3 left-3 bg-[#1E3B2E] text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.8 rounded-full shadow-sm">
-                      {product.badge}
-                    </span>
-                  )}
-
-                  {/* Quick View Button on Hover */}
-                  <button
-                    onClick={() => setLightboxProduct(product)}
-                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white text-xs font-bold backdrop-blur-[2px]"
-                  >
-                    <Eye size={16} />
-                    <span>Quick View Photo</span>
-                  </button>
-
-                  <span className="absolute bottom-2 right-2 text-[10px] text-stone-900 font-mono font-bold bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-sm">
-                    {product.gsm} GSM
-                  </span>
-                </div>
-
-                {/* Card Details */}
-                <div className="p-5">
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C4B31]">
-                      {product.category}
-                    </span>
-                    <span className="text-[10px] text-stone-500 font-medium">
-                      {product.handleType}
-                    </span>
-                  </div>
-
-                  <h3 className="font-serif text-lg font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors line-clamp-1">
-                    {product.name}
-                  </h3>
-                  
-                  <p className="text-xs font-semibold text-stone-700 mt-0.5">
-                    Client: {product.client}
-                  </p>
-
-                  <p className="text-stone-500 text-xs mt-2 line-clamp-2 leading-relaxed">
-                    {product.description}
-                  </p>
-
-                  <div className="mt-4 pt-3 border-t border-stone-100 text-[11px] text-stone-500 flex justify-between items-center">
-                    <span>Size: {product.dimensions}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Price and Order Link */}
-              <div className="px-5 pb-5 pt-2 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-stone-400 block">Bundle of {product.bundleSize}</span>
-                  <p className="font-serif text-xl font-bold text-[#8C4B31]">
-                    {product.price} <span className="text-xs font-sans text-stone-600 font-semibold">ETB</span>
-                  </p>
-                </div>
-                
-                <Link
-                  href={`/products/${product.id}`}
-                  className="px-4 py-2 rounded-full bg-[#1E3B2E] text-white hover:bg-[#8C4B31] transition-colors text-xs font-bold flex items-center gap-1.5 shadow-sm"
-                >
-                  <span>Order</span>
-                  <ArrowRight size={13} />
-                </Link>
-              </div>
-            </div>
-          ))
-          ) : (
-            <div className="col-span-full py-20 text-center text-stone-500 font-bold">
-              No products found matching your criteria.
-            </div>
+        <div className="py-4 text-xs font-medium text-stone-500 flex items-center justify-between">
+          <span>
+            Showing <strong className="text-stone-900">{productsList.length}</strong> of{" "}
+            <strong className="text-stone-900">{totalCount}</strong> products in catalog
+          </span>
+          {selectedCategory !== "All" && (
+            <span className="text-[11px] bg-stone-100 text-stone-600 px-2.5 py-0.5 rounded-full font-bold">
+              Filtered by: {selectedCategory}
+            </span>
           )}
         </div>
 
-      </section>
-
-      {/* Lightbox / High-Resolution "Nice View" Modal */}
-      {lightboxProduct && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 border border-stone-200 shadow-2xl relative animate-in fade-in zoom-in-95">
-            
-            <button
-              onClick={() => setLightboxProduct(null)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              {/* Large Photograph */}
-              <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-stone-100 relative shadow-inner">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={lightboxProduct.image}
-                  alt={lightboxProduct.name}
-                  className="w-full h-full object-cover object-center"
-                />
-                <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold">
-                  Verified Arenguade Production
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-2">
+          {loading ? (
+            Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="bg-white rounded-3xl p-6 border border-stone-200 animate-pulse flex flex-col justify-between">
+                <div>
+                  <div className="h-64 bg-stone-200 rounded-2xl mb-5" />
+                  <div className="h-4 bg-stone-200 rounded w-1/3 mb-2" />
+                  <div className="h-6 bg-stone-200 rounded w-3/4 mb-3" />
+                  <div className="h-4 bg-stone-200 rounded w-full mb-1" />
+                  <div className="h-4 bg-stone-200 rounded w-2/3" />
+                </div>
+                <div className="pt-6 mt-6 border-t border-stone-100 flex justify-between items-center">
+                  <div className="h-6 bg-stone-200 rounded w-20" />
+                  <div className="h-8 bg-stone-200 rounded-full w-24" />
                 </div>
               </div>
-
-              {/* Product Info & Order CTA */}
-              <div className="space-y-4">
+            ))
+          ) : productsList.length === 0 ? (
+            <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-stone-200 p-8">
+              <Package size={40} className="mx-auto text-stone-300 mb-3" />
+              <h3 className="font-serif text-xl font-bold text-stone-800 mb-1">No products found</h3>
+              <p className="text-xs text-stone-500 max-w-sm mx-auto mb-4">
+                We couldn&apos;t find any packaging matching your filters. Try selecting &ldquo;All&rdquo; or clearing your search term.
+              </p>
+              <button
+                onClick={() => {
+                  setSelectedCategory("All");
+                  setSearchQuery("");
+                }}
+                className="px-5 py-2 rounded-full bg-[#1E3B2E] text-[#E0B382] text-xs font-bold cursor-pointer"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            productsList.map((product) => (
+              <div 
+                key={product.id}
+                className="group bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden"
+              >
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C4B31]">
-                    {lightboxProduct.category}
-                  </span>
-                  <h2 className="font-serif text-2xl font-bold text-stone-900 mt-1">
-                    {lightboxProduct.name}
-                  </h2>
-                  <p className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md inline-block mt-2">
-                    Client: {lightboxProduct.client}
+                  {/* Image Container with Preview Button */}
+                  <div className="h-64 rounded-2xl bg-stone-100 relative overflow-hidden mb-5 group-hover:scale-[1.01] transition-transform duration-300">
+                    <img 
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
+                    
+                    {/* Badge */}
+                    <span className="absolute top-3 left-3 bg-[#1E3B2E] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
+                      {product.badge}
+                    </span>
+
+                    {/* Quick Lightbox Preview Trigger */}
+                    <button
+                      onClick={() => setLightboxProduct(product)}
+                      className="absolute top-3 right-3 p-2 rounded-full bg-white/90 text-stone-800 hover:bg-white hover:text-[#8C4B31] transition-all opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
+                      title="Inspect Product Gallery"
+                    >
+                      <Eye size={15} />
+                    </button>
+
+                    <span className="absolute bottom-3 left-3 text-white text-xs font-semibold drop-shadow-sm truncate max-w-[85%]">
+                      {product.client || product.category}
+                    </span>
+                  </div>
+
+                  {/* Specifications & Title */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wide">
+                      {product.category}
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                      {product.is_available ? "In Stock" : "Unavailable"}
+                    </span>
+                  </div>
+
+                  <h3 className="font-serif text-xl font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors line-clamp-1">
+                    {product.name}
+                  </h3>
+
+                  <p className="text-stone-600 text-xs mt-2 line-clamp-2 leading-relaxed">
+                    {product.description || "Premium Ethiopian recycled kraft packaging crafted with durability and precision."}
                   </p>
                 </div>
 
-                <p className="text-stone-600 text-xs leading-relaxed">
-                  {lightboxProduct.description}
-                </p>
+                {/* Card Action Footer */}
+                <div className="pt-5 mt-5 border-t border-stone-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] text-stone-500 block">Single Batch</span>
+                    <span className="text-lg font-bold text-[#8C4B31] font-mono">
+                      {formatPrice(product.price)}
+                    </span>
+                  </div>
 
-                <div className="space-y-2 p-4 bg-[#FAF7F2] rounded-2xl border border-stone-200 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-stone-500">Dimensions:</span>
-                    <span className="font-bold text-stone-900">{lightboxProduct.dimensions}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-stone-500">Material & Grammage:</span>
-                    <span className="font-bold text-stone-900">{lightboxProduct.gsm} GSM • {lightboxProduct.material}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-stone-500">Handle Specification:</span>
-                    <span className="font-bold text-stone-900">{lightboxProduct.handleType}</span>
-                  </div>
-                  <div className="flex justify-between pt-1 border-t border-stone-200 text-sm">
-                    <span className="font-bold text-stone-800">Price per Bundle (100):</span>
-                    <span className="font-serif font-bold text-[#8C4B31]">{lightboxProduct.price} ETB</span>
+                  <Link 
+                    href={`/products/${product.id}`}
+                    className="px-5 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                  >
+                    <span>View & Order</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-12 pt-6 border-t border-stone-200 flex items-center justify-between text-xs text-stone-600">
+            <div>
+              Page <strong className="text-stone-900">{page}</strong> of <strong className="text-stone-900">{totalPages}</strong>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || loading}
+                className="inline-flex items-center gap-1 px-4 py-2 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 text-stone-800 disabled:opacity-40 disabled:cursor-not-allowed font-semibold cursor-pointer"
+              >
+                <ChevronLeft size={14} />
+                <span>Previous</span>
+              </button>
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages || loading}
+                className="inline-flex items-center gap-1 px-4 py-2 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 text-stone-800 disabled:opacity-40 disabled:cursor-not-allowed font-semibold cursor-pointer"
+              >
+                <span>Next</span>
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+
+      </section>
+
+      {/* Lightbox Modal */}
+      {lightboxProduct && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 relative animate-in zoom-in-95">
+            <button
+              onClick={() => setLightboxProduct(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="w-full sm:w-1/2 h-72 rounded-2xl overflow-hidden bg-stone-100">
+                <img
+                  src={lightboxProduct.image}
+                  alt={lightboxProduct.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="w-full sm:w-1/2 flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C4B31] bg-amber-50 px-2 py-0.5 rounded-md inline-block mb-2">
+                    {lightboxProduct.category}
+                  </span>
+                  <h3 className="font-serif text-2xl font-bold text-stone-900 leading-tight">
+                    {lightboxProduct.name}
+                  </h3>
+                  <p className="text-stone-600 text-xs mt-3 leading-relaxed">
+                    {lightboxProduct.description || "Manufactured with pride in Addis Ababa, Ethiopia using heavy-duty biodegradable kraft."}
+                  </p>
+                  <div className="mt-4 pt-3 border-t border-stone-100">
+                    <span className="text-xl font-bold text-[#8C4B31] font-mono">
+                      {formatPrice(lightboxProduct.price)}
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="pt-4 border-t border-stone-100 flex items-center justify-end gap-3 mt-4">
+                  <button
+                    onClick={() => setLightboxProduct(null)}
+                    className="px-4 py-2 rounded-full text-xs font-bold text-stone-600 hover:bg-stone-100 cursor-pointer"
+                  >
+                    Close
+                  </button>
                   <Link
                     href={`/products/${lightboxProduct.id}`}
-                    className="flex-1 bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold py-3.5 rounded-full transition-colors flex items-center justify-center gap-2 shadow-md"
+                    className="px-5 py-2.5 rounded-full bg-[#1E3B2E] text-white text-xs font-bold hover:bg-[#8C4B31] transition-colors"
                   >
-                    <ShoppingBag size={15} />
-                    <span>Order This Model</span>
-                  </Link>
-
-                  <Link
-                    href="/design-submission"
-                    className="px-5 py-3.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-colors text-center"
-                  >
-                    Customize Design
+                    Go to Full Order Flow
                   </Link>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       )}

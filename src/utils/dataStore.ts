@@ -150,76 +150,7 @@ export const DEFAULT_ORDERS: StoredOrder[] = [];
 // Initial Real Workshop Registrations (Starts empty - only real student enrollments)
 export const DEFAULT_REGISTRATIONS: StoredRegistration[] = [];
 
-export const DEFAULT_PRODUCTS: StoredProduct[] = [
-  {
-    id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-    name: "Rare Specialty Coffee Roasters Bag",
-    client: "Rare Coffee Roastery",
-    category: "Coffee & Food",
-    price: 180,
-    bundleSize: 100,
-    gsm: 220,
-    handleType: "Twisted Black Cord",
-    image: "/images/photo_6_2026-09-05_00-36-03.jpg",
-    gallery: ["/images/photo_6_2026-09-05_00-36-03.jpg", "/images/photo_13_2026-09-05_00-36-03.jpg"],
-    badge: "Coffee Roasters Choice",
-    description: "Signature unbleached kraft carrier bag crafted for Ethiopian specialty coffee roasters.",
-    dimensions: "24cm × 28cm + 10cm gusset",
-    material: "100% Ethiopian Virgin Kraft",
-    inStock: true
-  },
-  {
-    id: "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
-    name: "Richo's Luxury Boutique Tote with Tibeb Border",
-    client: "Richo's Boutique",
-    category: "Luxury Retail",
-    price: 260,
-    bundleSize: 100,
-    gsm: 250,
-    handleType: "Woven Cotton Rope",
-    image: "/images/photo_3_2026-09-05_00-36-02.jpg",
-    gallery: ["/images/photo_3_2026-09-05_00-36-02.jpg", "/images/photo_4_2026-09-05_00-36-02.jpg"],
-    badge: "Bestseller",
-    description: "Premium white coated luxury retail bag featuring traditional Ethiopian Tibeb pattern border.",
-    dimensions: "32cm × 36cm + 12cm gusset",
-    material: "250 GSM Bleached Matte Kraft",
-    inStock: true
-  },
-  {
-    id: "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
-    name: "Hassan Adama Luxury Fashion Shopper",
-    client: "Hassan Adama",
-    category: "Luxury Retail",
-    price: 250,
-    bundleSize: 100,
-    gsm: 240,
-    handleType: "Braided Black Cord",
-    image: "/images/photo_4_2026-09-05_00-36-02.jpg",
-    gallery: ["/images/photo_4_2026-09-05_00-36-02.jpg"],
-    badge: "VIP Boutique",
-    description: "Clean, elegant typography with custom monogram emblem for suits, dresses, and footwear.",
-    dimensions: "30cm × 34cm + 12cm gusset",
-    material: "240 GSM Coated White Kraft",
-    inStock: true
-  },
-  {
-    id: "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a",
-    name: "Liora Fashion Store Carrier",
-    client: "Liora Fashion",
-    category: "Standard Retail",
-    price: 160,
-    bundleSize: 100,
-    gsm: 180,
-    handleType: "Twisted Black Cord",
-    image: "/images/photo_13_2026-09-05_00-36-03.jpg",
-    gallery: ["/images/photo_13_2026-09-05_00-36-03.jpg"],
-    badge: "High Durability",
-    description: "Natural earth brown kraft bag printed with clean modern branding and social tags.",
-    dimensions: "22cm × 28cm + 10cm gusset",
-    material: "180 GSM Recycled Earth Kraft",
-    inStock: true
-  }
-];
+export const DEFAULT_PRODUCTS: StoredProduct[] = [];
 
 export const DEFAULT_CLASSES: StoredClassSession[] = [
   {

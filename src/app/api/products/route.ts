@@ -1,54 +1,105 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireRole } from "@/utils/roles";
-import { createClient } from "@/utils/supabase/server";
+import { pool } from "@/utils/db";
+import { logAuditEvent } from "@/utils/audit";
 
-// GET /api/products - Read catalog from PostgreSQL
+const createProductSchema = z.object({
+  name: z.string().min(2, "Product name must be at least 2 characters"),
+  description: z.string().optional().default(""),
+  price: z.number().positive("Price must be a positive number"),
+  category: z.string().min(2, "Category is required").default("Packaging"),
+  stock_quantity: z.number().int().nonnegative().nullable().optional().default(500),
+  is_available: z.boolean().optional().default(true),
+  is_featured: z.boolean().optional().default(false),
+  images: z.array(z.string()).min(1, "At least one product image is required"),
+});
+
+const updateProductSchema = z.object({
+  id: z.string().uuid("Invalid product ID"),
+  name: z.string().min(2).optional(),
+  description: z.string().optional(),
+  price: z.number().positive().optional(),
+  category: z.string().min(2).optional(),
+  stock_quantity: z.number().int().nonnegative().nullable().optional(),
+  is_available: z.boolean().optional(),
+  is_featured: z.boolean().optional(),
+  images: z.array(z.string()).optional(),
+});
+
+// GET /api/products - Read catalog from PostgreSQL with search, category, pagination & featured filters
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
-    const search = searchParams.get("search");
-    const all = searchParams.get("all") === "true"; // if true, admin can see unavailable products
-    const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : null;
+    const search = searchParams.get("search")?.trim() || "";
+    const featured = searchParams.get("featured") === "true";
+    const all = searchParams.get("all") === "true"; // if true, admin sees unavailable products
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || searchParams.get("limit") || "12", 10)));
+    const offset = (page - 1) * pageSize;
 
-    let query = supabase
-      .from("products")
-      .select("id, name, description, price, images, image_urls, category, stock_quantity, is_available, created_at, updated_at")
-      .order("created_at", { ascending: false });
+    const conditions: string[] = ["is_deleted IS NOT TRUE"];
+    const params: any[] = [];
+    let paramIdx = 1;
 
+    // Public users only see available products unless all=true is passed
     if (!all) {
-      query = query.eq("is_available", true);
+      conditions.push("is_available = true");
     }
 
-    if (category && category !== "All") {
-      query = query.eq("category", category);
+    if (featured) {
+      conditions.push("is_featured = true");
     }
 
-    if (search && search.trim()) {
-      const s = search.trim();
-      query = query.or(`name.ilike.%${s}%,description.ilike.%${s}%,category.ilike.%${s}%`);
+    if (category && category !== "All" && category.toLowerCase() !== "all products") {
+      conditions.push(`category = $${paramIdx++}`);
+      params.push(category);
     }
 
-    if (limit) {
-      query = query.limit(limit);
+    if (search) {
+      conditions.push(`(name ILIKE $${paramIdx} OR description ILIKE $${paramIdx} OR category ILIKE $${paramIdx})`);
+      params.push(`%${search}%`);
+      paramIdx++;
     }
 
-    const { data: products, error } = await query;
-    if (error) throw error;
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    // Normalize images array
-    const normalized = (products || []).map((p) => {
+    // Count query for pagination
+    const countRes = await pool.query(
+      `SELECT COUNT(*) as total FROM public.products ${whereClause}`,
+      params
+    );
+    const totalCount = parseInt(countRes.rows[0]?.total || "0", 10);
+
+    // Data query
+    const dataParams = [...params, pageSize, offset];
+    const dataQuery = `
+      SELECT id, name, description, price, images, image_urls, category, stock_quantity, is_available, is_featured, created_at, updated_at
+      FROM public.products
+      ${whereClause}
+      ORDER BY is_featured DESC, created_at DESC
+      LIMIT $${paramIdx++} OFFSET $${paramIdx++}
+    `;
+
+    const productsRes = await pool.query(dataQuery, dataParams);
+
+    const normalized = (productsRes.rows || []).map((p) => {
       const imgList = (p.images && p.images.length > 0) ? p.images : (p.image_urls || []);
       return {
         ...p,
+        price: Number(p.price),
         images: imgList.length > 0 ? imgList : ["/images/photo_6_2026-09-05_00-36-03.jpg"],
+        image_urls: imgList.length > 0 ? imgList : ["/images/photo_6_2026-09-05_00-36-03.jpg"],
       };
     });
 
     return NextResponse.json({
       success: true,
       products: normalized,
+      totalCount,
+      page,
+      pageSize,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to fetch products" }, { status: 500 });
@@ -60,50 +111,45 @@ export async function POST(request: NextRequest) {
   try {
     const admin = await requireRole(["admin"]);
     const body = await request.json().catch(() => ({}));
-    const { name, description, price, images, category = "Packaging", stock_quantity = 500, is_available = true } = body;
 
-    if (!name || price === undefined) {
-      return NextResponse.json({ error: "Name and price are required." }, { status: 400 });
+    const parsed = createProductSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(", ");
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
 
-    const numPrice = Number(price);
-    if (isNaN(numPrice) || numPrice <= 0) {
-      return NextResponse.json({ error: "Price must be a valid positive number." }, { status: 400 });
-    }
+    const { name, description, price, category, stock_quantity, is_available, is_featured, images } = parsed.data;
 
-    const imgArray = Array.isArray(images) && images.length > 0
-      ? images
-      : ["/images/photo_6_2026-09-05_00-36-03.jpg"];
+    const res = await pool.query(
+      `
+      INSERT INTO public.products (
+        name, description, price, category, stock_quantity, is_available, is_featured, images, image_urls, is_deleted, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, false, NOW(), NOW())
+      RETURNING id, name, description, price, images, image_urls, category, stock_quantity, is_available, is_featured, created_at, updated_at;
+    `,
+      [
+        name.trim(),
+        description.trim(),
+        price,
+        category.trim(),
+        stock_quantity,
+        is_available,
+        is_featured,
+        images,
+      ]
+    );
 
-    const supabase = await createClient();
+    const product = res.rows[0];
 
-    const { data, error } = await supabase
-      .from("products")
-      .insert({
-        name: String(name).trim(),
-        description: description ? String(description).trim() : "",
-        price: numPrice,
-        images: imgArray,
-        image_urls: imgArray,
-        category: String(category).trim(),
-        stock_quantity: stock_quantity !== null ? Number(stock_quantity) : null,
-        is_available: Boolean(is_available),
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Audit log
-    await supabase.from("audit_log").insert({
-      actor_id: admin.id,
+    await logAuditEvent({
+      actorId: admin.id,
       action: "CREATE_PRODUCT",
       entity: "products",
-      entity_id: data.id,
-      metadata: { name: data.name, price: data.price },
+      entityId: product.id,
+      metadata: { name: product.name, price: product.price, is_featured: product.is_featured },
     });
 
-    return NextResponse.json({ success: true, product: data });
+    return NextResponse.json({ success: true, product });
   } catch (err: any) {
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to create product" }, { status });
@@ -115,51 +161,63 @@ export async function PATCH(request: NextRequest) {
   try {
     const admin = await requireRole(["admin"]);
     const body = await request.json().catch(() => ({}));
-    const { id, ...updates } = body;
 
-    if (!id) {
-      return NextResponse.json({ error: "Product ID is required." }, { status: 400 });
+    const parsed = updateProductSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(", ");
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const { id, images, ...fields } = parsed.data;
 
-    const payload: Record<string, any> = { updated_at: new Date().toISOString() };
-    if (updates.name !== undefined) payload.name = String(updates.name).trim();
-    if (updates.description !== undefined) payload.description = String(updates.description).trim();
-    if (updates.category !== undefined) payload.category = String(updates.category).trim();
-    if (updates.price !== undefined) payload.price = Number(updates.price);
-    if (updates.stock_quantity !== undefined) payload.stock_quantity = updates.stock_quantity === null ? null : Number(updates.stock_quantity);
-    if (updates.is_available !== undefined) payload.is_available = Boolean(updates.is_available);
-    if (updates.images !== undefined && Array.isArray(updates.images)) {
-      payload.images = updates.images;
-      payload.image_urls = updates.images;
+    const setClauses: string[] = ["updated_at = NOW()"];
+    const values: any[] = [id];
+    let paramIdx = 2;
+
+    for (const [k, v] of Object.entries(fields)) {
+      if (v !== undefined) {
+        setClauses.push(`${k} = $${paramIdx++}`);
+        values.push(v);
+      }
     }
 
-    const { data, error } = await supabase
-      .from("products")
-      .update(payload)
-      .eq("id", id)
-      .select()
-      .single();
+    if (images !== undefined) {
+      setClauses.push(`images = $${paramIdx}`);
+      setClauses.push(`image_urls = $${paramIdx}`);
+      values.push(images);
+      paramIdx++;
+    }
 
-    if (error) throw error;
+    const updateQuery = `
+      UPDATE public.products
+      SET ${setClauses.join(", ")}
+      WHERE id = $1 AND is_deleted IS NOT TRUE
+      RETURNING id, name, description, price, images, image_urls, category, stock_quantity, is_available, is_featured, created_at, updated_at;
+    `;
 
-    await supabase.from("audit_log").insert({
-      actor_id: admin.id,
+    const res = await pool.query(updateQuery, values);
+    if (res.rowCount === 0) {
+      return NextResponse.json({ error: "Product not found." }, { status: 404 });
+    }
+
+    const product = res.rows[0];
+
+    await logAuditEvent({
+      actorId: admin.id,
       action: "UPDATE_PRODUCT",
       entity: "products",
-      entity_id: id,
-      metadata: payload,
+      entityId: id,
+      metadata: { updates: fields, hasNewImages: Boolean(images) },
     });
 
-    return NextResponse.json({ success: true, product: data });
+    return NextResponse.json({ success: true, product });
   } catch (err: any) {
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to update product" }, { status });
   }
 }
 
-// DELETE /api/products - Delete product (Admin only)
+// DELETE /api/products - Delete product (Admin only; soft-deletes if in order history)
 export async function DELETE(request: NextRequest) {
   try {
     const admin = await requireRole(["admin"]);
@@ -170,48 +228,56 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Product ID is required." }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    // Check if product is referenced in order_items or orders
+    const orderItemsCheck = await pool.query(
+      "SELECT COUNT(*) as count FROM public.order_items WHERE product_id = $1",
+      [id]
+    );
+    const ordersCheck = await pool.query(
+      "SELECT COUNT(*) as count FROM public.orders WHERE product_id = $1",
+      [id]
+    ).catch(() => ({ rows: [{ count: "0" }] }));
 
-    // Check if product is in any order items
-    const { count } = await supabase
-      .from("order_items")
-      .select("id", { count: "exact", head: true })
-      .eq("product_id", id);
+    const linkedCount = parseInt(orderItemsCheck.rows[0]?.count || "0", 10) + parseInt(ordersCheck.rows[0]?.count || "0", 10);
 
-    if (count && count > 0) {
-      // Soft disable availability to maintain historical orders
-      await supabase
-        .from("products")
-        .update({ is_available: false, updated_at: new Date().toISOString() })
-        .eq("id", id);
+    if (linkedCount > 0) {
+      // Soft-delete to preserve historical orders
+      await pool.query(
+        "UPDATE public.products SET is_deleted = true, is_available = false, deleted_at = NOW(), updated_at = NOW() WHERE id = $1",
+        [id]
+      );
 
-      await supabase.from("audit_log").insert({
-        actor_id: admin.id,
-        action: "DEACTIVATE_PRODUCT_HISTORICAL",
+      await logAuditEvent({
+        actorId: admin.id,
+        action: "SOFT_DELETE_PRODUCT_HISTORICAL",
         entity: "products",
-        entity_id: id,
-        metadata: { reason: "Product in existing orders", order_items_count: count },
+        entityId: id,
+        metadata: { linked_orders: linkedCount, reason: "Product in existing orders" },
       });
 
       return NextResponse.json({
         success: true,
-        deactivated: true,
-        message: "Product is referenced in order history; availability has been toggled to false.",
+        softDeleted: true,
+        soft_deleted: true,
+        message: "Product appears in customer order history; it has been soft-deleted and hidden publicly.",
       });
     }
 
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) throw error;
+    // If not referenced in any order, mark soft deleted or purge
+    await pool.query(
+      "UPDATE public.products SET is_deleted = true, is_available = false, deleted_at = NOW(), updated_at = NOW() WHERE id = $1",
+      [id]
+    );
 
-    await supabase.from("audit_log").insert({
-      actor_id: admin.id,
+    await logAuditEvent({
+      actorId: admin.id,
       action: "DELETE_PRODUCT",
       entity: "products",
-      entity_id: id,
+      entityId: id,
       metadata: { deleted: true },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "Product deleted successfully." });
   } catch (err: any) {
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to delete product" }, { status });

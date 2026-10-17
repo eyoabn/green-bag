@@ -11,9 +11,10 @@ async function main() {
   const settingsRows = await c.query("SELECT * FROM public.settings");
   console.log('settings rows:', settingsRows.rows);
 
-  const search = 'admin@arenguade.com';
-  const q = await c.query("SELECT id, full_name, email, role, is_active FROM public.profiles WHERE (full_name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1) LIMIT $2 OFFSET $3", ['%' + search + '%', 10, 0]);
-  console.log('Search result for ' + search + ':', q.rows);
+  const cols = await c.query("SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'products'");
+  console.log('products columns:', cols.rows);
+  const sample = await c.query("SELECT * FROM public.products LIMIT 2");
+  console.log('sample products:', sample.rows);
   await c.end();
 }
 main().catch(console.error);

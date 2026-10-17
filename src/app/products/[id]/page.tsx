@@ -19,38 +19,52 @@ import {
   Eye
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { PRODUCTS_CATALOG } from "@/app/products/page";
 import { DataStore, StoredBankAccount } from "@/utils/dataStore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, isValidUUID, AppUser } from "@/utils/auth";
+
+export interface ProductDetail {
+  id: string;
+  name: string;
+  client?: string;
+  category: string;
+  price: number;
+  bundleSize?: number;
+  gsm?: number;
+  handleType?: string;
+  image: string;
+  gallery: string[];
+  badge?: string;
+  description: string;
+  dimensions?: string;
+  material?: string;
+  is_available?: boolean;
+  stock_quantity?: number | null;
+}
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
   const router = useRouter();
 
-  const [product, setProduct] = useState(() => {
-    const dynamicProd = DataStore.getProductById(productId);
-    if (dynamicProd) {
-      return {
-        id: dynamicProd.id,
-        name: dynamicProd.name,
-        client: dynamicProd.client || "Arenguade Custom Line",
-        category: dynamicProd.category,
-        price: dynamicProd.price,
-        bundleSize: dynamicProd.bundleSize || 100,
-        gsm: dynamicProd.gsm || 200,
-        handleType: dynamicProd.handleType || "Twisted Kraft Cord",
-        image: dynamicProd.image || "/images/photo_6_2026-09-05_00-36-03.jpg",
-        gallery: dynamicProd.gallery && dynamicProd.gallery.length > 0 ? dynamicProd.gallery : [dynamicProd.image],
-        badge: dynamicProd.inStock ? dynamicProd.badge : "Out of Stock",
-        description: dynamicProd.description || "",
-        dimensions: dynamicProd.dimensions || "24cm × 30cm + 10cm gusset",
-        material: dynamicProd.material || "100% Ethiopian Virgin Kraft",
-      };
-    }
-    return PRODUCTS_CATALOG.find((p) => p.id === productId) || PRODUCTS_CATALOG[0];
+  const [product, setProduct] = useState<ProductDetail>({
+    id: productId,
+    name: "Ethiopian Kraft Packaging",
+    client: "Arenguade Standard Catalog",
+    category: "Packaging",
+    price: 180,
+    bundleSize: 100,
+    gsm: 200,
+    handleType: "Twisted Kraft Cord",
+    image: "/images/photo_6_2026-09-05_00-36-03.jpg",
+    gallery: ["/images/photo_6_2026-09-05_00-36-03.jpg"],
+    badge: "Verified Production Batch",
+    description: "High-performance Ethiopian kraft packaging.",
+    dimensions: "24cm × 30cm + 10cm gusset",
+    material: "100% Ethiopian Virgin Kraft",
+    is_available: true,
+    stock_quantity: 500,
   });
 
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -104,48 +118,35 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }
       } catch {}
 
-      // 2. Fetch product from Supabase if valid UUID
-      if (isValidUUID(productId)) {
-        try {
-          const { data: p } = await supabase.from("products").select("*").eq("id", productId).maybeSingle();
-          if (p) {
-            const gallery = (p.images && p.images.length > 0) ? p.images : ((p.image_urls && p.image_urls.length > 0) ? p.image_urls : ["/images/photo_6_2026-09-05_00-36-03.jpg"]);
-            setProduct({
-              id: p.id,
-              name: p.name,
-              client: p.client || "Arenguade Standard Catalog",
-              category: p.category || "Standard Retail",
-              price: Number(p.price),
-              bundleSize: p.bundle_size || 100,
-              gsm: p.gsm || 200,
-              handleType: p.handle_type || "Twisted Kraft Cord",
-              image: gallery[0],
-              gallery,
-              badge: p.badge || "Verified Production Batch",
-              description: p.description || "",
-              dimensions: p.dimensions || "24cm × 30cm + 10cm gusset",
-              material: p.material || "100% Ethiopian Virgin Kraft",
-            });
-            setSelectedImage(gallery[0]);
-          }
-        } catch {}
-      } else {
-        // Fallback for numeric IDs: map to Supabase products if possible
-        try {
-          const { data: dbProds } = await supabase.from("products").select("id, name, price, images, is_available").eq("is_available", true);
-          if (dbProds && dbProds.length > 0) {
-            const match = dbProds.find((dbp) => dbp.name.toLowerCase().includes(product.name.toLowerCase().slice(0, 10))) || dbProds[0];
-            if (match) {
-              setProduct((prev) => ({
-                ...prev,
-                id: match.id,
-                name: match.name,
-                price: Number(match.price),
-                image: (match.images && match.images[0]) || prev.image,
-              }));
-            }
-          }
-        } catch {}
+      // 2. Fetch product from API
+      try {
+        const res = await fetch(`/api/products/${productId}`);
+        const data = await res.json();
+        if (data.product) {
+          const p = data.product;
+          const gallery = (p.images && p.images.length > 0) ? p.images : ((p.image_urls && p.image_urls.length > 0) ? p.image_urls : ["/images/photo_6_2026-09-05_00-36-03.jpg"]);
+          setProduct({
+            id: p.id,
+            name: p.name,
+            client: p.client || "Arenguade Standard Catalog",
+            category: p.category || "Standard Retail",
+            price: Number(p.price),
+            bundleSize: p.bundle_size || p.bundleSize || 100,
+            gsm: p.gsm || 200,
+            handleType: p.handle_type || p.handleType || "Twisted Kraft Cord",
+            image: gallery[0],
+            gallery,
+            badge: p.badge || "Verified Production Batch",
+            description: p.description || "",
+            dimensions: p.dimensions || "24cm × 30cm + 10cm gusset",
+            material: p.material || "100% Ethiopian Virgin Kraft",
+            is_available: p.is_available !== false,
+            stock_quantity: p.stock_quantity ?? 500,
+          });
+          setSelectedImage(gallery[0]);
+        }
+      } catch (err) {
+        console.error("Error loading product detail:", err);
       }
 
       // 3. Auto-populate logged-in user information
@@ -183,6 +184,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (product.is_available === false) {
+      alert("This product is currently marked unavailable and cannot be ordered.");
+      return;
+    }
     if (!uploadedFile) {
       alert("Please upload your bank transaction receipt / screenshot to complete your order.");
       return;
@@ -309,7 +314,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="flex justify-between">
                 <span className="text-stone-500">Quantity:</span>
-                <span className="font-semibold text-stone-900">{quantity} Bundles ({quantity * product.bundleSize} bags)</span>
+                <span className="font-semibold text-stone-900">{quantity} Bundles ({quantity * (product.bundleSize || 100)} bags)</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-stone-500">Payment Channel:</span>
@@ -419,9 +424,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31] block mb-1">
                   Product #{product.id} • Manufactured in Addis Ababa
                 </span>
-                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mb-2">
-                  {product.name}
-                </h1>
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900">
+                    {product.name}
+                  </h1>
+                  {product.is_available === false ? (
+                    <span className="bg-rose-100 text-rose-800 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-rose-200">
+                      Unavailable
+                    </span>
+                  ) : (
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-emerald-200">
+                      In Stock
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-emerald-800 font-semibold bg-emerald-50 px-2.5 py-1 rounded-md inline-block mb-4">
                   Produced for: {product.client}
                 </p>
@@ -437,7 +453,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                       {totalPrice} ETB
                     </span>
                     <span className="text-xs text-stone-500">
-                      for {quantity} bundle ({quantity * product.bundleSize} bags)
+                      for {quantity} bundle ({quantity * (product.bundleSize || 100)} bags)
                     </span>
                     {quantity >= 3 && (
                       <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
@@ -458,7 +474,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         -
                       </button>
                       <span className="px-4 py-1.5 font-bold text-xs text-stone-900 bg-white">
-                        {quantity} ({quantity * product.bundleSize} pcs)
+                        {quantity} ({quantity * (product.bundleSize || 100)} pcs)
                       </span>
                       <button 
                         type="button"
@@ -471,8 +487,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
 
-                {/* Checkout Form or Login Prompt */}
-                {!currentUser ? (
+                {/* Checkout Form or Unavailable Notification */}
+                {product.is_available === false ? (
+                  <div className="mt-6 p-8 bg-rose-50/70 rounded-3xl border border-rose-200 text-center">
+                    <ShieldCheck size={32} className="text-rose-400 mx-auto mb-3" />
+                    <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Product Currently Unavailable</h3>
+                    <p className="text-sm text-stone-600 mb-6">
+                      This paper bag model is currently unavailable for order. Please browse other active items in our catalog.
+                    </p>
+                    <button
+                      disabled
+                      className="w-full py-4 rounded-full bg-stone-300 text-stone-500 text-xs font-bold tracking-wider uppercase cursor-not-allowed shadow-none"
+                    >
+                      Product Currently Unavailable
+                    </button>
+                  </div>
+                ) : !currentUser ? (
                   <div className="mt-6 p-8 bg-stone-100 rounded-3xl border border-stone-200 text-center">
                     <ShieldCheck size={32} className="text-stone-400 mx-auto mb-3" />
                     <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Sign in to Request Custom Bags</h3>
@@ -637,7 +667,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     <button
                       type="submit"
                       disabled={isSubmitting || !uploadedFile}
-                      className="w-full py-4 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full py-4 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (
                         <>

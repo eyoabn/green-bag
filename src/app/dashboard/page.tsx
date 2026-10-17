@@ -88,6 +88,8 @@ function CustomerDashboardContent() {
   // Profile edit state
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileNotice, setProfileNotice] = useState<string | null>(null);
 
@@ -115,6 +117,7 @@ function CustomerDashboardContent() {
       setCurrentUser(combinedUser);
       setFullName(combinedUser.full_name || "");
       setPhone(combinedUser.phone || "");
+      setAvatarUrl(combinedUser.avatar_url || "");
 
       // 1. Fetch own orders
       const ordersRes = await fetch("/api/orders");
@@ -150,6 +153,36 @@ function CustomerDashboardContent() {
     loadAllData();
   }, [urlTab]);
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    setProfileNotice(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("bucket", "avatars");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to upload avatar.");
+      }
+
+      setAvatarUrl(data.url);
+      setProfileNotice("Avatar uploaded! Save profile to finalize.");
+    } catch (err: any) {
+      alert(err.message || "Failed to upload avatar.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
@@ -157,19 +190,28 @@ function CustomerDashboardContent() {
     setProfileNotice(null);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: fullName.trim(),
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
           phone: phone.trim(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", currentUser.id);
+          avatarUrl,
+        }),
+      });
 
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to update profile.");
+      }
+
       setProfileNotice("Profile updated successfully!");
-      setCurrentUser((prev: any) => ({ ...prev, full_name: fullName.trim(), phone: phone.trim() }));
+      setCurrentUser((prev: any) => ({
+        ...prev,
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+        avatar_url: avatarUrl,
+      }));
     } catch (err: any) {
       alert(err.message || "Failed to update profile.");
     } finally {
@@ -596,6 +638,32 @@ function CustomerDashboardContent() {
                 )}
 
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  {/* Avatar Upload */}
+                  <div className="flex items-center gap-4 pb-4 border-b border-stone-100">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400 shrink-0">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Profile Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={28} />
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-stone-800 block mb-1">
+                        Profile Avatar
+                      </label>
+                      <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-stone-300 text-stone-700 hover:bg-stone-50 text-[11px] font-semibold transition-colors">
+                        <span>{uploadingAvatar ? "Uploading..." : "Upload New Photo"}</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={handleAvatarUpload}
+                          disabled={uploadingAvatar}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
                       Account Email

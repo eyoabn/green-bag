@@ -14,7 +14,9 @@ import {
   ArrowRight, 
   Sparkles, 
   BookOpen,
-  AlertCircle
+  AlertCircle,
+  User,
+  LogOut
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -169,7 +171,14 @@ export default function TeacherDashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/profile"
+              className="px-4 py-2.5 rounded-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <User size={13} />
+              <span>My Profile</span>
+            </Link>
             <Link
               href="/learn/schedule"
               className="px-5 py-2.5 rounded-full bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
@@ -177,6 +186,18 @@ export default function TeacherDashboardPage() {
               <span>Public Workshop Catalog</span>
               <ArrowRight size={13} />
             </Link>
+            <button
+              onClick={async () => {
+                const supabase = createClient();
+                await supabase.auth.signOut();
+                await fetch("/api/auth/logout", { method: "POST" });
+                router.push("/login");
+              }}
+              className="px-4 py-2.5 rounded-full bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold transition-all border border-red-200 flex items-center gap-1.5 cursor-pointer"
+            >
+              <LogOut size={13} />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
 

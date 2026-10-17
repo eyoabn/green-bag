@@ -10,15 +10,19 @@ import {
   Menu, 
   X, 
   ArrowRight, 
-  Award
+  Award,
+  User,
+  LogOut,
+  ChevronDown
 } from "lucide-react";
-import { getCurrentUser, AppUser } from "@/utils/auth";
+import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import { useCurrency } from "@/components/CurrencyContext";
 import NotificationBell from "@/components/NotificationBell";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { currency, setCurrency } = useCurrency();
   const [user, setUser] = useState<AppUser | null>(null);
 
@@ -106,40 +110,97 @@ export default function Navbar() {
             {/* Notification Bell for logged-in user */}
             {user && <NotificationBell />}
 
-            {/* Role-Based Account Link */}
+            {/* Role-Based Account & User Menu */}
             {user ? (
-              user.role === "admin" ? (
-                <Link
-                  href="/admin"
-                  className="text-xs font-semibold text-red-950 px-3.5 py-1.5 rounded-full bg-red-100 hover:bg-red-200 transition-colors flex items-center gap-1.5 border border-red-200"
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-stone-200/60 hover:bg-stone-200 border border-stone-300/50 text-xs font-semibold text-stone-800 transition-colors cursor-pointer"
                 >
-                  <Award size={13} className="text-red-700" />
-                  <span>Admin Panel</span>
-                </Link>
-              ) : user.role === "teacher" ? (
-                <Link
-                  href="/teacher"
-                  className="text-xs font-semibold text-amber-950 px-3.5 py-1.5 rounded-full bg-amber-100/70 hover:bg-amber-200 transition-colors flex items-center gap-1.5 border border-amber-200"
-                >
-                  <BookOpen size={13} className="text-[#8C4B31]" />
-                  <span>Teacher Portal</span>
-                </Link>
-              ) : (
-                <Link
-                  href="/dashboard"
-                  className="text-xs font-semibold text-stone-800 hover:text-[#1E3B2E] px-3.5 py-1.5 rounded-full bg-stone-200/60 hover:bg-stone-200 transition-colors flex items-center gap-1.5 border border-stone-300/50"
-                >
-                  <ShoppingBag size={13} className="text-[#1E3B2E]" />
-                  <span>My Dashboard</span>
-                </Link>
-              )
+                  <div className="w-6 h-6 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center text-[10px] font-bold overflow-hidden">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+                    ) : (
+                      user.full_name?.charAt(0) || "U"
+                    )}
+                  </div>
+                  <span className="max-w-[100px] truncate">{user.full_name}</span>
+                  <span className="text-[9px] uppercase px-1.5 py-0.2 rounded-full font-bold bg-[#1E3B2E]/10 text-[#1E3B2E]">
+                    {user.role}
+                  </span>
+                  <ChevronDown size={13} className={`text-stone-500 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-stone-200 p-2 text-xs flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-top-1">
+                    <div className="px-3 py-2 border-b border-stone-100 flex flex-col">
+                      <span className="font-bold text-stone-900 truncate">{user.full_name}</span>
+                      <span className="text-[10px] text-stone-400 truncate font-mono">{user.email}</span>
+                      <span className="inline-block mt-1 text-[9px] uppercase font-bold text-stone-500">
+                        Access: <span className="text-[#8C4B31]">{user.role}</span>
+                      </span>
+                    </div>
+
+                    <Link
+                      href={user.role === "admin" ? "/admin" : user.role === "teacher" ? "/teacher" : "/dashboard"}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-stone-700 hover:bg-[#FAF7F2] font-semibold transition-colors"
+                    >
+                      {user.role === "admin" ? (
+                        <Award size={14} className="text-red-700" />
+                      ) : user.role === "teacher" ? (
+                        <BookOpen size={14} className="text-[#8C4B31]" />
+                      ) : (
+                        <ShoppingBag size={14} className="text-[#1E3B2E]" />
+                      )}
+                      <span>
+                        {user.role === "admin" ? "Admin Panel" : user.role === "teacher" ? "Teacher Portal" : "My Dashboard"}
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-stone-700 hover:bg-[#FAF7F2] font-semibold transition-colors"
+                    >
+                      <User size={14} className="text-stone-500" />
+                      <span>Edit Profile</span>
+                    </Link>
+
+                    <div className="border-t border-stone-100 my-0.5" />
+
+                    <button
+                      onClick={async () => {
+                        setUserMenuOpen(false);
+                        await fetch("/api/auth/logout", { method: "POST" });
+                        setLocalUser(null);
+                        setUser(null);
+                        window.location.href = "/login";
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 font-semibold transition-colors w-full text-left cursor-pointer"
+                    >
+                      <LogOut size={14} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
-              <Link
-                href="/login"
-                className="text-xs font-semibold text-stone-700 hover:text-[#1E3B2E] px-3 py-1.5 rounded-full hover:bg-stone-200/40 transition-colors"
-              >
-                Log In
-              </Link>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href="/login"
+                  className="text-xs font-semibold text-stone-700 hover:text-[#1E3B2E] px-3 py-1.5 rounded-full hover:bg-stone-200/40 transition-colors"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="text-xs font-semibold text-[#8C4B31] hover:text-[#8C4B31]/80 px-3 py-1.5 rounded-full bg-[#8C4B31]/10 hover:bg-[#8C4B31]/20 transition-colors"
+                >
+                  Sign Up
+                </Link>
+              </div>
             )}
 
             {/* Primary CTA */}
@@ -185,54 +246,67 @@ export default function Navbar() {
               ))}
             </div>
 
-            <div className="flex items-center justify-between pt-1">
-              {user ? (
-                user.role === "admin" ? (
+            {user ? (
+              <div className="flex flex-col gap-2 pt-1 border-b border-stone-200 pb-3">
+                <div className="px-2 py-1 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-stone-900 block">{user.full_name}</span>
+                    <span className="text-[10px] text-stone-500">{user.email}</span>
+                  </div>
+                  <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#1E3B2E] text-white">
+                    {user.role}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-1">
                   <Link
-                    href="/admin"
+                    href={user.role === "admin" ? "/admin" : user.role === "teacher" ? "/teacher" : "/dashboard"}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold text-red-950 px-4 py-2 rounded-xl bg-red-100 hover:bg-red-200 flex items-center gap-1.5"
+                    className="text-xs font-bold text-center py-2 px-3 rounded-xl bg-stone-200/60 hover:bg-stone-200 text-stone-800"
                   >
-                    <Award size={13} className="text-red-700" />
-                    <span>Admin Panel</span>
-                  </Link>
-                ) : user.role === "teacher" ? (
-                  <Link
-                    href="/teacher"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold text-amber-950 px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 flex items-center gap-1.5"
-                  >
-                    <BookOpen size={13} className="text-[#8C4B31]" />
-                    <span>Teacher Portal</span>
-                  </Link>
-                ) : (
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold text-[#1E3B2E] px-4 py-2 rounded-xl bg-stone-200/60 hover:bg-stone-200 flex items-center gap-1.5"
-                  >
-                    <ShoppingBag size={13} className="text-[#1E3B2E]" />
-                    <span>My Dashboard ({user.full_name.split(" ")[0]})</span>
-                  </Link>
-                )
-              ) : (
-                <div className="flex gap-2">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold text-stone-800 px-4 py-2 rounded-xl bg-stone-200/60 hover:bg-stone-200"
-                  >
-                    Log In
+                    Portal Home
                   </Link>
                   <Link
-                    href="/signup"
+                    href="/profile"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold text-[#8C4B31] px-4 py-2 rounded-xl bg-[#8C4B31]/10 hover:bg-[#8C4B31]/20"
+                    className="text-xs font-bold text-center py-2 px-3 rounded-xl bg-stone-200/60 hover:bg-stone-200 text-stone-800"
                   >
-                    Register
+                    My Profile
                   </Link>
                 </div>
-              )}
+
+                <button
+                  onClick={async () => {
+                    setMobileMenuOpen(false);
+                    await fetch("/api/auth/logout", { method: "POST" });
+                    setLocalUser(null);
+                    setUser(null);
+                    window.location.href = "/login";
+                  }}
+                  className="text-xs font-bold text-red-600 py-2 px-3 rounded-xl hover:bg-red-50 text-left flex items-center gap-2 cursor-pointer mt-1"
+                >
+                  <LogOut size={13} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2 pt-1">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-xs font-bold text-stone-800 px-4 py-2 rounded-xl bg-stone-200/60 hover:bg-stone-200 flex-1 text-center"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-xs font-bold text-[#8C4B31] px-4 py-2 rounded-xl bg-[#8C4B31]/10 hover:bg-[#8C4B31]/20 flex-1 text-center"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
 
               <Link
                 href="/products"

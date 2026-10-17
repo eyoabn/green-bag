@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided." }, { status: 400 });
     }
 
-    if (!["product-images", "payment-proofs", "designs"].includes(bucket)) {
+    if (!["product-images", "payment-proofs", "designs", "avatars"].includes(bucket)) {
       return NextResponse.json({ error: "Invalid target storage bucket." }, { status: 400 });
     }
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       throw uploadError;
     }
 
-    if (bucket === "product-images") {
+    if (bucket === "product-images" || bucket === "avatars") {
       const { data: publicData } = supabase.storage
         .from(bucket)
         .getPublicUrl(filePath);

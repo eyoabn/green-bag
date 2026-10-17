@@ -19,7 +19,8 @@ import {
   ArrowRight,
   GraduationCap,
   CheckCircle2,
-  Settings
+  Settings,
+  User
 } from "lucide-react";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import { createClient } from "@/utils/supabase/client";
@@ -246,6 +247,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               Admin
             </span>
           </div>
+
+          <Link
+            href="/profile"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-100 transition-colors"
+          >
+            <User size={14} />
+            <span>My Profile & Settings</span>
+          </Link>
 
           <Link
             href="/"

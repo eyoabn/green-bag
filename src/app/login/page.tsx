@@ -158,13 +158,12 @@ function LoginFormContent() {
               <label className="block font-bold text-stone-700 uppercase tracking-wider">
                 Password
               </label>
-              <button 
-                type="button" 
-                onClick={() => alert("Password reset instructions have been logged to your account.")} 
+              <Link
+                href="/forgot-password"
                 className="text-[11px] text-[#8C4B31] font-semibold hover:underline"
               >
                 Forgot password?
-              </button>
+              </Link>
             </div>
             <input 
               type="password" 

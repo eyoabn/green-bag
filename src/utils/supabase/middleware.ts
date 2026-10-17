@@ -53,10 +53,17 @@ export async function updateSession(request: NextRequest) {
     // 1. Deactivated user protection
     if (user && !isActive) {
       if (pathname.startsWith('/dashboard') || pathname.startsWith('/teacher') || pathname.startsWith('/admin')) {
+        await supabase.auth.signOut();
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         url.searchParams.set('error', 'deactivated')
-        return NextResponse.redirect(url)
+        const redirectRes = NextResponse.redirect(url)
+        request.cookies.getAll().forEach((cookie) => {
+          if (cookie.name.includes('supabase') || cookie.name.includes('sb-')) {
+            redirectRes.cookies.delete(cookie.name)
+          }
+        })
+        return redirectRes
       }
     }
 

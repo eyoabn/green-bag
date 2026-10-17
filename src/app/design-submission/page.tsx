@@ -226,8 +226,6 @@ export default function DesignSubmissionPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const supabase = createClient();
-      
       // 1. Get the current user
       const user = await getCurrentUser();
       if (!user) {
@@ -236,19 +234,26 @@ export default function DesignSubmissionPage() {
         return;
       }
 
-      // 2. Ensure profile exists in profiles table
-      try {
-        await supabase.from("profiles").upsert({
-          id: user.id,
-          full_name: companyName || user.full_name,
-          phone: contactPhone || user.phone || "",
-          role: user.role || "customer"
+      // 2. Upload artwork file to 'designs' bucket if provided
+      let finalFilePath = `custom-specs/${user.id}_${Date.now()}.json`;
+
+      if (dielineFile) {
+        const formData = new FormData();
+        formData.append("file", dielineFile);
+        formData.append("bucket", "designs");
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
         });
-      } catch (profErr) {
-        console.warn("Profile sync warning:", profErr);
+
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || !uploadData.filePath) {
+          throw new Error(uploadData.error || "Failed to upload dieline artwork.");
+        }
+        finalFilePath = uploadData.filePath;
       }
 
-      let submittedId = "";
       const notePayload = JSON.stringify({
         clientCompany: companyName || user.full_name || "Bespoke Ethiopian Client",
         clientContact: `${contactEmail || user.email} • ${contactPhone || user.phone || "0911000000"}`,
@@ -257,41 +262,27 @@ export default function DesignSubmissionPage() {
         paperShade: bagColorName,
         quantity: quantity,
         handleType: `${handleType} Handle`,
-        notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}.` : "Uploaded bespoke dieline artwork."),
+        estimatedUnitPrice: estUnitPrice,
         totalEstEtb: totalEstEtb,
+        notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}.` : "Uploaded bespoke dieline artwork."),
       });
 
-      // 3. Try Supabase insert
-      try {
-        const { data, error } = await supabase.from("designs").insert({
-          submitted_by: user.id,
-          file_url: dielineFile?.name || (activeMode === "design" ? "Vector_Generated_Spec.pdf" : "Custom_Dieline.ai"),
-          note: notePayload,
-          status: "new"
-        }).select().single();
+      // 3. Post to real PostgreSQL /api/designs endpoint
+      const res = await fetch("/api/designs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filePath: finalFilePath,
+          description: notePayload,
+        }),
+      });
 
-        if (data?.id) {
-          submittedId = data.id;
-        }
-      } catch (dbErr) {
-        console.warn("Supabase design insert notice:", dbErr);
+      const resData = await res.json();
+      if (!res.ok || !resData.design) {
+        throw new Error(resData.error || "Failed to submit custom design.");
       }
 
-      // 4. Always save to DataStore
-      const localDesign = DataStore.addDesign({
-        clientName: user.full_name || companyName || "Valued Client",
-        clientCompany: companyName || user.full_name || "Bespoke Ethiopian Client",
-        clientContact: `${contactEmail || user.email} • ${contactPhone || user.phone || "0911000000"}`,
-        dimensions: `${bagWidth} × ${bagHeight} + ${bagGusset} cm`,
-        paperWeight: `${paperWeight} GSM Kraft`,
-        paperShade: bagColorName,
-        quantity: quantity,
-        handleType: `${handleType} Handle`,
-        fileName: dielineFile?.name || (activeMode === "design" ? "Vector_Generated_Spec.pdf" : "Custom_Dieline.ai"),
-        notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}. Unit: ${estUnitPrice} ETB. Total: ${totalEstEtb} ETB.` : `Uploaded bespoke dieline. Unit: ${estUnitPrice} ETB. Total: ${totalEstEtb} ETB.`),
-      });
-
-      setSubmittedRef(submittedId || localDesign.id);
+      setSubmittedRef(resData.design.id);
     } catch (err: any) {
       console.error("Failed to submit design:", err);
       alert(err.message || "Failed to submit design");

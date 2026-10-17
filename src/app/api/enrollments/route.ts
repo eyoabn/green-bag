@@ -108,11 +108,12 @@ export async function POST(request: NextRequest) {
         .eq("role", "admin");
 
       if (admins && admins.length > 0) {
-        const title = enrollment?.class_sessions?.title || "Workshop";
+        const sessionInfo: any = Array.isArray(enrollment?.class_sessions) ? enrollment?.class_sessions[0] : enrollment?.class_sessions;
+        const title = sessionInfo?.title || "Workshop";
         const notices = admins.map(a => ({
           user_id: a.id,
           title: `Class Enrollment Payment to Verify`,
-          body: `${user.full_name} submitted payment receipt for "${title}".`,
+          message: `${user.full_name} submitted payment receipt for "${title}".`,
           link: `/admin/payments?tab=enrollments`,
         }));
         await supabase.from("notifications").insert(notices);

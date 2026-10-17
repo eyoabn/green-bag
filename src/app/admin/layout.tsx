@@ -114,17 +114,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <p className="text-xs text-stone-400 leading-relaxed mb-6">
             You are currently signed in as <strong className="text-white">{currentUser.full_name}</strong> with the account role{" "}
             <span className="inline-block px-2 py-0.5 rounded bg-stone-800 text-stone-200 uppercase font-bold text-[10px]">
-              {currentUser.role === "student" ? "Academy Student" : "Packaging Buyer"}
+              {currentUser.role === "teacher" ? "Guild Teacher" : "Customer Buyer"}
             </span>.
             Access to manufacturing queues, user accounts, and factory controls is restricted to verified Plant Administrators.
           </p>
 
           <div className="space-y-3">
             <Link
-              href={currentUser.role === "student" ? "/dashboard?tab=classes" : "/dashboard?tab=orders"}
+              href={currentUser.role === "teacher" ? "/teacher" : "/dashboard?tab=orders"}
               className="w-full py-3.5 px-4 rounded-2xl bg-[#1E3B2E] hover:bg-[#8C4B31] text-[#E0B382] hover:text-white font-bold text-xs tracking-wide transition-all shadow-lg flex items-center justify-center gap-2"
             >
-              <span>Go to My {currentUser.role === "student" ? "Student Academy" : "Customer Portal"}</span>
+              <span>Go to My {currentUser.role === "teacher" ? "Teacher Portal" : "Customer Portal"}</span>
               <ArrowRight size={15} />
             </Link>
 

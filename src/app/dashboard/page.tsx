@@ -7,187 +7,137 @@ import {
   ShoppingBag, 
   BookOpen, 
   Package, 
-  Sparkles,
-  ArrowRight,
-  Upload,
-  CheckCircle2,
-  Clock,
-  MapPin,
-  Camera,
-  LogOut
+  Sparkles, 
+  ArrowRight, 
+  CheckCircle2, 
+  Clock, 
+  MapPin, 
+  User, 
+  LogOut, 
+  AlertCircle, 
+  Video, 
+  ExternalLink,
+  PenTool,
+  Check,
+  X
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { getCurrentUser, setLocalUser } from "@/utils/auth";
-import { DataStore } from "@/utils/dataStore";
+
+interface OrderItem {
+  id: string;
+  order_number: string;
+  total_price: number;
+  status: string;
+  delivery_address: string;
+  phone: string;
+  payment_proof_path?: string;
+  rejection_reason?: string;
+  created_at: string;
+  order_items?: Array<{
+    id: string;
+    quantity: number;
+    unit_price_snapshot: number;
+    products?: {
+      name: string;
+      category?: string;
+    };
+  }>;
+}
+
+interface EnrollmentItem {
+  id: string;
+  status: string;
+  attended: boolean;
+  payment_proof_path?: string;
+  rejection_reason?: string;
+  created_at: string;
+  class_sessions?: {
+    id: string;
+    title: string;
+    type: "in_person" | "live";
+    starts_at: string;
+    ends_at: string;
+    location: string;
+    price: number;
+    status: string;
+    livekit_room_name?: string;
+  };
+}
+
+interface DesignItem {
+  id: string;
+  file_path: string;
+  description: string;
+  quoted_price: number | null;
+  status: "submitted" | "reviewing" | "quoted" | "accepted" | "declined";
+  created_at: string;
+}
 
 function CustomerDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlTab = searchParams.get("tab") as "orders" | "classes" | "designs" | null;
-  const [activeTab, setActiveTab] = useState<"orders" | "classes" | "designs">(urlTab || "orders");
-  
-  const [designs, setDesigns] = useState<any[]>([]);
-  const [customerName, setCustomerName] = useState("Valued Customer");
+  const urlTab = searchParams.get("tab") as "orders" | "classes" | "designs" | "profile" | null;
+  const [activeTab, setActiveTab] = useState<"orders" | "classes" | "designs" | "profile">(urlTab || "orders");
+
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [enrollments, setEnrollments] = useState<EnrollmentItem[]>([]);
+  const [designs, setDesigns] = useState<DesignItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploadingPaymentId, setUploadingPaymentId] = useState<string | null>(null);
-  const [paymentUrl, setPaymentUrl] = useState("");
-  const [orders, setOrders] = useState<any[]>([]);
-  const [registrations, setRegistrations] = useState<any[]>([]);
 
-  const supabase = createClient();
+  // Profile edit state
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [profileNotice, setProfileNotice] = useState<string | null>(null);
 
-  const loadData = async () => {
+  // Design quotation action
+  const [designActionId, setDesignActionId] = useState<string | null>(null);
+
+  const loadAllData = async () => {
+    setLoading(true);
+    const supabase = createClient();
+
     try {
-      const user = await getCurrentUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push("/login?returnTo=/dashboard");
         return;
       }
 
-      setCustomerName(user.full_name || user.email.split('@')[0] || "Valued Customer");
-      
-      // 1. Fetch designs from Supabase
-      let dbDesigns: any[] = [];
-      try {
-        const { data } = await supabase
-          .from("designs")
-          .select("*")
-          .eq("submitted_by", user.id)
-          .order("created_at", { ascending: false });
-        if (data) dbDesigns = data;
-      } catch (err) {}
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
 
-      // 2. Fetch designs from local DataStore
-      const localDesigns = DataStore.getDesigns().map((d) => ({
-        id: d.id,
-        submitted_by: user.id,
-        file_url: d.fileName,
-        note: JSON.stringify({
-          clientCompany: d.clientCompany,
-          clientContact: d.clientContact,
-          dimensions: d.dimensions,
-          paperWeight: d.paperWeight,
-          paperShade: d.paperShade,
-          quantity: d.quantity,
-          handleType: d.handleType,
-          notes: d.notes,
-        }),
-        status: d.status === "reviewing" ? "engineering_review" : d.status === "proof_ready" ? "approved_pending_payment" : d.status,
-        created_at: d.submittedDate,
-      }));
+      const combinedUser = { ...user, ...profile };
+      setCurrentUser(combinedUser);
+      setFullName(combinedUser.full_name || "");
+      setPhone(combinedUser.phone || "");
 
-      // Merge and deduplicate designs
-      const seenDesignIds = new Set();
-      const combinedDesigns: any[] = [];
-      for (const d of [...dbDesigns, ...localDesigns]) {
-        if (!seenDesignIds.has(d.id)) {
-          seenDesignIds.add(d.id);
-          combinedDesigns.push(d);
-        }
+      // 1. Fetch own orders
+      const ordersRes = await fetch("/api/orders");
+      const ordersData = await ordersRes.json();
+      if (ordersRes.ok && ordersData.orders) {
+        setOrders(ordersData.orders);
       }
-      setDesigns(combinedDesigns);
 
-      // 3. Fetch retail orders from Supabase
-      let dbOrders: any[] = [];
-      try {
-        const { data } = await supabase
-          .from("orders")
-          .select("*, products(name)")
-          .eq("buyer_id", user.id)
-          .order("created_at", { ascending: false });
-        if (data) {
-          dbOrders = data.map((o: any) => ({
-            id: o.id,
-            product_id: o.product_id,
-            productName: o.products?.name || "Premium Bag Bundle",
-            quantity: o.quantity,
-            total_price: o.total_price,
-            status: o.status,
-            payment_screenshot_url: o.payment_screenshot_url,
-            created_at: o.created_at,
-          }));
-        }
-      } catch (err) {}
-
-      // 4. Fetch retail orders from local DataStore
-      const localOrders = DataStore.getOrders()
-        .filter((o) => !o.customerEmail || o.customerEmail === user.email || !user.email)
-        .map((o) => ({
-          id: o.id,
-          product_id: o.productId,
-          productName: o.productName,
-          quantity: o.quantityBundles,
-          total_price: o.totalEtb,
-          status: o.status,
-          payment_screenshot_url: o.receiptUrl,
-          created_at: o.timestamp,
-        }));
-
-      // Merge and deduplicate orders
-      const seenOrderIds = new Set();
-      const combinedOrders: any[] = [];
-      for (const o of [...dbOrders, ...localOrders]) {
-        if (!seenOrderIds.has(o.id)) {
-          seenOrderIds.add(o.id);
-          combinedOrders.push(o);
-        }
+      // 2. Fetch own enrollments
+      const enrRes = await fetch("/api/enrollments");
+      const enrData = await enrRes.json();
+      if (enrRes.ok && enrData.enrollments) {
+        setEnrollments(enrData.enrollments);
       }
-      setOrders(combinedOrders);
 
-      // 5. Fetch workshop registrations from Supabase
-      let dbRegistrations: any[] = [];
-      try {
-        const { data } = await supabase
-          .from("session_registrations")
-          .select("*, class_sessions(*)")
-          .eq("student_id", user.id)
-          .order("created_at", { ascending: false });
-        if (data) {
-          dbRegistrations = data.map((r: any) => ({
-            id: r.id,
-            sessionId: r.session_id,
-            sessionTitle: r.class_sessions?.title || "Craft Academy Masterclass",
-            sessionType: r.class_sessions?.type || "live",
-            sessionDate: r.class_sessions?.start_time ? new Date(r.class_sessions.start_time).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Upcoming",
-            sessionTime: r.class_sessions?.start_time ? new Date(r.class_sessions.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "2:00 PM",
-            location: r.class_sessions?.location || "LiveKit Interactive Classroom",
-            livekitRoom: r.class_sessions?.livekit_room_name,
-            status: r.status,
-            priceEtb: r.class_sessions?.price || 300,
-            receiptUrl: r.payment_screenshot_url,
-          }));
-        }
-      } catch (err) {}
-
-      // 6. Fetch workshop registrations from local DataStore
-      const localRegs = DataStore.getRegistrations()
-        .filter((r) => !r.studentEmail || r.studentEmail === user.email || r.studentId === user.id)
-        .map((r) => ({
-          id: r.id,
-          sessionId: r.sessionId,
-          sessionTitle: r.sessionTitle,
-          sessionType: r.sessionType,
-          sessionDate: r.sessionDate,
-          sessionTime: r.sessionTime,
-          location: r.location,
-          status: r.status,
-          priceEtb: r.priceEtb,
-          receiptUrl: r.receiptUrl,
-        }));
-
-      // Merge and deduplicate registrations
-      const seenRegIds = new Set();
-      const combinedRegs: any[] = [];
-      for (const r of [...dbRegistrations, ...localRegs]) {
-        if (!seenRegIds.has(r.id)) {
-          seenRegIds.add(r.id);
-          combinedRegs.push(r);
-        }
+      // 3. Fetch own custom designs
+      const desRes = await fetch("/api/designs");
+      const desData = await desRes.json();
+      if (desRes.ok && desData.designs) {
+        setDesigns(desData.designs);
       }
-      setRegistrations(combinedRegs);
-
-    } catch (e) {
-      console.error("Dashboard loadData error:", e);
+    } catch (err: any) {
+      console.error("Dashboard data load error:", err);
     } finally {
       setLoading(false);
     }
@@ -197,434 +147,539 @@ function CustomerDashboardContent() {
     if (urlTab) {
       setActiveTab(urlTab);
     }
-    loadData();
-
-    const handleUpdate = () => loadData();
-    window.addEventListener("arenguade_datastore_change", handleUpdate);
-    window.addEventListener("arenguade_auth_change", handleUpdate);
-    return () => {
-      window.removeEventListener("arenguade_datastore_change", handleUpdate);
-      window.removeEventListener("arenguade_auth_change", handleUpdate);
-    };
+    loadAllData();
   }, [urlTab]);
 
-  const submitPaymentScreenshot = async (designId: string) => {
-    if (!paymentUrl) return alert("Please enter a screenshot URL or file");
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    setIsUpdatingProfile(true);
+    setProfileNotice(null);
+
     try {
-      try {
-        await supabase
-          .from("designs")
-          .update({ 
-            payment_screenshot_url: paymentUrl,
-            status: "payment_review" 
-          })
-          .eq("id", designId);
-      } catch {}
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: fullName.trim(),
+          phone: phone.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", currentUser.id);
 
-      DataStore.updateDesignStatus(designId, "approved");
-        
-      alert("Payment screenshot submitted! Factory staff will verify within 2-4 hours.");
-      setPaymentUrl("");
-      setUploadingPaymentId(null);
-      loadData();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Submission failed";
-      alert("Error: " + msg);
-    }
-  };
-
-  const getWorkflowStep = (status: string) => {
-    switch (status) {
-      case "new":
-      case "submitted":
-        return 0;
-      case "reviewing":
-      case "engineering_review":
-        return 1;
-      case "proof_ready":
-      case "approved_pending_payment":
-        return 2;
-      case "payment_review":
-        return 3;
-      case "approved":
-      case "in_production":
-        return 4;
-      case "delivered":
-      case "shipped":
-      case "completed":
-        return 5;
-      default:
-        return 0;
+      if (error) throw error;
+      setProfileNotice("Profile updated successfully!");
+      setCurrentUser((prev: any) => ({ ...prev, full_name: fullName.trim(), phone: phone.trim() }));
+    } catch (err: any) {
+      alert(err.message || "Failed to update profile.");
+    } finally {
+      setIsUpdatingProfile(false);
     }
   };
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
-    } catch {}
-    setLocalUser(null);
-    router.push("/login");
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } catch {
+      router.push("/login");
+    }
+  };
+
+  const handleRespondToQuote = async (designId: string, action: "accept" | "decline") => {
+    setDesignActionId(designId);
+    try {
+      const res = await fetch(`/api/designs/${designId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to respond to quotation.");
+
+      setDesigns((prev) =>
+        prev.map((d) => (d.id === designId ? { ...d, status: action === "accept" ? "accepted" : "declined" } : d))
+      );
+      alert(action === "accept" ? "Quotation accepted! Plant management will schedule factory production." : "Quotation declined.");
+    } catch (err: any) {
+      alert(err.message || "Failed to respond to quotation.");
+    } finally {
+      setDesignActionId(null);
+    }
+  };
+
+  const getOrderStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Pending Verification</span>;
+      case "payment_uploaded":
+        return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Proof Uploaded</span>;
+      case "verified":
+        return <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Payment Verified</span>;
+      case "in_production":
+        return <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-[10px] font-bold uppercase">In Production</span>;
+      case "ready":
+      case "shipped":
+        return <span className="bg-cyan-100 text-cyan-800 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Dispatched</span>;
+      case "delivered":
+        return <span className="bg-emerald-200 text-emerald-900 px-3 py-1 rounded-full text-[10px] font-bold uppercase font-extrabold">Delivered</span>;
+      case "rejected":
+        return <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Payment Rejected</span>;
+      default:
+        return <span className="bg-stone-100 text-stone-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase">{status}</span>;
+    }
   };
 
   return (
-    <div className="flex flex-col max-w-6xl mx-auto space-y-8 pb-12 pt-8">
-      
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#1E3B2E] via-[#244737] to-[#1E3B2E] text-white p-8 rounded-3xl border border-stone-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-semibold mb-3">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            Verified Customer & Student Portal
+    <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full">
+        
+        {/* Dashboard Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1E3B2E]/10 border border-[#1E3B2E]/20 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider mb-2">
+              <User size={13} />
+              <span>Customer Account Portal</span>
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900">
+              Welcome, {currentUser?.full_name || "Valued Client"}
+            </h1>
+            <p className="text-stone-600 text-xs sm:text-sm mt-1">
+              Track retail batch orders, join your live craft workshops, and review bespoke custom packaging quotes.
+            </p>
           </div>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold">
-            Welcome back, {customerName}!
-          </h1>
-          <p className="text-sm text-stone-300 mt-1 max-w-lg">
-            Track your custom Ethiopian kraft bag manufacturing batches, view verified CBE / Telebirr payments, and access your live LiveKit masterclasses.
-          </p>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/products"
+              className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-6 py-2.5 rounded-full transition-colors flex items-center gap-1.5 shadow-sm"
+            >
+              <ShoppingBag size={14} />
+              <span>Order Packaging</span>
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-bold px-4 py-2.5 rounded-full transition-colors flex items-center gap-1.5 shadow-sm"
+            >
+              <LogOut size={14} />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSignOut}
-            className="bg-stone-800 hover:bg-stone-900 text-stone-200 text-xs font-bold px-4 py-3 rounded-full transition-all shadow-md flex items-center gap-1.5"
-          >
-            <LogOut size={15} />
-            <span className="hidden sm:inline">Sign Out</span>
-          </button>
-          <Link
-            href="/design-submission"
-            className="bg-[#8C4B31] hover:bg-[#A3593B] text-white text-xs font-bold px-5 py-3 rounded-full transition-all shadow-md flex items-center gap-1.5"
-          >
-            <Sparkles size={15} />
-            <span>New Custom Design</span>
-          </Link>
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 border-b border-stone-200">
+          {[
+            { id: "orders", label: `Retail Orders (${orders.length})`, icon: ShoppingBag },
+            { id: "classes", label: `Craft Workshops (${enrollments.length})`, icon: BookOpen },
+            { id: "designs", label: `Bespoke Designs (${designs.length})`, icon: PenTool },
+            { id: "profile", label: "Profile & Settings", icon: User },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-5 py-3 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+                  isActive
+                    ? "bg-[#1E3B2E] text-white shadow-sm"
+                    : "bg-white text-stone-700 hover:bg-stone-100 border border-stone-200"
+                }`}
+              >
+                <Icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Tab Navigation */}
-      <div className="flex items-center gap-2 border-b border-stone-200 pb-2">
-        {[
-          { id: "orders", label: "My Orders & Receipts", count: orders.length },
-          { id: "classes", label: "My Academy Workshops", count: registrations.length },
-          { id: "designs", label: "Custom 3D Designs & Map", count: designs.length },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-              activeTab === tab.id
-                ? "bg-[#1E3B2E] text-white shadow-sm"
-                : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
-            }`}
-          >
-            <span>{tab.label}</span>
-            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === tab.id ? "bg-white/20 text-white" : "bg-stone-200 text-stone-700"}`}>
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </div>
+        {/* Content Tabs */}
+        {loading ? (
+          <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center">
+            <Sparkles size={28} className="animate-spin text-[#1E3B2E] mx-auto mb-3" />
+            <p className="text-xs font-semibold text-stone-700">Loading your account data securely from Supabase...</p>
+          </div>
+        ) : (
+          <div>
+            
+            {/* Tab 1: Orders */}
+            {activeTab === "orders" && (
+              <div className="space-y-4">
+                {orders.length === 0 ? (
+                  <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center space-y-3">
+                    <Package size={36} className="text-stone-400 mx-auto" />
+                    <h3 className="font-serif text-xl font-bold text-stone-800">No Orders Placed Yet</h3>
+                    <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                      Explore our 2026 packaging catalog and order high-tensile kraft shopping bags.
+                    </p>
+                    <Link
+                      href="/products"
+                      className="inline-block bg-[#1E3B2E] text-white text-xs font-bold px-6 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"
+                    >
+                      Browse Catalog
+                    </Link>
+                  </div>
+                ) : (
+                  orders.map((order) => {
+                    const firstItem = order.order_items && order.order_items[0];
+                    const itemCount = order.order_items?.length || 1;
+                    return (
+                      <div
+                        key={order.id}
+                        className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="font-mono text-xs font-bold text-stone-900">
+                              Order #{order.order_number || order.id.substring(0, 8)}
+                            </span>
+                            {getOrderStatusBadge(order.status)}
+                            <span className="text-[11px] text-stone-400 font-mono">
+                              {new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </span>
+                          </div>
 
-      {loading ? (
-        <div className="text-center text-stone-500 py-12">Loading data securely from Supabase...</div>
-      ) : (
-        <>
-          {/* Tab Content: DESIGNS (Main Workflow) */}
-          {activeTab === "designs" && (
-            <div className="space-y-6">
-              {designs.length > 0 ? (
-                designs.map((d) => {
-                  const currentStep = getWorkflowStep(d.status);
-                  let parsedNote: any = {};
-                  try {
-                    parsedNote = JSON.parse(d.note || "{}");
-                  } catch (e) {}
-
-                  return (
-                    <div key={d.id} className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col gap-6">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C4B31]">Design Ticket #{d.id.substring(0,8)}</span>
-                          <h3 className="font-serif text-2xl font-bold text-stone-900 mt-1">
-                            {parsedNote.clientCompany || "Custom Packaging Order"}
+                          <h3 className="font-serif text-xl font-bold text-stone-900">
+                            {firstItem?.products?.name || "Artisan Kraft Bag Order"}
+                            {itemCount > 1 && <span className="text-xs font-normal text-stone-500 ml-2">(+{itemCount - 1} more items)</span>}
                           </h3>
-                          <p className="text-xs text-stone-500 mt-1">
-                            Submitted on {new Date(d.created_at).toLocaleDateString()} • {parsedNote.dimensions || "Custom Specs"}
+
+                          <p className="text-xs text-stone-600">
+                            Delivery Address: <span className="font-medium text-stone-800">{order.delivery_address}</span> • Phone: <span className="font-mono text-stone-800">{order.phone}</span>
                           </p>
-                        </div>
-                        <span className="text-xs font-bold text-[#1E3B2E] bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full uppercase tracking-widest">
-                          {d.status.replace(/_/g, " ")}
-                        </span>
-                      </div>
 
-                      {/* WORKFLOW TRACKER MAP */}
-                      <div className="relative pt-6 pb-2">
-                        {/* Connecting Line */}
-                        <div className="absolute top-10 left-8 right-8 h-1 bg-stone-100 -z-10 rounded-full" />
-                        <div 
-                          className="absolute top-10 left-8 h-1 bg-[#8C4B31] -z-10 rounded-full transition-all duration-1000" 
-                          style={{ width: `calc(${Math.min(currentStep / 5 * 100, 100)}% - 2rem)` }} 
-                        />
-                        
-                        <div className="flex justify-between relative">
-                          {/* Step 0: Submitted */}
-                          <div className="flex flex-col items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 0 ? "bg-[#8C4B31]" : "bg-stone-200 text-stone-400"}`}>
-                              {currentStep > 0 ? <CheckCircle2 size={16} /> : "1"}
+                          {order.rejection_reason && (
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs flex items-center gap-2">
+                              <AlertCircle size={14} className="shrink-0" />
+                              <span>Rejection Note: {order.rejection_reason}</span>
                             </div>
-                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Submitted</span>
-                          </div>
-
-                          {/* Step 1: Eng Review */}
-                          <div className="flex flex-col items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 1 ? "bg-[#8C4B31]" : "bg-stone-200 text-stone-400"}`}>
-                              {currentStep > 1 ? <CheckCircle2 size={16} /> : "2"}
-                            </div>
-                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Engineering<br/>Review</span>
-                          </div>
-
-                          {/* Step 2: Payment */}
-                          <div className="flex flex-col items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 2 ? "bg-[#8C4B31]" : "bg-stone-200 text-stone-400"}`}>
-                              {currentStep > 3 ? <CheckCircle2 size={16} /> : "3"}
-                            </div>
-                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Payment &<br/>Approval</span>
-                          </div>
-
-                          {/* Step 3: Production */}
-                          <div className="flex flex-col items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 4 ? "bg-[#8C4B31]" : "bg-stone-200 text-stone-400"}`}>
-                              {currentStep > 4 ? <CheckCircle2 size={16} /> : "4"}
-                            </div>
-                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">In<br/>Production</span>
-                          </div>
-
-                          {/* Step 4: Shipped */}
-                          <div className="flex flex-col items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 5 ? "bg-[#8C4B31]" : "bg-stone-200 text-stone-400"}`}>
-                              {currentStep >= 5 ? <CheckCircle2 size={16} /> : "5"}
-                            </div>
-                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Shipped</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Payment Action Box */}
-                      {d.status === "approved_pending_payment" && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-                          <div>
-                            <h4 className="text-amber-900 font-bold text-sm flex items-center gap-2">
-                              <CheckCircle2 size={16} /> Design Approved! Payment Required
-                            </h4>
-                            <p className="text-xs text-amber-700 mt-1 max-w-md">
-                              Your 3D design has been approved by the factory. Please pay {parsedNote.totalEstEtb ? `${parsedNote.totalEstEtb} ETB` : "the quoted amount"} to CBE Account: 1000123456789 and upload the screenshot.
-                            </p>
-                          </div>
-                          
-                          {uploadingPaymentId === d.id ? (
-                            <div className="flex items-center gap-2 w-full md:w-auto">
-                              <input 
-                                type="text" 
-                                placeholder="Paste image URL here..."
-                                value={paymentUrl}
-                                onChange={(e) => setPaymentUrl(e.target.value)}
-                                className="border border-amber-300 rounded-xl px-3 py-2 text-xs w-full md:w-48 bg-white"
-                              />
-                              <button 
-                                onClick={() => submitPaymentScreenshot(d.id)}
-                                className="bg-[#8C4B31] text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap"
-                              >
-                                Submit
-                              </button>
-                            </div>
-                          ) : (
-                            <button 
-                              onClick={() => setUploadingPaymentId(d.id)}
-                              className="bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shrink-0 transition-colors"
-                            >
-                              <Camera size={14} /> Upload Screenshot
-                            </button>
                           )}
                         </div>
-                      )}
 
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center">
-                  <Sparkles size={40} className="text-stone-300 mx-auto mb-3" />
-                  <h3 className="font-serif text-xl font-bold text-stone-900 mb-1">No Custom Designs Yet</h3>
-                  <p className="text-xs text-stone-500 max-w-sm mx-auto mb-6">
-                    Use our 3D interactive studio to build your bespoke packaging and submit it directly to our Addis Ababa factory.
-                  </p>
-                  <Link 
-                    href="/design-submission" 
-                    className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-6 py-3 rounded-full transition-colors"
-                  >
-                    Open 3D Studio
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tab Content: ORDERS (Retail) */}
-          {activeTab === "orders" && (
-            <div className="space-y-6">
-              {orders.length > 0 ? (
-                orders.map((o) => {
-                  const currentStep = ["pending_verification", "approved", "fulfilled"].indexOf(o.status);
-                  
-                  return (
-                    <div key={o.id} className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col gap-6">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Retail Order #{o.id.substring(0,8)}</span>
-                          <h3 className="font-serif text-2xl font-bold text-stone-900 mt-1">
-                            {o.productName || o.products?.name || "Premium Bag Bundle"}
-                          </h3>
-                          <p className="text-xs text-stone-500 mt-1">
-                            {o.quantity} Bundles • {o.total_price} ETB
-                          </p>
-                        </div>
-                        <span className="text-xs font-bold text-[#1E3B2E] bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full uppercase tracking-widest">
-                          {o.status.replace(/_/g, " ")}
-                        </span>
-                      </div>
-
-                      {/* WORKFLOW TRACKER MAP */}
-                      <div className="relative pt-6 pb-2 max-w-xl mx-auto w-full">
-                        <div className="absolute top-10 left-8 right-8 h-1 bg-stone-100 -z-10 rounded-full" />
-                        <div 
-                          className="absolute top-10 left-8 h-1 bg-emerald-700 -z-10 rounded-full transition-all duration-1000" 
-                          style={{ width: `calc(${Math.min(currentStep / 2 * 100, 100)}% - 2rem)` }} 
-                        />
-                        
-                        <div className="flex justify-between relative">
-                          <div className="flex flex-col items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 0 ? "bg-emerald-700" : "bg-stone-200 text-stone-400"}`}>
-                              {currentStep > 0 ? <CheckCircle2 size={16} /> : "1"}
-                            </div>
-                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Verifying</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0">
+                          <div className="text-right">
+                            <span className="text-[11px] text-stone-400 uppercase font-bold block">Total Amount</span>
+                            <span className="font-serif text-2xl font-bold text-[#8C4B31]">
+                              {order.total_price} ETB
+                            </span>
                           </div>
-                          <div className="flex flex-col items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 1 ? "bg-emerald-700" : "bg-stone-200 text-stone-400"}`}>
-                              {currentStep > 1 ? <CheckCircle2 size={16} /> : "2"}
-                            </div>
-                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Approved &<br/>Processing</span>
-                          </div>
-                          <div className="flex flex-col items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${currentStep >= 2 ? "bg-emerald-700" : "bg-stone-200 text-stone-400"}`}>
-                              {currentStep >= 2 ? <CheckCircle2 size={16} /> : "3"}
-                            </div>
-                            <span className="text-[10px] uppercase font-bold text-stone-600 text-center">Fulfilled</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="bg-white rounded-3xl p-12 border border-stone-200 shadow-sm text-center">
-                  <ShoppingBag size={48} className="mx-auto text-stone-300 mb-4" />
-                  <h3 className="font-serif text-2xl font-bold text-stone-900 mb-2">No Retail Orders Yet</h3>
-                  <p className="text-stone-500 mb-6 max-w-md mx-auto">
-                    You haven&apos;t placed any standard bag orders from our catalog.
-                  </p>
-                  <Link href="/products" className="inline-block bg-[#1E3B2E] text-white px-6 py-3 rounded-full text-sm font-bold shadow-md hover:bg-[#8C4B31] transition-all">
-                    Browse Catalog
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Tab Content: ACADEMY WORKSHOPS */}
-          {activeTab === "classes" && (
-            <div className="space-y-6">
-              {registrations.length > 0 ? (
-                registrations.map((r) => (
-                  <div key={r.id} className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col gap-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                            r.sessionType === "live" ? "bg-[#1E3B2E]/10 text-[#1E3B2E]" : "bg-[#8C4B31]/10 text-[#8C4B31]"
-                          }`}>
-                            {r.sessionType === "live" ? "LiveKit WebRTC Class" : "Studio In-Person"}
-                          </span>
-                          <span className="text-stone-400 text-xs">•</span>
-                          <span className="text-xs text-stone-500 font-mono">Reg #{r.id.substring(0,8)}</span>
-                        </div>
-                        <h3 className="font-serif text-2xl font-bold text-stone-900">{r.sessionTitle}</h3>
-                        <div className="flex flex-wrap items-center gap-4 text-xs text-stone-600 mt-2">
-                          <span className="flex items-center gap-1.5 font-medium">
-                            <Clock size={14} className="text-[#8C4B31]" />
-                            {r.sessionDate} • {r.sessionTime}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <MapPin size={14} className="text-[#1E3B2E]" />
-                            {r.location}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <span className={`text-xs font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider ${
-                          r.status === "approved"
-                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                            : r.status === "rejected"
-                            ? "bg-red-50 text-red-800 border border-red-200"
-                            : "bg-amber-50 text-amber-800 border border-amber-200"
-                        }`}>
-                          {r.status === "approved" ? "Seat Confirmed" : r.status.replace(/_/g, " ")}
-                        </span>
-
-                        {r.sessionType === "live" && (
                           <Link
-                            href={`/dashboard/sessions/${r.sessionId}`}
-                            className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-5 py-2 rounded-full transition-all shadow-sm flex items-center gap-1.5"
+                            href={`/dashboard/orders/${order.id}`}
+                            className="bg-stone-100 hover:bg-[#1E3B2E] text-stone-800 hover:text-white px-5 py-2.5 rounded-full text-xs font-bold transition-all text-center flex items-center gap-1.5"
                           >
-                            <span>Join Classroom</span>
+                            <span>View Timeline</span>
                             <ArrowRight size={13} />
                           </Link>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* Tab 2: Classes */}
+            {activeTab === "classes" && (
+              <div className="space-y-4">
+                {enrollments.length === 0 ? (
+                  <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center space-y-3">
+                    <BookOpen size={36} className="text-stone-400 mx-auto" />
+                    <h3 className="font-serif text-xl font-bold text-stone-800">No Workshop Registrations</h3>
+                    <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                      Enroll in our studio workshops or global LiveKit online broadcasts.
+                    </p>
+                    <Link
+                      href="/learn/schedule"
+                      className="inline-block bg-[#1E3B2E] text-white text-xs font-bold px-6 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"
+                    >
+                      Browse Workshops Schedule
+                    </Link>
+                  </div>
+                ) : (
+                  enrollments.map((enr) => {
+                    const session = enr.class_sessions;
+                    const isLive = session?.type === "live";
+                    const isConfirmed = enr.status === "confirmed" || enr.status === "attended";
+                    return (
+                      <div
+                        key={enr.id}
+                        className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                              isLive 
+                                ? "bg-[#1E3B2E]/10 text-[#1E3B2E] border border-[#1E3B2E]/20" 
+                                : "bg-[#8C4B31]/10 text-[#8C4B31] border border-[#8C4B31]/20"
+                            }`}>
+                              {isLive ? "LiveKit Virtual Masterclass" : "In-Person Studio"}
+                            </span>
+
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                              isConfirmed
+                                ? "bg-emerald-100 text-emerald-800 font-bold"
+                                : enr.status === "pending"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-red-100 text-red-800"
+                            }`}>
+                              {enr.status === "confirmed" ? "Admission Confirmed" : enr.status}
+                            </span>
+                          </div>
+
+                          <h3 className="font-serif text-xl font-bold text-stone-900">
+                            {session?.title || "Craft Workshop Session"}
+                          </h3>
+
+                          <div className="flex flex-wrap items-center gap-4 text-xs text-stone-500">
+                            {session?.starts_at && (
+                              <span className="flex items-center gap-1">
+                                <Clock size={13} className="text-[#8C4B31]" />
+                                {new Date(session.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} • {new Date(session.starts_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1">
+                              {isLive ? <Video size={13} className="text-[#1E3B2E]" /> : <MapPin size={13} className="text-[#1E3B2E]" />}
+                              {session?.location}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          {isLive && isConfirmed ? (
+                            <Link
+                              href={`/dashboard/live/${session?.id}`}
+                              className="px-6 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-colors flex items-center gap-2 shadow-sm"
+                            >
+                              <Video size={14} />
+                              <span>Join Live Stream</span>
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-stone-500 font-medium italic">
+                              {enr.status === "pending" ? "Awaiting Payment Verification" : "Admission Confirmed"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* Tab 3: Custom Designs */}
+            {activeTab === "designs" && (
+              <div className="space-y-4">
+                {designs.length === 0 ? (
+                  <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center space-y-3">
+                    <PenTool size={36} className="text-stone-400 mx-auto" />
+                    <h3 className="font-serif text-xl font-bold text-stone-800">No Custom Designs Submitted</h3>
+                    <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                      Use our bespoke 3D design studio to customize your logo, dimensions, and paper specifications.
+                    </p>
+                    <Link
+                      href="/design-submission"
+                      className="inline-block bg-[#1E3B2E] text-white text-xs font-bold px-6 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"
+                    >
+                      Open Design Studio
+                    </Link>
+                  </div>
+                ) : (
+                  designs.map((d) => {
+                    let parsed: any = {};
+                    try {
+                      parsed = JSON.parse(d.description || "{}");
+                    } catch {
+                      parsed = { notes: d.description };
+                    }
+
+                    return (
+                      <div
+                        key={d.id}
+                        className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-4"
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-stone-100">
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono text-xs font-bold text-stone-900">
+                              Design #{d.id.substring(0, 8)}
+                            </span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              d.status === "quoted"
+                                ? "bg-purple-100 text-purple-800 font-bold"
+                                : d.status === "accepted"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : d.status === "reviewing"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-stone-100 text-stone-700"
+                            }`}>
+                              {d.status}
+                            </span>
+                          </div>
+
+                          <div className="text-right">
+                            {d.quoted_price ? (
+                              <div>
+                                <span className="text-[10px] text-stone-500 block uppercase font-bold">Official Plant Quote</span>
+                                <span className="font-serif text-2xl font-bold text-[#8C4B31]">{d.quoted_price} ETB</span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-stone-400 italic">Quotation Under Engineering Review</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                          <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-200">
+                            <span className="text-[10px] text-stone-400 uppercase font-bold block">Dimensions</span>
+                            <span className="font-bold text-stone-900">{parsed.dimensions || "Bespoke"}</span>
+                          </div>
+                          <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-200">
+                            <span className="text-[10px] text-stone-400 uppercase font-bold block">Paper Weight</span>
+                            <span className="font-bold text-stone-900">{parsed.paperWeight || "220 GSM"}</span>
+                          </div>
+                          <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-200">
+                            <span className="text-[10px] text-stone-400 uppercase font-bold block">Paper Shade</span>
+                            <span className="font-bold text-stone-900">{parsed.paperShade || "Artisan Kraft"}</span>
+                          </div>
+                          <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-200">
+                            <span className="text-[10px] text-stone-400 uppercase font-bold block">Volume</span>
+                            <span className="font-bold text-stone-900">{parsed.quantity ? Number(parsed.quantity).toLocaleString() : "Custom"} Units</span>
+                          </div>
+                        </div>
+
+                        {d.status === "quoted" && (
+                          <div className="p-4 bg-purple-50 rounded-2xl border border-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <p className="text-xs font-bold text-purple-950">Quotation Ready for Approval</p>
+                              <p className="text-[11px] text-purple-800 mt-0.5">
+                                Our factory has quoted this custom run at <strong>{d.quoted_price} ETB</strong>. Accept quote to convert into an active order.
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleRespondToQuote(d.id, "accept")}
+                                disabled={designActionId === d.id}
+                                className="px-5 py-2 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-colors flex items-center gap-1 shadow-sm"
+                              >
+                                <Check size={13} />
+                                <span>Accept Quote</span>
+                              </button>
+                              <button
+                                onClick={() => handleRespondToQuote(d.id, "decline")}
+                                disabled={designActionId === d.id}
+                                className="px-4 py-2 rounded-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold border border-stone-300 transition-colors"
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </div>
-                    </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
 
-                    <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-stone-100 flex items-center justify-between text-xs text-stone-600">
-                      <span>Tuition Fee: <strong className="text-stone-900">{r.priceEtb} ETB</strong></span>
-                      <span className="text-emerald-700 font-medium">Payment Screenshot Received</span>
-                    </div>
+            {/* Tab 4: Profile & Settings */}
+            {activeTab === "profile" && (
+              <div className="max-w-xl bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-sm">
+                <h3 className="font-serif text-2xl font-bold text-stone-900 mb-2">Personal Profile & Contact</h3>
+                <p className="text-xs text-stone-500 mb-6">Keep your contact details up to date for delivery dispatch and workshop notifications.</p>
+
+                {profileNotice && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl mb-4 text-emerald-800 text-xs font-bold">
+                    {profileNotice}
                   </div>
-                ))
-              ) : (
-                <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center">
-                  <BookOpen size={40} className="text-stone-300 mx-auto mb-3" />
-                  <h3 className="font-serif text-xl font-bold text-stone-900 mb-1">No Academy Bookings Yet</h3>
-                  <p className="text-xs text-stone-500 mb-6">Explore our craft paper bag masterclasses and interactive live sessions.</p>
-                  <Link
-                    href="/learn/schedule"
-                    className="inline-block bg-[#1E3B2E] text-white text-xs font-bold px-6 py-3 rounded-full hover:bg-[#8C4B31] transition-colors"
-                  >
-                    View Workshop Schedule
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
+                )}
 
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
+                      Account Email
+                    </label>
+                    <input
+                      type="email"
+                      disabled
+                      value={currentUser?.email || ""}
+                      className="w-full p-3 text-xs bg-stone-100 border border-stone-300 rounded-xl text-stone-500 cursor-not-allowed font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
+                      Phone Number (for SMS dispatch)
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
+                      Account Role
+                    </label>
+                    <input
+                      type="text"
+                      disabled
+                      value={(currentUser?.role || "customer").toUpperCase()}
+                      className="w-full p-3 text-xs bg-stone-100 border border-stone-300 rounded-xl text-stone-600 font-bold cursor-not-allowed"
+                    />
+                    <p className="text-[10px] text-stone-400 mt-1">
+                      Protected system role. Escalation to teacher or admin is managed exclusively by platform administrators.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isUpdatingProfile}
+                      className="w-full py-3.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] disabled:opacity-50 text-white text-xs font-bold tracking-wider uppercase transition-all shadow-md"
+                    >
+                      {isUpdatingProfile ? "Saving Profile..." : "Save Profile Details"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
 
 export default function CustomerDashboardPage() {
   return (
-    <Suspense fallback={<div className="max-w-6xl mx-auto p-12 text-center text-stone-500 font-serif">Loading Customer & Student Portal...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen pt-32 pb-20 flex items-center justify-center bg-[#F9F6F0]">
+        <div className="text-center space-y-3">
+          <Sparkles size={28} className="animate-spin text-[#1E3B2E] mx-auto" />
+          <p className="font-serif text-lg font-bold text-stone-800">Opening Dashboard...</p>
+        </div>
+      </div>
+    }>
       <CustomerDashboardContent />
     </Suspense>
   );

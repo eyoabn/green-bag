@@ -46,9 +46,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const roleLabel =
     user?.role === "admin"
       ? "Plant Administrator"
-      : user?.role === "student"
-      ? "Craft Academy Student"
-      : "Packaging Buyer";
+      : user?.role === "teacher"
+      ? "Guild Instructor"
+      : "Packaging Customer";
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#F9F6F0] pt-20">
@@ -57,7 +57,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       <div className="md:hidden bg-white px-6 py-3 border-b border-stone-200 flex items-center justify-between sticky top-20 z-30 shadow-sm">
         <div className="flex items-center gap-2">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-serif font-bold text-xs ${
-            user?.role === "admin" ? "bg-red-900 text-white" : user?.role === "student" ? "bg-[#8C4B31] text-white" : "bg-[#1E3B2E] text-[#E0B382]"
+            user?.role === "admin" ? "bg-red-900 text-white" : user?.role === "teacher" ? "bg-[#8C4B31] text-white" : "bg-[#1E3B2E] text-[#E0B382]"
           }`}>
             {userName.charAt(0)}
           </div>
@@ -85,7 +85,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         <div className="p-6 border-b border-stone-100">
           <div className="flex items-center gap-3">
             <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-serif font-bold text-lg shadow-sm ${
-              user?.role === "admin" ? "bg-red-900 text-white" : user?.role === "student" ? "bg-[#8C4B31] text-white" : "bg-[#1E3B2E] text-[#E0B382]"
+              user?.role === "admin" ? "bg-red-900 text-white" : user?.role === "teacher" ? "bg-[#8C4B31] text-white" : "bg-[#1E3B2E] text-[#E0B382]"
             }`}>
               {userName.charAt(0)}
             </div>

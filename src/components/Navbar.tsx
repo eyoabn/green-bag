@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { getCurrentUser, AppUser } from "@/utils/auth";
 import { useCurrency } from "@/components/CurrencyContext";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -101,6 +102,9 @@ export default function Navbar() {
               <span className="text-[10px] text-stone-500">Cur:</span>
               <span className="font-bold text-[#1E3B2E]">{currency}</span>
             </button>
+
+            {/* Notification Bell for logged-in user */}
+            {user && <NotificationBell />}
 
             {/* Role-Based Account Link */}
             {user ? (

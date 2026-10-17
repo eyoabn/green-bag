@@ -244,47 +244,40 @@ export default function ProductsPage() {
 
   useEffect(() => {
     async function loadProducts() {
-      const supabase = createClient();
-      const { data, error } = await supabase.from('products').select('*');
-      
-      if (!error && data && data.length > 0) {
-        // Map Supabase columns to frontend Product interface
-        const mappedProducts = (data as Array<{
-          id: string;
-          name: string;
-          client?: string;
-          category?: string;
-          price: number;
-          bundle_size?: number;
-          gsm?: number;
-          handle_type?: string;
-          image_urls?: string[];
-          badge?: string;
-          description?: string;
-          dimensions?: string;
-          material?: string;
-        }>).map((p) => ({
-          id: p.id,
-          name: p.name,
-          client: p.client || "Arenguade Standard Catalog",
-          category: p.category || "Standard Retail",
-          price: p.price,
-          bundleSize: p.bundle_size || 100,
-          gsm: p.gsm || 150,
-          handleType: p.handle_type || "Flat Paper Handle",
-          image: p.image_urls && p.image_urls.length > 0 ? p.image_urls[0] : "/images/placeholder.jpg",
-          gallery: p.image_urls || [],
-          badge: p.badge,
-          description: p.description || "",
-          dimensions: p.dimensions || "Standard",
-          material: p.material || "Recycled Kraft"
-        }));
-        setProductsList(mappedProducts);
-      } else {
-        // Fallback to hardcoded catalog if DB is empty or fails
-        setProductsList(PRODUCTS_CATALOG);
+      setLoading(true);
+      try {
+        const res = await fetch('/api/products');
+        const resJson = await res.json();
+        if (res.ok && resJson.products) {
+          const mappedProducts = (resJson.products as any[]).map((p) => {
+            const gallery = p.images && p.images.length > 0 ? p.images : ["/images/photo_6_2026-09-05_00-36-03.jpg"];
+            return {
+              id: p.id,
+              name: p.name,
+              client: p.client || "Arenguade Standard Catalog",
+              category: p.category || "Standard Retail",
+              price: Number(p.price),
+              bundleSize: p.bundle_size || 100,
+              gsm: p.gsm || 200,
+              handleType: p.handle_type || "Twisted Kraft Cord",
+              image: gallery[0],
+              gallery,
+              badge: p.badge || (p.stock_quantity ? "In Stock" : "Bespoke Order"),
+              description: p.description || "",
+              dimensions: p.dimensions || "Standard Retail",
+              material: p.material || "100% Ethiopian Virgin Kraft",
+            };
+          });
+          setProductsList(mappedProducts);
+        } else {
+          setProductsList([]);
+        }
+      } catch (err) {
+        console.error("Failed to load products from API:", err);
+        setProductsList([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     loadProducts();
   }, []);

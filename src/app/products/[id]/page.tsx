@@ -60,9 +60,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [customerName, setCustomerName] = useState<string>("");
   const [customerPhone, setCustomerPhone] = useState<string>("");
+  const [deliveryAddress, setDeliveryAddress] = useState<string>("Bole, Addis Ababa");
+  const [notes, setNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [orderConfirmed, setOrderConfirmed] = useState<boolean>(false);
   const [orderRef, setOrderRef] = useState<string>("");
+  const [createdOrderId, setCreatedOrderId] = useState<string>("");
 
   const [banks, setBanks] = useState<StoredBankAccount[]>(DataStore.getActiveBanks());
   const [selectedBank, setSelectedBank] = useState<StoredBankAccount>(DataStore.getActiveBanks()[0] || {
@@ -106,41 +109,43 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         try {
           const { data: p } = await supabase.from("products").select("*").eq("id", productId).maybeSingle();
           if (p) {
+            const gallery = (p.images && p.images.length > 0) ? p.images : ((p.image_urls && p.image_urls.length > 0) ? p.image_urls : ["/images/photo_6_2026-09-05_00-36-03.jpg"]);
             setProduct({
               id: p.id,
               name: p.name,
               client: p.client || "Arenguade Standard Catalog",
               category: p.category || "Standard Retail",
-              price: p.price,
+              price: Number(p.price),
               bundleSize: p.bundle_size || 100,
               gsm: p.gsm || 200,
               handleType: p.handle_type || "Twisted Kraft Cord",
-              image: p.image_urls && p.image_urls.length > 0 ? p.image_urls[0] : "/images/photo_6_2026-09-05_00-36-03.jpg",
-              gallery: p.image_urls && p.image_urls.length > 0 ? p.image_urls : ["/images/photo_6_2026-09-05_00-36-03.jpg"],
+              image: gallery[0],
+              gallery,
               badge: p.badge || "Verified Production Batch",
               description: p.description || "",
               dimensions: p.dimensions || "24cm × 30cm + 10cm gusset",
               material: p.material || "100% Ethiopian Virgin Kraft",
             });
-            if (p.image_urls && p.image_urls.length > 0) {
-              setSelectedImage(p.image_urls[0]);
-            }
+            setSelectedImage(gallery[0]);
           }
         } catch {}
       } else {
         // Fallback for numeric IDs: map to Supabase products if possible
-        const catProd = PRODUCTS_CATALOG.find((p) => p.id === productId);
-        if (catProd) {
-          try {
-            const { data: dbProds } = await supabase.from("products").select("id, name");
-            if (dbProds && dbProds.length > 0) {
-              const match = dbProds.find((dbp) => dbp.name.toLowerCase().includes(catProd.name.toLowerCase().slice(0, 10)));
-              if (match) {
-                setProduct((prev) => ({ ...prev, id: match.id }));
-              }
+        try {
+          const { data: dbProds } = await supabase.from("products").select("id, name, price, images, is_available").eq("is_available", true);
+          if (dbProds && dbProds.length > 0) {
+            const match = dbProds.find((dbp) => dbp.name.toLowerCase().includes(product.name.toLowerCase().slice(0, 10))) || dbProds[0];
+            if (match) {
+              setProduct((prev) => ({
+                ...prev,
+                id: match.id,
+                name: match.name,
+                price: Number(match.price),
+                image: (match.images && match.images[0]) || prev.image,
+              }));
             }
-          } catch {}
-        }
+          }
+        } catch {}
       }
 
       // 3. Auto-populate logged-in user information
@@ -157,7 +162,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
 
     loadProductAndBanks();
-  }, [productId]);
+  }, [productId, product.name]);
 
   const basePrice = product.price;
   // Volume discount: 5% off for 3+ bundles, 12% off for 10+ bundles
@@ -182,6 +187,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       alert("Please upload your bank transaction receipt / screenshot to complete your order.");
       return;
     }
+    if (!deliveryAddress || deliveryAddress.trim().length < 5) {
+      alert("Please enter a valid delivery address (at least 5 characters).");
+      return;
+    }
+    if (!customerPhone || customerPhone.trim().length < 6) {
+      alert("Please enter a valid phone number (at least 6 characters).");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // 1. Verify user is logged in
@@ -192,80 +206,55 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         return;
       }
 
-      // 2. Prepare receipt image (upload to Supabase storage or convert to persistent DataURL)
-      const fileDataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(uploadedFile);
-      });
-
-      let receiptUrl = "";
-      try {
+      // 2. Ensure product ID is a valid UUID
+      let targetProductId = product.id;
+      if (!isValidUUID(targetProductId)) {
         const supabase = createClient();
-        const fileExt = uploadedFile.name.split('.').pop() || "jpg";
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `retail-orders/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('payment-proofs')
-          .upload(filePath, uploadedFile);
-
-        if (!uploadError) {
-          const { data: publicUrlData } = supabase.storage
-            .from('payment-proofs')
-            .getPublicUrl(filePath);
-          receiptUrl = publicUrlData.publicUrl;
+        const { data: dbP } = await supabase.from("products").select("id").eq("is_available", true).limit(1).maybeSingle();
+        if (dbP?.id) {
+          targetProductId = dbP.id;
+        } else {
+          throw new Error("Unable to identify product in database. Please choose an active product from the catalog.");
         }
-      } catch (storageErr) {
-        console.warn("Storage upload note:", storageErr);
       }
 
-      if (!receiptUrl) {
-        receiptUrl = fileDataUrl;
-      }
+      // 3. Upload receipt screenshot using /api/upload
+      const formData = new FormData();
+      formData.append("file", uploadedFile);
+      formData.append("bucket", "payment-proofs");
 
-      // 3. Post order to Server API endpoint
-      let orderId = "";
-      try {
-        const res = await fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            productId: product.id,
-            productName: product.name,
-            buyerId: user.id,
-            customerName: customerName || user.full_name,
-            customerPhone: customerPhone || user.phone,
-            customerEmail: user.email,
-            quantity,
-            totalPrice,
-            bankAccountId: selectedBank.id,
-            receiptUrl,
-          }),
-        });
-        const resData = await res.json();
-        if (resData?.orderId) {
-          orderId = resData.orderId;
-        }
-      } catch (apiErr) {
-        console.warn("Server order API fallback:", apiErr);
-      }
-
-      // 4. Also register order in DataStore so dashboard updates immediately
-      const savedOrder = await DataStore.addOrder({
-        id: orderId || undefined,
-        customerName: customerName || user.full_name || "Valued Customer",
-        customerPhone: customerPhone || user.phone || "0911000000",
-        customerEmail: user.email,
-        productId: product.id,
-        productName: `${product.name} (${quantity} Bundles)`,
-        quantityBundles: quantity,
-        totalEtb: totalPrice,
-        bankName: selectedBank.name,
-        receiptUrl: receiptUrl,
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       });
 
-      setOrderRef(orderId || savedOrder.id);
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.filePath) {
+        throw new Error(uploadData.error || "Failed to upload payment receipt screenshot.");
+      }
+
+      // 4. Place real order in PostgreSQL
+      const orderRes = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: [{ productId: targetProductId, quantity }],
+          bankAccountId: selectedBank.id,
+          deliveryAddress: deliveryAddress.trim(),
+          phone: customerPhone.trim(),
+          notes: notes.trim() || undefined,
+          paymentProofPath: uploadData.filePath,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok || !orderData.order) {
+        throw new Error(orderData.error || "Failed to record order.");
+      }
+
+      const confirmedOrder = orderData.order;
+      setCreatedOrderId(confirmedOrder.id);
+      setOrderRef(confirmedOrder.order_number || confirmedOrder.id);
       setOrderConfirmed(true);
     } catch (err: unknown) {
       console.error("Order submission failed:", err);
@@ -330,10 +319,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link 
-                href="/dashboard?tab=orders" 
+                href={createdOrderId ? `/dashboard/orders/${createdOrderId}` : "/dashboard?tab=orders"} 
                 className="w-full sm:w-auto bg-[#1E3B2E] hover:bg-[#8C4B31] text-white px-8 py-3.5 rounded-full text-xs font-bold transition-all shadow-md"
               >
-                Track Order in Dashboard
+                Track Order #{orderRef}
               </Link>
               <Link 
                 href="/products" 
@@ -504,27 +493,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">1</span>
-                      Your Brand Customization
+                      Your Brand Customization & Notes
                     </h4>
                     <div className="p-4 bg-[#FAF7F2] border border-stone-200 rounded-xl mb-6">
                       <p className="text-xs text-stone-600 mb-3 leading-relaxed">
-                        You are requesting a custom production run based on the <span className="font-bold text-stone-900">{product.name}</span> style. Please describe the branding (logo, text) you want printed instead of the current client&apos;s design.
+                        You are requesting a custom production run based on the <span className="font-bold text-stone-900">{product.name}</span> style. Please describe the branding (logo, text) or specific instructions.
                       </p>
                       <textarea
                         placeholder="E.g., Please print our logo 'Addis Cafe' in black ink centered on the bag. We will email the vector logo."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
                         className="w-full p-3 text-xs bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 min-h-[80px]"
-                        required
                       />
                     </div>
                   </div>
 
-                  {/* Step 2: Contact Details */}
+                  {/* Step 2: Contact & Delivery Details */}
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">2</span>
-                      Your Contact Details
+                      Contact & Delivery Details
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                       <input 
                         type="text" 
                         placeholder="Full Name / Store Name"
@@ -540,6 +530,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
                         className="p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                      />
+                    </div>
+                    <div>
+                      <input 
+                        type="text" 
+                        placeholder="Delivery Address (e.g. Bole Medhanialem, Addis Ababa)"
+                        required
+                        value={deliveryAddress}
+                        onChange={(e) => setDeliveryAddress(e.target.value)}
+                        className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
                       />
                     </div>
                   </div>

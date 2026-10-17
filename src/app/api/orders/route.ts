@@ -1,125 +1,390 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { isValidUUID, toValidUUID } from "@/utils/uuid";
+import { requireUser } from "@/utils/roles";
+import { createClient } from "@/utils/supabase/server";
+import { z } from "zod";
 
-// Server-side Supabase client using environment variables
-function getServerSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
-  return createSupabaseClient(url, key);
-}
+const createOrderSchema = z.object({
+  items: z.array(z.object({
+    productId: z.string().uuid("Invalid product ID format"),
+    quantity: z.number().int().min(1, "Quantity must be at least 1"),
+  })).min(1, "Order must contain at least one item"),
+  bankAccountId: z.string().uuid("Invalid bank account ID"),
+  deliveryAddress: z.string().min(5, "Delivery address must be provided"),
+  phone: z.string().min(6, "Valid phone number required"),
+  notes: z.string().optional(),
+  paymentProofPath: z.string().optional(),
+});
 
-export async function POST(request: NextRequest) {
+// GET /api/orders - Fetch orders (all for admin, own only for customer)
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    const {
-      productId,
-      productName,
-      buyerId,
-      customerName,
-      customerPhone,
-      customerEmail,
-      quantity = 1,
-      totalPrice,
-      bankAccountId,
-      receiptUrl,
-    } = body;
+    const user = await requireUser();
+    const supabase = await createClient();
+    const { searchParams } = new URL(request.url);
+    const statusFilter = searchParams.get("status");
 
-    const supabase = getServerSupabase();
+    let query = supabase
+      .from("orders")
+      .select(`
+        id, order_number, buyer_id, status, total_price, delivery_address, phone, notes,
+        bank_account_id, payment_proof_path, rejection_reason, verified_by, verified_at,
+        created_at, updated_at,
+        bank_accounts(id, bank_name, account_name, account_number, instructions),
+        profiles:buyer_id(id, full_name, email, phone),
+        order_items(id, product_id, quantity, unit_price_snapshot, products(id, name, images, category))
+      `)
+      .order("created_at", { ascending: false });
 
-    // 1. Resolve / Ensure Buyer Profile
-    let finalBuyerId = buyerId;
-    if (!isValidUUID(finalBuyerId)) {
-      finalBuyerId = toValidUUID(customerEmail || customerPhone || "arenguade-customer");
-    }
-
-    try {
-      await supabase.from("profiles").upsert({
-        id: finalBuyerId,
-        full_name: customerName || "Valued Customer",
-        phone: customerPhone || "",
-        role: "customer",
-      });
-    } catch (profErr) {
-      console.warn("Server profile upsert note:", profErr);
-    }
-
-    // 2. Resolve Product UUID
-    let resolvedProductId: string | null = isValidUUID(productId) ? productId : null;
-
-    if (!resolvedProductId) {
-      // Find matching product in Supabase
-      const { data: dbProducts } = await supabase.from("products").select("id, name");
-      if (dbProducts && dbProducts.length > 0) {
-        if (productName) {
-          const match = dbProducts.find((p) =>
-            p.name.toLowerCase().includes(productName.toLowerCase().slice(0, 10))
-          );
-          resolvedProductId = match ? match.id : dbProducts[0].id;
-        } else {
-          resolvedProductId = dbProducts[0].id;
-        }
+    // Enforce role-based isolation
+    if (user.role === "admin") {
+      if (statusFilter && statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
       }
-    }
-
-    // 3. Resolve Bank Account UUID
-    let resolvedBankId: string | null = isValidUUID(bankAccountId) ? bankAccountId : null;
-    if (!resolvedBankId) {
-      const { data: dbBanks } = await supabase.from("bank_accounts").select("id, is_active");
-      if (dbBanks && dbBanks.length > 0) {
-        const activeBank = dbBanks.find((b) => b.is_active) || dbBanks[0];
-        resolvedBankId = activeBank.id;
+    } else if (user.role === "customer") {
+      // Customer can view ONLY their own orders
+      query = query.eq("buyer_id", user.id);
+      if (statusFilter && statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
       }
+    } else {
+      // Teachers do not manage customer orders
+      return NextResponse.json({ success: true, orders: [] });
     }
 
-    // 4. Insert Order into Supabase
-    let createdOrder: any = null;
-    if (resolvedProductId) {
-      try {
-        const { data: orderData, error: orderErr } = await supabase
-          .from("orders")
-          .insert({
-            buyer_id: finalBuyerId,
-            product_id: resolvedProductId,
-            quantity: Number(quantity),
-            total_price: Number(totalPrice),
-            bank_account_id: resolvedBankId,
-            payment_screenshot_url: receiptUrl || "",
-            status: "pending_verification",
-          })
-          .select()
-          .single();
-
-        if (orderData) {
-          createdOrder = orderData;
-        } else if (orderErr) {
-          console.warn("Supabase server order insert note:", orderErr.message);
-        }
-      } catch (insertErr) {
-        console.warn("Supabase server order insert exception:", insertErr);
-      }
-    }
-
-    const fallbackId = `ARN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const finalOrderId = createdOrder?.id || fallbackId;
+    const { data: orders, error } = await query;
+    if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      orderId: finalOrderId,
-      order: createdOrder || {
-        id: finalOrderId,
-        buyer_id: finalBuyerId,
-        product_id: resolvedProductId,
-        quantity,
-        total_price: totalPrice,
-        status: "pending_verification",
-      },
+      orders: orders || [],
     });
-  } catch (error: any) {
-    console.error("Order processing error:", error);
-    return NextResponse.json(
-      { error: error?.message || "Internal server error" },
-      { status: 500 }
-    );
+  } catch (err: any) {
+    const status = err.status || 500;
+    return NextResponse.json({ error: err.message || "Failed to load orders" }, { status });
+  }
+}
+
+// POST /api/orders - Place a new order with server-computed pricing & snapshots
+export async function POST(request: NextRequest) {
+  try {
+    const user = await requireUser();
+    const body = await request.json().catch(() => ({}));
+
+    // Server-side Zod validation
+    const parsed = createOrderSchema.safeParse(body);
+    if (!parsed.success) {
+      const errMsgs = parsed.error.issues.map(e => e.message).join(", ");
+      return NextResponse.json({ error: errMsgs }, { status: 400 });
+    }
+
+    const { items, bankAccountId, deliveryAddress, phone, notes, paymentProofPath } = parsed.data;
+    const supabase = await createClient();
+
+    // 1. Fetch real products from DB to strictly compute prices on the server
+    const productIds = items.map(i => i.productId);
+    const { data: dbProducts, error: prodErr } = await supabase
+      .from("products")
+      .select("id, name, price, is_available")
+      .in("id", productIds);
+
+    if (prodErr || !dbProducts || dbProducts.length !== productIds.length) {
+      return NextResponse.json({ error: "One or more selected products are invalid or no longer exist." }, { status: 400 });
+    }
+
+    const productMap = new Map(dbProducts.map(p => [p.id, p]));
+
+    let calculatedTotal = 0;
+    const itemSnapshots: Array<{ productId: string; quantity: number; unitPrice: number }> = [];
+
+    for (const item of items) {
+      const dbProd = productMap.get(item.productId);
+      if (!dbProd) {
+        return NextResponse.json({ error: `Product not found: ${item.productId}` }, { status: 400 });
+      }
+      if (!dbProd.is_available) {
+        return NextResponse.json({ error: `Product "${dbProd.name}" is currently unavailable.` }, { status: 400 });
+      }
+
+      const unitPrice = Number(dbProd.price);
+      calculatedTotal += unitPrice * item.quantity;
+      itemSnapshots.push({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice,
+      });
+    }
+
+    // 2. Validate Bank Account exists
+    const { data: bank, error: bankErr } = await supabase
+      .from("bank_accounts")
+      .select("id, bank_name, is_active")
+      .eq("id", bankAccountId)
+      .maybeSingle();
+
+    if (bankErr || !bank) {
+      return NextResponse.json({ error: "Selected settlement bank account is invalid." }, { status: 400 });
+    }
+
+    // 3. Generate human-friendly order number (e.g. ARN-2026-XXXX)
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const orderNumber = `ARN-2026-${randomSuffix}`;
+
+    const initialStatus = paymentProofPath ? "pending_verification" : "pending_payment";
+
+    // 4. Insert Order
+    const { data: newOrder, error: orderInsertErr } = await supabase
+      .from("orders")
+      .insert({
+        order_number: orderNumber,
+        buyer_id: user.id,
+        status: initialStatus,
+        total_price: calculatedTotal,
+        delivery_address: deliveryAddress,
+        phone,
+        notes: notes || "",
+        bank_account_id: bankAccountId,
+        payment_proof_path: paymentProofPath || null,
+      })
+      .select()
+      .single();
+
+    if (orderInsertErr || !newOrder) {
+      throw orderInsertErr || new Error("Failed to insert order");
+    }
+
+    // 5. Insert Order Items with price snapshots
+    const orderItemsRows = itemSnapshots.map(item => ({
+      order_id: newOrder.id,
+      product_id: item.productId,
+      quantity: item.quantity,
+      unit_price_snapshot: item.unitPrice,
+    }));
+
+    const { error: itemsErr } = await supabase.from("order_items").insert(orderItemsRows);
+    if (itemsErr) {
+      console.error("Order items error:", itemsErr);
+    }
+
+    // 6. Write to order_status_history
+    await supabase.from("order_status_history").insert({
+      order_id: newOrder.id,
+      from_status: null,
+      to_status: initialStatus,
+      changed_by: user.id,
+      note: paymentProofPath
+        ? "Order created with payment proof uploaded by customer."
+        : "Order initialized awaiting bank transfer payment.",
+    });
+
+    // 7. If payment proof provided, notify plant administrators
+    if (paymentProofPath) {
+      const { data: adminProfiles } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("role", "admin");
+
+      if (adminProfiles && adminProfiles.length > 0) {
+        const notifications = adminProfiles.map(adm => ({
+          user_id: adm.id,
+          title: `New Payment to Verify: ${orderNumber}`,
+          body: `Customer ${user.full_name} submitted payment receipt for order ${orderNumber} (${calculatedTotal.toLocaleString()} ETB).`,
+          link: `/admin/payments?order=${newOrder.id}`,
+        }));
+        await supabase.from("notifications").insert(notifications);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      order: newOrder,
+      orderNumber,
+      totalPrice: calculatedTotal,
+    });
+  } catch (err: any) {
+    const status = err.status || 500;
+    return NextResponse.json({ error: err.message || "Failed to place order" }, { status });
+  }
+}
+
+// PATCH /api/orders - Status transitions, proof uploads, cancellations
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await requireUser();
+    const body = await request.json().catch(() => ({}));
+    const { orderId, action, status, rejectionReason, paymentProofPath, note } = body;
+
+    if (!orderId) {
+      return NextResponse.json({ error: "Order ID is required." }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+
+    // Fetch existing order
+    const { data: order, error: fetchErr } = await supabase
+      .from("orders")
+      .select("*, profiles:buyer_id(id, full_name, email)")
+      .eq("id", orderId)
+      .single();
+
+    if (fetchErr || !order) {
+      return NextResponse.json({ error: "Order not found." }, { status: 404 });
+    }
+
+    const oldStatus = order.status;
+
+    // A. CUSTOMER ACTIONS
+    if (user.role === "customer") {
+      // Must own the order
+      if (order.buyer_id !== user.id) {
+        return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
+      }
+
+      if (action === "cancel") {
+        // Can only cancel if pending_payment or pending_verification
+        if (!["pending_payment", "pending_verification"].includes(oldStatus)) {
+          return NextResponse.json({ error: "Orders that are already approved or in production cannot be cancelled." }, { status: 400 });
+        }
+
+        const { data: updated, error } = await supabase
+          .from("orders")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .eq("id", orderId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        await supabase.from("order_status_history").insert({
+          order_id: orderId,
+          from_status: oldStatus,
+          to_status: "cancelled",
+          changed_by: user.id,
+          note: note || "Cancelled by customer.",
+        });
+
+        return NextResponse.json({ success: true, order: updated });
+      }
+
+      if (action === "upload_proof") {
+        if (!paymentProofPath) {
+          return NextResponse.json({ error: "Payment proof path is required." }, { status: 400 });
+        }
+
+        const { data: updated, error } = await supabase
+          .from("orders")
+          .update({
+            payment_proof_path: paymentProofPath,
+            status: "pending_verification",
+            rejection_reason: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", orderId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        await supabase.from("order_status_history").insert({
+          order_id: orderId,
+          from_status: oldStatus,
+          to_status: "pending_verification",
+          changed_by: user.id,
+          note: "Customer uploaded payment verification receipt.",
+        });
+
+        // Notify admins
+        const { data: adminProfiles } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("role", "admin");
+
+        if (adminProfiles && adminProfiles.length > 0) {
+          const notifications = adminProfiles.map(adm => ({
+            user_id: adm.id,
+            title: `Payment Receipt Uploaded: ${order.order_number}`,
+            body: `${user.full_name} submitted new payment receipt for verification.`,
+            link: `/admin/payments?order=${order.id}`,
+          }));
+          await supabase.from("notifications").insert(notifications);
+        }
+
+        return NextResponse.json({ success: true, order: updated });
+      }
+
+      return NextResponse.json({ error: "Invalid customer action on order." }, { status: 400 });
+    }
+
+    // B. ADMIN ACTIONS
+    if (user.role === "admin") {
+      let targetStatus = status;
+      let updates: Record<string, any> = { updated_at: new Date().toISOString() };
+
+      if (action === "approve") {
+        targetStatus = "approved";
+        updates.verified_by = user.id;
+        updates.verified_at = new Date().toISOString();
+        updates.rejection_reason = null;
+      } else if (action === "reject") {
+        targetStatus = "rejected";
+        if (!rejectionReason || !rejectionReason.trim()) {
+          return NextResponse.json({ error: "Rejection reason is required." }, { status: 400 });
+        }
+        updates.rejection_reason = rejectionReason.trim();
+        updates.verified_by = user.id;
+        updates.verified_at = new Date().toISOString();
+      }
+
+      if (!targetStatus) {
+        return NextResponse.json({ error: "Target status or action is required." }, { status: 400 });
+      }
+
+      updates.status = targetStatus;
+
+      const { data: updated, error } = await supabase
+        .from("orders")
+        .update(updates)
+        .eq("id", orderId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Status history
+      await supabase.from("order_status_history").insert({
+        order_id: orderId,
+        from_status: oldStatus,
+        to_status: targetStatus,
+        changed_by: user.id,
+        note: note || (action === "reject" ? `Rejected: ${rejectionReason}` : `Status transitioned by Administrator.`),
+      });
+
+      // Customer notification
+      await supabase.from("notifications").insert({
+        user_id: order.buyer_id,
+        title: `Order ${order.order_number} Update: ${targetStatus.toUpperCase()}`,
+        body: action === "reject"
+          ? `Your payment proof was rejected. Reason: "${rejectionReason}". Please re-upload your valid receipt.`
+          : action === "approve"
+          ? `Your payment of ${Number(order.total_price).toLocaleString()} ETB has been verified. Production will begin shortly!`
+          : `Order status has progressed to ${targetStatus.replace("_", " ")}.`,
+        link: `/dashboard/orders/${order.id}`,
+      });
+
+      // Audit log
+      await supabase.from("audit_log").insert({
+        actor_id: user.id,
+        action: `ORDER_${targetStatus.toUpperCase()}`,
+        entity: "orders",
+        entity_id: orderId,
+        metadata: { from: oldStatus, to: targetStatus, rejectionReason },
+      });
+
+      return NextResponse.json({ success: true, order: updated });
+    }
+
+    return NextResponse.json({ error: "Unauthorized role for order updates." }, { status: 403 });
+  } catch (err: any) {
+    const status = err.status || 500;
+    return NextResponse.json({ error: err.message || "Failed to update order" }, { status });
   }
 }

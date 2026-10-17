@@ -9,6 +9,7 @@
     "lint": "eslint ./src",
     "typecheck": "tsc --noEmit",
     "seed": "node scripts/seed.js",
+    "test:db": "node tests/db/rls-and-constraints.test.js",
     "test:e2e": "playwright test"
   },
   "dependencies": {

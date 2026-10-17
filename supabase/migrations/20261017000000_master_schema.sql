@@ -175,9 +175,17 @@ $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 CREATE OR REPLACE FUNCTION public.prevent_role_self_escalation()
 RETURNS TRIGGER AS $$
+DECLARE
+  jwt_role text;
 BEGIN
-  IF NEW.role <> OLD.role THEN
-    IF current_user <> 'postgres' AND current_user <> 'service_role' AND NOT public.is_admin() THEN
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    jwt_role := coalesce(current_setting('request.jwt.claim.role', true), auth.role());
+
+    IF jwt_role = 'service_role' OR session_user = 'postgres' THEN
+      RETURN NEW;
+    END IF;
+
+    IF NOT public.is_admin() THEN
       RAISE EXCEPTION 'Access denied: only administrators can change user roles.';
     END IF;
   END IF;

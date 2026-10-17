@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import { useCurrency } from "@/components/CurrencyContext";
+import { useCart } from "@/context/CartContext";
 import NotificationBell from "@/components/NotificationBell";
 
 export default function Navbar() {
@@ -24,6 +25,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { currency, setCurrency } = useCurrency();
+  const { setIsCartOpen, totalItems } = useCart();
   const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
@@ -105,6 +107,21 @@ export default function Navbar() {
             >
               <span className="text-[10px] text-stone-500">Cur:</span>
               <span className="font-bold text-[#1E3B2E]">{currency}</span>
+            </button>
+
+            {/* Shopping Cart Button */}
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-2 rounded-full bg-stone-200/60 hover:bg-stone-300/70 text-stone-700 border border-stone-300/40 transition-all flex items-center justify-center cursor-pointer"
+              aria-label="View Cart"
+              title="View Packaging Cart"
+            >
+              <ShoppingBag size={16} className="text-[#1E3B2E]" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#8C4B31] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                  {totalItems > 99 ? "99+" : totalItems}
+                </span>
+              )}
             </button>
 
             {/* Notification Bell for logged-in user */}
@@ -213,8 +230,21 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile Hamburger Button */}
+          {/* Mobile Cart & Hamburger Buttons */}
           <div className="flex lg:hidden items-center gap-2">
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-2 rounded-full text-stone-700 hover:bg-stone-200/60 transition-colors"
+              aria-label="View Cart"
+            >
+              <ShoppingBag size={19} className="text-[#1E3B2E]" />
+              {totalItems > 0 && (
+                <span className="absolute 0 top-0 right-0 bg-[#8C4B31] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {totalItems > 99 ? "99+" : totalItems}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-full text-stone-700 hover:bg-stone-200/60 transition-colors"

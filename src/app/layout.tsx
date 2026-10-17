@@ -3,6 +3,8 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CurrencyProvider } from "@/components/CurrencyContext";
+import { CartProvider } from "@/context/CartContext";
+import CartDrawer from "@/components/CartDrawer";
 
 export const metadata: Metadata = {
   title: "Ethiopia Arenguade Paper Product — Sustainable Packaging & Craft Academy",
@@ -29,9 +31,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-sans text-stone-900 bg-[#F9F6F0]">
         <CurrencyProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <CartProvider>
+            <Navbar />
+            <CartDrawer />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </CartProvider>
         </CurrencyProvider>
       </body>
     </html>

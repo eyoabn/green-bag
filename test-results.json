@@ -4,9 +4,7 @@
       "C:\\Program Files\\nodejs\\node.exe",
       "C:\\Users\\us\\greenwork\\node_modules\\@playwright\\test\\cli.js",
       "test",
-      "tests/e2e/phase2-auth.spec.ts",
-      "tests/e2e/phase3-admin.spec.ts",
-      "tests/e2e/phase4-products.spec.ts"
+      "tests/e2e/phase5-orders.spec.ts"
     ],
     "configFile": "C:\\Users\\us\\greenwork\\playwright.config.ts",
     "rootDir": "C:/Users/us/greenwork/tests/e2e",
@@ -112,275 +110,20 @@
   },
   "suites": [
     {
-      "title": "phase3-admin.spec.ts",
-      "file": "phase3-admin.spec.ts",
+      "title": "phase5-orders.spec.ts",
+      "file": "phase5-orders.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Phase 3: Admin Shell, Users, Bank Accounts, Settings",
-          "file": "phase3-admin.spec.ts",
-          "line": 23,
-          "column": 6,
-          "specs": [
-            {
-              "title": "1. Admin layout displays full 9-link navigation and desktop top bar with notification bell",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6590,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-17T13:42:00.577Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-47d5914ff99e838f5d56",
-              "file": "phase3-admin.spec.ts",
-              "line": 29,
-              "column": 7
-            },
-            {
-              "title": "2. Admin cannot demote or deactivate self (UI locked and API returns 403)",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 12646,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-17T13:42:07.590Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-8cb8f76bf7feb4f5548a",
-              "file": "phase3-admin.spec.ts",
-              "line": 62,
-              "column": 7
-            },
-            {
-              "title": "3. Non-admin users calling /api/admin/* receive HTTP 403 Forbidden",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5115,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-17T13:42:20.314Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-490ba0f083347baacf01",
-              "file": "phase3-admin.spec.ts",
-              "line": 117,
-              "column": 7
-            },
-            {
-              "title": "4. Admin promotes customer to teacher and writes audit log",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 10603,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-17T13:42:25.478Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-cb25fbfb1b4b4340b443",
-              "file": "phase3-admin.spec.ts",
-              "line": 139,
-              "column": 7
-            },
-            {
-              "title": "5. Admin provisions a new teacher account and verifies profile & audit log",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3635,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-17T13:42:36.159Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-19071afce8b860bb12e6",
-              "file": "phase3-admin.spec.ts",
-              "line": 176,
-              "column": 7
-            },
-            {
-              "title": "6. Admin bank accounts CRUD and disabled account filtered out of checkout",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7493,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-17T13:42:39.869Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-94af610a0427f9ceba54",
-              "file": "phase3-admin.spec.ts",
-              "line": 214,
-              "column": 7
-            },
-            {
-              "title": "7. Updating settings updates database, public footer, and audit log",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 10195,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-17T13:42:47.414Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-38258fdcb9a883a2bc36",
-              "file": "phase3-admin.spec.ts",
-              "line": 269,
-              "column": 7
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "phase4-products.spec.ts",
-      "file": "phase4-products.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Phase 4: Products and Public Pages",
-          "file": "phase4-products.spec.ts",
-          "line": 15,
+          "title": "Phase 5: Ordering and Payments",
+          "file": "phase5-orders.spec.ts",
+          "line": 19,
           "column": 15,
           "specs": [
             {
-              "title": "1. Non-admin (customer) calling product mutations receives HTTP 403 Forbidden",
+              "title": "1. Customer orders, uploads proof, admin approves, customer sees approved with timeline",
               "ok": true,
               "tags": [],
               "tests": [
@@ -390,8 +133,8 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                        "line": 15,
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
                         "column": 15
                       }
                     }
@@ -404,18 +147,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6982,
+                      "duration": 18489,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T13:42:57.767Z",
+                      "startTime": "2026-10-17T14:25:45.998Z",
                       "annotations": [
                         {
                           "type": "serial",
                           "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                            "line": 15,
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
                             "column": 15
                           }
                         }
@@ -426,13 +169,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "a5d19fde1f8f119cbf72-06cd1ac9922c6f5b7e0b",
-              "file": "phase4-products.spec.ts",
-              "line": 27,
+              "id": "2151fdb9a22d53b6edf9-f95622de3d0c991302b8",
+              "file": "phase5-orders.spec.ts",
+              "line": 87,
               "column": 7
             },
             {
-              "title": "2. Product images upload enforces admin authorization and file validation",
+              "title": "2. Admin rejects with a reason, customer sees the reason, re-uploads, status returns to pending_verification",
               "ok": true,
               "tags": [],
               "tests": [
@@ -442,8 +185,8 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                        "line": 15,
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
                         "column": 15
                       }
                     }
@@ -456,18 +199,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4229,
+                      "duration": 22650,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T13:43:04.786Z",
+                      "startTime": "2026-10-17T14:26:07.292Z",
                       "annotations": [
                         {
                           "type": "serial",
                           "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                            "line": 15,
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
                             "column": 15
                           }
                         }
@@ -478,13 +221,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "a5d19fde1f8f119cbf72-8d62057eac8d2b0dc3de",
-              "file": "phase4-products.spec.ts",
-              "line": 62,
+              "id": "2151fdb9a22d53b6edf9-d47ecd44c8021e90ba49",
+              "file": "phase5-orders.spec.ts",
+              "line": 172,
               "column": 7
             },
             {
-              "title": "3. Admin creates product with 3 images; dynamically visible on /products and landing page",
+              "title": "3. Cross-customer isolation: Customer cannot open another customer's order API, detail, or signed proof URL",
               "ok": true,
               "tags": [],
               "tests": [
@@ -494,8 +237,8 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                        "line": 15,
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
                         "column": 15
                       }
                     }
@@ -508,18 +251,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10137,
+                      "duration": 9311,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T13:43:09.070Z",
+                      "startTime": "2026-10-17T14:26:29.985Z",
                       "annotations": [
                         {
                           "type": "serial",
                           "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                            "line": 15,
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
                             "column": 15
                           }
                         }
@@ -530,13 +273,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "a5d19fde1f8f119cbf72-1dd689fb1b94a29ecdfb",
-              "file": "phase4-products.spec.ts",
-              "line": 101,
+              "id": "2151fdb9a22d53b6edf9-0f733d73a3806dcff0e9",
+              "file": "phase5-orders.spec.ts",
+              "line": 237,
               "column": 7
             },
             {
-              "title": "4. Toggling product availability hides from public catalog and disables ordering",
+              "title": "4. Privilege Escalation Block: Customer cannot approve their own payment or transition to approved",
               "ok": true,
               "tags": [],
               "tests": [
@@ -546,8 +289,8 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                        "line": 15,
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
                         "column": 15
                       }
                     }
@@ -560,18 +303,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9994,
+                      "duration": 7773,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T13:43:19.240Z",
+                      "startTime": "2026-10-17T14:26:39.374Z",
                       "annotations": [
                         {
                           "type": "serial",
                           "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                            "line": 15,
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
                             "column": 15
                           }
                         }
@@ -582,13 +325,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "a5d19fde1f8f119cbf72-a9ad1ba5a0a3eb16fa08",
-              "file": "phase4-products.spec.ts",
-              "line": 149,
+              "id": "2151fdb9a22d53b6edf9-f8f927a211235a812dc7",
+              "file": "phase5-orders.spec.ts",
+              "line": 286,
               "column": 7
             },
             {
-              "title": "5. Public /products/[id] renders gallery, specs, price, and Add to Cart/Order controls",
+              "title": "5. Server computes price strictly from DB; price tampering has no effect; unavailable products rejected",
               "ok": true,
               "tags": [],
               "tests": [
@@ -598,8 +341,8 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                        "line": 15,
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
                         "column": 15
                       }
                     }
@@ -612,18 +355,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10710,
+                      "duration": 6506,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T13:43:29.283Z",
+                      "startTime": "2026-10-17T14:26:47.239Z",
                       "annotations": [
                         {
                           "type": "serial",
                           "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                            "line": 15,
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
                             "column": 15
                           }
                         }
@@ -634,13 +377,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "a5d19fde1f8f119cbf72-99591a3f92ddbcd72afa",
-              "file": "phase4-products.spec.ts",
-              "line": 192,
+              "id": "2151fdb9a22d53b6edf9-d613e8cbe9bcb7848446",
+              "file": "phase5-orders.spec.ts",
+              "line": 325,
               "column": 7
             },
             {
-              "title": "6. Public /products catalog filters by search, category pills, and pagination",
+              "title": "6. State Machine Validation: Invalid status jumps are rejected with HTTP 400",
               "ok": true,
               "tags": [],
               "tests": [
@@ -650,8 +393,8 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                        "line": 15,
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
                         "column": 15
                       }
                     }
@@ -664,18 +407,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5689,
+                      "duration": 20818,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T13:43:40.050Z",
+                      "startTime": "2026-10-17T14:26:53.798Z",
                       "annotations": [
                         {
                           "type": "serial",
                           "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                            "line": 15,
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
                             "column": 15
                           }
                         }
@@ -686,13 +429,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "a5d19fde1f8f119cbf72-bbbaf8a7c75c5300b73c",
-              "file": "phase4-products.spec.ts",
-              "line": 218,
+              "id": "2151fdb9a22d53b6edf9-3561e105b6e16efc5fdc",
+              "file": "phase5-orders.spec.ts",
+              "line": 367,
               "column": 7
             },
             {
-              "title": "7. Product deletion enforces soft-delete when referenced in orders",
+              "title": "7. Storage Validation: Wrong file format (.exe) and oversized file (>5 MB) are rejected",
               "ok": true,
               "tags": [],
               "tests": [
@@ -702,8 +445,8 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                        "line": 15,
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
                         "column": 15
                       }
                     }
@@ -716,18 +459,18 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10378,
+                      "duration": 3541,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T13:43:45.780Z",
+                      "startTime": "2026-10-17T14:27:14.651Z",
                       "annotations": [
                         {
                           "type": "serial",
                           "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
-                            "line": 15,
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
                             "column": 15
                           }
                         }
@@ -738,9 +481,61 @@
                   "status": "expected"
                 }
               ],
-              "id": "a5d19fde1f8f119cbf72-3f46dc4d89a414f6df83",
-              "file": "phase4-products.spec.ts",
-              "line": 248,
+              "id": "2151fdb9a22d53b6edf9-a61ebf28968557a7e983",
+              "file": "phase5-orders.spec.ts",
+              "line": 441,
+              "column": 7
+            },
+            {
+              "title": "8. Admin can create an order on behalf of a customer and it appears in customer portal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7303,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-17T14:27:18.258Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2151fdb9a22d53b6edf9-898eec4bb42244fda516",
+              "file": "phase5-orders.spec.ts",
+              "line": 479,
               "column": 7
             }
           ]
@@ -750,9 +545,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-17T13:41:58.863Z",
-    "duration": 118022.39,
-    "expected": 14,
+    "startTime": "2026-10-17T14:25:44.502Z",
+    "duration": 107091.905,
+    "expected": 8,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

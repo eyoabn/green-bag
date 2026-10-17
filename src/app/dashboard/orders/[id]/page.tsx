@@ -181,11 +181,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       {/* Back button & Title */}
       <div>
         <Link
-          href="/dashboard"
+          href="/dashboard/orders"
           className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-stone-900 mb-2 transition-colors"
         >
           <ArrowLeft size={14} />
-          <span>Back to My Dashboard</span>
+          <span>Back to Orders</span>
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

@@ -23,6 +23,7 @@ import { DataStore, StoredBankAccount } from "@/utils/dataStore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, isValidUUID, AppUser } from "@/utils/auth";
+import { useCart } from "@/context/CartContext";
 
 export interface ProductDetail {
   id: string;
@@ -47,6 +48,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
   const router = useRouter();
+  const { addItem } = useCart();
 
   const [product, setProduct] = useState<ProductDetail>({
     id: productId,
@@ -462,28 +464,50 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     )}
                   </div>
 
-                  {/* Quantity Counter */}
-                  <div className="flex items-center gap-4">
-                    <span className="text-xs font-bold text-stone-700 uppercase">Select Bundles:</span>
-                    <div className="flex items-center border border-stone-300 rounded-full overflow-hidden">
-                      <button 
-                        type="button"
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold"
-                      >
-                        -
-                      </button>
-                      <span className="px-4 py-1.5 font-bold text-xs text-stone-900 bg-white">
-                        {quantity} ({quantity * (product.bundleSize || 100)} pcs)
-                      </span>
-                      <button 
-                        type="button"
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold"
-                      >
-                        +
-                      </button>
+                  {/* Quantity Counter & Add to Cart */}
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-stone-700 uppercase">Select Bundles:</span>
+                      <div className="flex items-center border border-stone-300 rounded-full overflow-hidden bg-white">
+                        <button 
+                          type="button"
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition-colors"
+                        >
+                          -
+                        </button>
+                        <span className="px-4 py-1.5 font-bold text-xs text-stone-900">
+                          {quantity} ({quantity * (product.bundleSize || 100)} pcs)
+                        </span>
+                        <button 
+                          type="button"
+                          onClick={() => setQuantity(quantity + 1)}
+                          className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
+
+                    <button
+                      type="button"
+                      disabled={product.is_available === false}
+                      onClick={() => {
+                        addItem({
+                          id: product.id,
+                          productId: product.id,
+                          name: product.name,
+                          price: product.price,
+                          image: product.image,
+                          category: product.category,
+                          bundleSize: product.bundleSize,
+                        }, quantity);
+                      }}
+                      className="px-5 py-2 rounded-full border-2 border-[#1E3B2E] text-[#1E3B2E] hover:bg-[#1E3B2E] hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                    >
+                      <ShoppingBag size={14} />
+                      <span>Add to Cart</span>
+                    </button>
                   </div>
                 </div>
 

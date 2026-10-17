@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
+import { pool } from "@/utils/db";
 import { z } from "zod";
 
 const createOrderSchema = z.object({
+  buyerId: z.string().uuid("Invalid customer ID format").optional(),
   items: z.array(z.object({
     productId: z.string().uuid("Invalid product ID format"),
-    quantity: z.number().int().min(1, "Quantity must be at least 1"),
+    quantity: z.number().int().min(1, "Quantity must be at least 1").max(10000, "Quantity exceeds limit"),
   })).min(1, "Order must contain at least one item"),
   bankAccountId: z.string().uuid("Invalid bank account ID"),
   deliveryAddress: z.string().min(5, "Delivery address must be provided"),
@@ -14,6 +16,17 @@ const createOrderSchema = z.object({
   notes: z.string().optional(),
   paymentProofPath: z.string().optional(),
 });
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  pending_payment: ["pending_verification", "cancelled"],
+  pending_verification: ["approved", "rejected", "cancelled"],
+  rejected: ["pending_verification", "cancelled"],
+  approved: ["in_production", "cancelled"],
+  in_production: ["ready", "cancelled"],
+  ready: ["completed"],
+  completed: [],
+  cancelled: [],
+};
 
 // GET /api/orders - Fetch orders (all for admin, own only for customer)
 export async function GET(request: NextRequest) {
@@ -79,27 +92,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: errMsgs }, { status: 400 });
     }
 
-    const { items, bankAccountId, deliveryAddress, phone, notes, paymentProofPath } = parsed.data;
+    const { items, bankAccountId, deliveryAddress, phone, notes, paymentProofPath, buyerId } = parsed.data;
     const supabase = await createClient();
+
+    // Determine target buyer (admin can order on behalf of customer)
+    let targetBuyerId = user.id;
+    if (user.role === "admin" && buyerId) {
+      const { data: customerProfile, error: profErr } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("id", buyerId)
+        .maybeSingle();
+
+      if (profErr || !customerProfile) {
+        return NextResponse.json({ error: "Specified customer account does not exist." }, { status: 400 });
+      }
+      targetBuyerId = buyerId;
+    }
 
     // 1. Fetch real products from DB to strictly compute prices on the server
     const productIds = items.map(i => i.productId);
-    const { data: dbProducts, error: prodErr } = await supabase
-      .from("products")
-      .select("id, name, price, is_available")
-      .in("id", productIds);
+    const { rows: dbProducts } = await pool.query(
+      "SELECT id, name, price, is_available FROM public.products WHERE id = ANY($1::uuid[])",
+      [productIds]
+    );
 
-    if (prodErr || !dbProducts || dbProducts.length !== productIds.length) {
+    if (!dbProducts || dbProducts.length !== productIds.length) {
       return NextResponse.json({ error: "One or more selected products are invalid or no longer exist." }, { status: 400 });
     }
 
-    const productMap = new Map(dbProducts.map(p => [p.id, p]));
+    const productMap = new Map(dbProducts.map((p: any) => [p.id, p]));
 
     let calculatedTotal = 0;
     const itemSnapshots: Array<{ productId: string; quantity: number; unitPrice: number }> = [];
 
     for (const item of items) {
-      const dbProd = productMap.get(item.productId);
+      const dbProd: any = productMap.get(item.productId);
       if (!dbProd) {
         return NextResponse.json({ error: `Product not found: ${item.productId}` }, { status: 400 });
       }
@@ -116,15 +144,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 2. Validate Bank Account exists
-    const { data: bank, error: bankErr } = await supabase
-      .from("bank_accounts")
-      .select("id, bank_name, is_active")
-      .eq("id", bankAccountId)
-      .maybeSingle();
+    // 2. Validate Bank Account exists and is active
+    const { rows: bankRows } = await pool.query(
+      "SELECT id, bank_name, is_active FROM public.bank_accounts WHERE id = $1",
+      [bankAccountId]
+    );
+    const bank = bankRows[0];
 
-    if (bankErr || !bank) {
+    if (!bank) {
       return NextResponse.json({ error: "Selected settlement bank account is invalid." }, { status: 400 });
+    }
+    if (!bank.is_active) {
+      return NextResponse.json({ error: "Selected settlement bank account is currently not active." }, { status: 400 });
     }
 
     // 3. Generate human-friendly order number (e.g. ARN-2026-XXXX)
@@ -138,7 +169,7 @@ export async function POST(request: NextRequest) {
       .from("orders")
       .insert({
         order_number: orderNumber,
-        buyer_id: user.id,
+        buyer_id: targetBuyerId,
         status: initialStatus,
         total_price: calculatedTotal,
         delivery_address: deliveryAddress,
@@ -154,7 +185,7 @@ export async function POST(request: NextRequest) {
       throw orderInsertErr || new Error("Failed to insert order");
     }
 
-    // 5. Insert Order Items with price snapshots
+    // 5. Insert Order Items with unit_price_snapshot
     const orderItemsRows = itemSnapshots.map(item => ({
       order_id: newOrder.id,
       product_id: item.productId,
@@ -174,11 +205,36 @@ export async function POST(request: NextRequest) {
       to_status: initialStatus,
       changed_by: user.id,
       note: paymentProofPath
-        ? "Order created with payment proof uploaded by customer."
+        ? "Order created with payment proof uploaded."
+        : user.role === "admin" && targetBuyerId !== user.id
+        ? `Order created on behalf of customer by Administrator (${user.full_name}).`
         : "Order initialized awaiting bank transfer payment.",
     });
 
-    // 7. If payment proof provided, notify plant administrators
+    // 7. If admin created on behalf, log to audit_log
+    if (user.role === "admin" && targetBuyerId !== user.id) {
+      await supabase.from("audit_log").insert({
+        actor_id: user.id,
+        action: "ORDER_CREATED_ON_BEHALF",
+        entity: "orders",
+        entity_id: newOrder.id,
+        metadata: {
+          buyer_id: targetBuyerId,
+          order_number: orderNumber,
+          total_price: calculatedTotal,
+        },
+      });
+
+      // Notify customer that order was placed on their behalf
+      await supabase.from("notifications").insert({
+        user_id: targetBuyerId,
+        title: `New Order Placed: ${orderNumber}`,
+        body: `An order for ${calculatedTotal.toLocaleString()} ETB was placed on your behalf by Ethiopia Arenguade administrators.`,
+        link: `/dashboard/orders/${newOrder.id}`,
+      });
+    }
+
+    // 8. If payment proof provided, notify plant administrators
     if (paymentProofPath) {
       const { data: adminProfiles } = await supabase
         .from("profiles")
@@ -189,7 +245,7 @@ export async function POST(request: NextRequest) {
         const notifications = adminProfiles.map(adm => ({
           user_id: adm.id,
           title: `New Payment to Verify: ${orderNumber}`,
-          body: `Customer ${user.full_name} submitted payment receipt for order ${orderNumber} (${calculatedTotal.toLocaleString()} ETB).`,
+          body: `Payment receipt submitted for order ${orderNumber} (${calculatedTotal.toLocaleString()} ETB).`,
           link: `/admin/payments?order=${newOrder.id}`,
         }));
         await supabase.from("notifications").insert(notifications);
@@ -219,6 +275,16 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Order ID is required." }, { status: 400 });
     }
 
+    // Check existence and ownership in DB first to distinguish 404 vs 403 under RLS
+    const { rows: patchOrderRows } = await pool.query("SELECT id, buyer_id FROM public.orders WHERE id = $1", [orderId]);
+    if (patchOrderRows.length === 0) {
+      return NextResponse.json({ error: "Order not found." }, { status: 404 });
+    }
+
+    if (user.role === "customer" && patchOrderRows[0].buyer_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
+    }
+
     const supabase = await createClient();
 
     // Fetch existing order
@@ -239,6 +305,11 @@ export async function PATCH(request: NextRequest) {
       // Must own the order
       if (order.buyer_id !== user.id) {
         return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
+      }
+
+      // Customer CANNOT approve payment or jump statuses
+      if (action === "approve" || status === "approved" || status === "in_production" || status === "ready" || status === "completed") {
+        return NextResponse.json({ error: "Forbidden: Customers cannot approve payments or modify manufacturing status." }, { status: 403 });
       }
 
       if (action === "cancel") {
@@ -272,6 +343,11 @@ export async function PATCH(request: NextRequest) {
           return NextResponse.json({ error: "Payment proof path is required." }, { status: 400 });
         }
 
+        // Customer can upload proof if pending_payment or rejected (or re-upload while pending_verification)
+        if (!["pending_payment", "pending_verification", "rejected"].includes(oldStatus)) {
+          return NextResponse.json({ error: "Receipt cannot be uploaded for an already approved or cancelled order." }, { status: 400 });
+        }
+
         const { data: updated, error } = await supabase
           .from("orders")
           .update({
@@ -291,7 +367,9 @@ export async function PATCH(request: NextRequest) {
           from_status: oldStatus,
           to_status: "pending_verification",
           changed_by: user.id,
-          note: "Customer uploaded payment verification receipt.",
+          note: oldStatus === "rejected"
+            ? "Customer re-uploaded payment verification receipt after rejection."
+            : "Customer uploaded payment verification receipt.",
         });
 
         // Notify admins
@@ -304,7 +382,7 @@ export async function PATCH(request: NextRequest) {
           const notifications = adminProfiles.map(adm => ({
             user_id: adm.id,
             title: `Payment Receipt Uploaded: ${order.order_number}`,
-            body: `${user.full_name} submitted new payment receipt for verification.`,
+            body: `${user.full_name} submitted payment receipt for verification.`,
             link: `/admin/payments?order=${order.id}`,
           }));
           await supabase.from("notifications").insert(notifications);
@@ -318,11 +396,11 @@ export async function PATCH(request: NextRequest) {
 
     // B. ADMIN ACTIONS
     if (user.role === "admin") {
-      let targetStatus = status;
-      let updates: Record<string, any> = { updated_at: new Date().toISOString() };
+      let targetStatus: string | null = status || null;
+      const updates: Record<string, any> = { updated_at: new Date().toISOString() };
 
       if (action === "approve") {
-        targetStatus = "verified";
+        targetStatus = "approved";
         updates.verified_by = user.id;
         updates.verified_at = new Date().toISOString();
         updates.rejection_reason = null;
@@ -338,6 +416,14 @@ export async function PATCH(request: NextRequest) {
 
       if (!targetStatus) {
         return NextResponse.json({ error: "Target status or action is required." }, { status: 400 });
+      }
+
+      // Validate allowed transitions in state machine
+      const allowedNext = VALID_TRANSITIONS[oldStatus] || [];
+      if (!allowedNext.includes(targetStatus)) {
+        return NextResponse.json({
+          error: `Invalid status transition: cannot change order from '${oldStatus}' to '${targetStatus}'.`,
+        }, { status: 400 });
       }
 
       updates.status = targetStatus;
@@ -357,7 +443,7 @@ export async function PATCH(request: NextRequest) {
         from_status: oldStatus,
         to_status: targetStatus,
         changed_by: user.id,
-        note: note || (action === "reject" ? `Rejected: ${rejectionReason}` : `Status transitioned by Administrator.`),
+        note: note || (action === "reject" ? `Rejected: ${rejectionReason}` : `Status transitioned to ${targetStatus} by Administrator.`),
       });
 
       // Customer notification
@@ -378,7 +464,7 @@ export async function PATCH(request: NextRequest) {
         action: `ORDER_${targetStatus.toUpperCase()}`,
         entity: "orders",
         entity_id: orderId,
-        metadata: { from: oldStatus, to: targetStatus, rejectionReason },
+        metadata: { from: oldStatus, to: targetStatus, rejectionReason: updates.rejection_reason || null },
       });
 
       return NextResponse.json({ success: true, order: updated });

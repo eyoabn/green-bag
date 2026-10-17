@@ -16,6 +16,7 @@ import {
   Filter
 } from "lucide-react";
 import { useCurrency } from "@/components/CurrencyContext";
+import { useCart } from "@/context/CartContext";
 
 export interface Product {
   id: string;
@@ -48,6 +49,7 @@ const CATEGORIES = [
 
 export default function ProductsPage() {
   const { formatPrice } = useCurrency();
+  const { addItem } = useCart();
   const [productsList, setProductsList] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -324,13 +326,37 @@ export default function ProductsPage() {
                     </span>
                   </div>
 
-                  <Link 
-                    href={`/products/${product.id}`}
-                    className="px-5 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-                  >
-                    <span>View & Order</span>
-                    <ArrowRight size={13} />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={!product.is_available}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        addItem({
+                          id: product.id,
+                          productId: product.id,
+                          name: product.name,
+                          price: product.price,
+                          image: product.image,
+                          category: product.category,
+                          bundleSize: product.bundleSize,
+                        }, 1);
+                      }}
+                      className="p-2.5 rounded-full border border-stone-300 hover:border-[#1E3B2E] text-stone-700 hover:text-[#1E3B2E] bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Add to Cart"
+                      aria-label="Add to Cart"
+                    >
+                      <ShoppingBag size={14} />
+                    </button>
+
+                    <Link 
+                      href={`/products/${product.id}`}
+                      className="px-4 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                    >
+                      <span>View & Order</span>
+                      <ArrowRight size={13} />
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))

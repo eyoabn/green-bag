@@ -13,9 +13,15 @@ import {
   AlertCircle, 
   X, 
   Check, 
-  ArrowRight,
-  Filter
+  ArrowRight, 
+  Filter,
+  Plus,
+  Package,
+  Truck,
+  RotateCcw,
+  UserCheck
 } from "lucide-react";
+import { useCurrency } from "@/components/CurrencyContext";
 
 interface OrderItem {
   id: string;
@@ -55,6 +61,7 @@ interface OrderRecord {
 }
 
 export default function AdminOrdersPage() {
+  const { formatPrice } = useCurrency();
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,6 +76,23 @@ export default function AdminOrdersPage() {
 
   // Status Change State
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+
+  // Create Order on Behalf Modal
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [customers, setCustomers] = useState<Array<{ id: string; full_name: string; email: string; phone: string }>>([]);
+  const [products, setProducts] = useState<Array<{ id: string; name: string; price: number; is_available: boolean }>>([]);
+  const [banks, setBanks] = useState<Array<{ id: string; bank_name: string; account_number: string }>>([]);
+  
+  // Create Order Form Fields
+  const [formBuyerId, setFormBuyerId] = useState("");
+  const [formProductId, setFormProductId] = useState("");
+  const [formQuantity, setFormQuantity] = useState(1);
+  const [formBankId, setFormBankId] = useState("");
+  const [formAddress, setFormAddress] = useState("Bole Subcity, Addis Ababa");
+  const [formPhone, setFormPhone] = useState("");
+  const [formNotes, setFormNotes] = useState("");
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [createError, setCreateError] = useState("");
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -91,6 +115,104 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, [statusFilter]);
+
+  // Load auxiliary data for Create Order on Behalf
+  const openCreateModal = async () => {
+    setCreateModalOpen(true);
+    setCreateError("");
+    try {
+      // 1. Fetch users with role customer
+      const userRes = await fetch("/api/users?role=customer");
+      const userData = await userRes.json();
+      if (userRes.ok && userData.users) {
+        setCustomers(userData.users);
+        if (userData.users.length > 0 && !formBuyerId) {
+          setFormBuyerId(userData.users[0].id);
+          setFormPhone(userData.users[0].phone || "+251 911 000 000");
+        }
+      }
+
+      // 2. Fetch products
+      const prodRes = await fetch("/api/products?pageSize=50");
+      const prodData = await prodRes.json();
+      if (prodRes.ok && prodData.products) {
+        const availableProds = prodData.products.filter((p: any) => p.is_available);
+        setProducts(availableProds);
+        if (availableProds.length > 0 && !formProductId) {
+          setFormProductId(availableProds[0].id);
+        }
+      }
+
+      // 3. Fetch active bank accounts
+      const bankRes = await fetch("/api/bank-accounts");
+      const bankData = await bankRes.json();
+      if (bankRes.ok && bankData.bankAccounts) {
+        const activeBanks = bankData.bankAccounts.filter((b: any) => b.is_active);
+        setBanks(activeBanks);
+        if (activeBanks.length > 0 && !formBankId) {
+          setFormBankId(activeBanks[0].id);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading create order metadata:", err);
+    }
+  };
+
+  const handleCreateOnBehalf = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError("");
+
+    if (!formBuyerId) {
+      setCreateError("Please select a target customer.");
+      return;
+    }
+    if (!formProductId) {
+      setCreateError("Please select a valid product.");
+      return;
+    }
+    if (!formBankId) {
+      setCreateError("Please select an active settlement bank account.");
+      return;
+    }
+    if (!formAddress || formAddress.trim().length < 5) {
+      setCreateError("Delivery address must be at least 5 characters.");
+      return;
+    }
+    if (!formPhone || formPhone.trim().length < 6) {
+      setCreateError("Valid phone number required (min 6 characters).");
+      return;
+    }
+
+    setIsCreatingOrder(true);
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyerId: formBuyerId,
+          items: [{ productId: formProductId, quantity: Number(formQuantity) }],
+          bankAccountId: formBankId,
+          deliveryAddress: formAddress.trim(),
+          phone: formPhone.trim(),
+          notes: formNotes.trim() || undefined,
+        }),
+      });
+
+      const resJson = await res.json();
+      if (!res.ok) {
+        throw new Error(resJson.error || "Failed to create order on behalf of customer.");
+      }
+
+      setCreateModalOpen(false);
+      fetchOrders();
+      setActionSuccess(`Order ${resJson.orderNumber} successfully created on behalf of customer.`);
+      setTimeout(() => setActionSuccess(""), 4000);
+    } catch (err: any) {
+      setCreateError(err.message || "Failed to create order.");
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
 
   const openOrderDetail = async (order: OrderRecord) => {
     setSelectedOrder(order);
@@ -117,14 +239,14 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({
           orderId,
           status: newStatus,
-          note: `Fulfillment status advanced to ${newStatus.replace("_", " ")} by Plant Administrator`,
+          note: `Fulfillment status transitioned to ${newStatus.replace("_", " ").toUpperCase()} by Plant Administrator`,
         }),
       });
 
       const resJson = await res.json();
       if (res.ok && resJson.success) {
         fetchOrders();
-        setActionSuccess(`Order status updated to ${newStatus.toUpperCase()}`);
+        setActionSuccess(`Order transitioned to ${newStatus.toUpperCase()}`);
         setTimeout(() => setActionSuccess(""), 3500);
       } else {
         alert(resJson.error || "Failed to update status");
@@ -145,6 +267,7 @@ export default function AdminOrdersPage() {
     const headers = [
       "Order Number",
       "Customer Name",
+      "Customer Email",
       "Phone",
       "Status",
       "Total Price (ETB)",
@@ -156,6 +279,7 @@ export default function AdminOrdersPage() {
     const rows = orders.map((o) => [
       `"${o.order_number}"`,
       `"${o.profiles?.full_name || "Customer"}"`,
+      `"${o.profiles?.email || ""}"`,
       `"${o.phone}"`,
       `"${o.status}"`,
       o.total_price,
@@ -200,11 +324,19 @@ export default function AdminOrdersPage() {
             Manufacturing & Orders Management
           </h1>
           <p className="text-xs text-stone-500 mt-1">
-            Track customer orders through printing, die-cutting, assembly, and dispatch with real PostgreSQL status history.
+            Track orders through verified payment, in-production printing, assembly, and completed dispatch.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={openCreateModal}
+            className="px-4 py-2 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+          >
+            <Plus size={14} />
+            <span>Create Order on Behalf</span>
+          </button>
+
           <button
             onClick={exportCSV}
             className="px-4 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
@@ -215,7 +347,7 @@ export default function AdminOrdersPage() {
 
           <Link
             href="/admin/payments"
-            className="px-4 py-2 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+            className="px-4 py-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <span>Payments Queue</span>
             <ArrowRight size={14} />
@@ -250,126 +382,168 @@ export default function AdminOrdersPage() {
           />
         </div>
 
-        {/* Status Filter Badges */}
-        <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
           {[
-            { key: "all", label: "All" },
-            { key: "pending_verification", label: "Verification" },
-            { key: "approved", label: "Approved" },
-            { key: "in_production", label: "Production" },
-            { key: "ready", label: "Ready" },
-            { key: "completed", label: "Completed" },
-            { key: "rejected", label: "Rejected" },
-          ].map((st) => (
+            { id: "all", label: "All" },
+            { id: "pending_payment", label: "Pending Payment" },
+            { id: "pending_verification", label: "Pending Verification" },
+            { id: "approved", label: "Approved" },
+            { id: "in_production", label: "In Production" },
+            { id: "ready", label: "Ready" },
+            { id: "completed", label: "Completed" },
+          ].map((tab) => (
             <button
-              key={st.key}
-              onClick={() => setStatusFilter(st.key)}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                statusFilter === st.key
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                statusFilter === tab.id
                   ? "bg-[#1E3B2E] text-white shadow-xs"
-                  : "bg-stone-50 text-stone-600 hover:bg-stone-100 border border-stone-200"
+                  : "bg-stone-50 hover:bg-stone-100 text-stone-600 border border-stone-200"
               }`}
             >
-              {st.label}
+              {tab.label}
             </button>
           ))}
         </div>
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-hidden">
         {loading ? (
-          <div className="py-20 text-center text-stone-400 text-xs">
+          <div className="py-24 text-center text-stone-400 text-xs">
             <div className="w-8 h-8 border-2 border-[#1E3B2E] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            Loading fulfillment orders...
+            Loading orders catalog...
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="py-16 text-center text-stone-400 text-xs">
-            <ShoppingBag size={32} className="mx-auto text-stone-300 mb-2" />
-            No orders matching the selected filter.
+          <div className="py-20 text-center text-stone-400 text-xs">
+            <ShoppingBag size={36} className="mx-auto text-stone-300 mb-2" />
+            <p className="font-serif text-base font-bold text-stone-700">No orders matching criteria</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-stone-700">
-              <thead className="bg-[#FAF7F2] border-b border-stone-200 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
-                <tr>
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-stone-200 bg-stone-50/70 text-stone-500 uppercase tracking-wider text-[10px] font-bold">
                   <th className="py-3.5 px-6">Order Reference</th>
                   <th className="py-3.5 px-4">Client</th>
                   <th className="py-3.5 px-4">Total Amount</th>
-                  <th className="py-3.5 px-4">Fulfillment Status</th>
-                  <th className="py-3.5 px-4">Ordered At</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
+                  <th className="py-3.5 px-4">Status & Next Action</th>
+                  <th className="py-3.5 px-4">Date</th>
+                  <th className="py-3.5 px-6 text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {filteredOrders.map((o) => (
-                  <tr key={o.id} className="hover:bg-stone-50/60 transition-colors">
-                    <td className="py-4 px-6">
-                      <span className="font-mono font-bold text-stone-900 bg-stone-100 px-2 py-0.5 rounded text-[11px]">
-                        {o.order_number}
-                      </span>
-                    </td>
+                {filteredOrders.map((o) => {
+                  const isUpdating = updatingStatusId === o.id;
 
-                    <td className="py-4 px-4">
-                      <div>
-                        <p className="font-bold text-stone-900 text-xs">
-                          {o.profiles?.full_name || "Valued Client"}
-                        </p>
-                        <p className="text-[10px] text-stone-500 font-mono mt-0.5">
-                          {o.phone}
-                        </p>
-                      </div>
-                    </td>
+                  return (
+                    <tr key={o.id} className="hover:bg-stone-50/60 transition-colors">
+                      <td className="py-4 px-6">
+                        <span className="font-mono font-bold text-stone-900 bg-stone-100 px-2.5 py-1 rounded-md text-[11px]">
+                          {o.order_number}
+                        </span>
+                      </td>
 
-                    <td className="py-4 px-4 font-mono font-bold text-stone-900">
-                      {Number(o.total_price).toLocaleString()} ETB
-                    </td>
+                      <td className="py-4 px-4">
+                        <div>
+                          <p className="font-bold text-stone-900 text-xs">
+                            {o.profiles?.full_name || "Customer"}
+                          </p>
+                          <p className="text-[10px] text-stone-500 font-mono mt-0.5">
+                            {o.phone}
+                          </p>
+                        </div>
+                      </td>
 
-                    <td className="py-4 px-4">
-                      <select
-                        value={o.status}
-                        disabled={updatingStatusId === o.id}
-                        onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                        className={`text-[10px] font-bold rounded-lg px-2.5 py-1 border transition-colors cursor-pointer ${
-                          o.status === "completed" ? "bg-emerald-50 text-emerald-900 border-emerald-200" :
-                          o.status === "approved" || o.status === "in_production" ? "bg-blue-50 text-blue-900 border-blue-200" :
-                          o.status === "ready" ? "bg-teal-50 text-teal-900 border-teal-200" :
-                          o.status === "rejected" || o.status === "cancelled" ? "bg-red-50 text-red-900 border-red-200" :
-                          "bg-amber-50 text-amber-900 border-amber-200"
-                        }`}
-                      >
-                        <option value="pending_payment">Pending Payment</option>
-                        <option value="pending_verification">Pending Verification</option>
-                        <option value="approved">Approved</option>
-                        <option value="in_production">In Production</option>
-                        <option value="ready">Ready for Dispatch</option>
-                        <option value="completed">Completed</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                    </td>
+                      <td className="py-4 px-4 font-mono font-bold text-stone-900">
+                        {formatPrice(o.total_price)}
+                      </td>
 
-                    <td className="py-4 px-4 text-stone-400 text-[11px]">
-                      {new Date(o.created_at).toLocaleDateString()}
-                    </td>
+                      {/* Status & Valid Transition Buttons */}
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            o.status === "completed" ? "bg-emerald-100 text-emerald-800" :
+                            o.status === "ready" ? "bg-indigo-100 text-indigo-800" :
+                            o.status === "in_production" ? "bg-purple-100 text-purple-800" :
+                            o.status === "approved" ? "bg-blue-100 text-blue-800" :
+                            o.status === "rejected" || o.status === "cancelled" ? "bg-red-100 text-red-800" :
+                            "bg-amber-100 text-amber-800"
+                          }`}>
+                            {o.status.replace("_", " ")}
+                          </span>
 
-                    <td className="py-4 px-6 text-right">
-                      <button
-                        onClick={() => openOrderDetail(o)}
-                        className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        Inspect Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                          {/* Valid Next Transition Controls */}
+                          {o.status === "approved" && (
+                            <button
+                              disabled={isUpdating}
+                              onClick={() => handleStatusChange(o.id, "in_production")}
+                              className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                              title="Start printing & production"
+                            >
+                              <Package size={11} />
+                              <span>Start Production</span>
+                            </button>
+                          )}
+
+                          {o.status === "in_production" && (
+                            <button
+                              disabled={isUpdating}
+                              onClick={() => handleStatusChange(o.id, "ready")}
+                              className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                              title="Mark ready for delivery dispatch"
+                            >
+                              <Truck size={11} />
+                              <span>Mark Ready</span>
+                            </button>
+                          )}
+
+                          {o.status === "ready" && (
+                            <button
+                              disabled={isUpdating}
+                              onClick={() => handleStatusChange(o.id, "completed")}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                              title="Confirm delivery dispatch completed"
+                            >
+                              <Check size={11} />
+                              <span>Complete</span>
+                            </button>
+                          )}
+
+                          {o.status === "pending_verification" && (
+                            <Link
+                              href={`/admin/payments`}
+                              className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition-all flex items-center gap-1"
+                            >
+                              <span>Verify</span>
+                              <ArrowRight size={11} />
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="py-4 px-4 text-stone-400 text-[11px]">
+                        {new Date(o.created_at).toLocaleDateString()}
+                      </td>
+
+                      <td className="py-4 px-6 text-right">
+                        <button
+                          onClick={() => openOrderDetail(o)}
+                          className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          Inspect
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
 
-      {/* Order Detail Modal */}
+      {/* Detail Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 border border-stone-200 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fadeIn text-xs">
@@ -392,7 +566,7 @@ export default function AdminOrdersPage() {
             </div>
 
             <div className="space-y-4">
-              {/* Client & Shipping */}
+              {/* Customer & Shipping */}
               <div className="grid grid-cols-2 gap-4 bg-[#FAF7F2] p-4 rounded-2xl border border-stone-200/60">
                 <div>
                   <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Customer</span>
@@ -417,7 +591,7 @@ export default function AdminOrdersPage() {
                   {(selectedOrder.order_items || []).map((item) => (
                     <div key={item.id} className="py-2 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-stone-900">{item.products?.name || "Catalog Bag"}</p>
+                        <p className="font-bold text-stone-900">{item.products?.name || "Artisan Kraft Bag"}</p>
                         <p className="text-[10px] text-stone-500">
                           {item.quantity} bundles × {item.unit_price_snapshot} ETB
                         </p>
@@ -434,7 +608,7 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
-              {/* Chronological Status Audit Log */}
+              {/* Chronological Status Audit Trail */}
               <div>
                 <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-2">
                   Order Status Audit Trail
@@ -448,13 +622,15 @@ export default function AdminOrdersPage() {
                     {detailHistory.map((h) => (
                       <div key={h.id} className="p-2.5 rounded-xl bg-white border border-stone-200 flex items-center justify-between">
                         <div>
-                          <span className="font-bold text-[10px] uppercase tracking-wider text-[#1E3B2E]">
-                            {h.to_status.replace("_", " ")}
+                          <span className="font-bold text-stone-800 capitalize">
+                            {h.to_status?.replace("_", " ")}
                           </span>
-                          {h.note && <p className="text-[11px] text-stone-600 mt-0.5">{h.note}</p>}
+                          {h.note && (
+                            <p className="text-[10px] text-stone-500 mt-0.5">{h.note}</p>
+                          )}
                         </div>
                         <span className="text-[10px] text-stone-400 font-mono">
-                          {new Date(h.created_at).toLocaleString()}
+                          {new Date(h.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(h.created_at).toLocaleDateString()}
                         </span>
                       </div>
                     ))}
@@ -462,11 +638,184 @@ export default function AdminOrdersPage() {
                 )}
               </div>
             </div>
-
           </div>
         </div>
       )}
 
+      {/* Modal: Create Order on Behalf of Customer */}
+      {createModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-stone-200 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fadeIn text-xs">
+            
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
+              <div className="flex items-center gap-2">
+                <UserCheck size={18} className="text-[#1E3B2E]" />
+                <h3 className="font-serif text-lg font-bold text-stone-900">
+                  Create Order on Behalf of Customer
+                </h3>
+              </div>
+              <button
+                onClick={() => setCreateModalOpen(false)}
+                className="p-1 rounded-full text-stone-400 hover:bg-stone-100 text-stone-600 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {createError && (
+              <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                <AlertCircle size={15} className="text-red-600 shrink-0" />
+                <span>{createError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateOnBehalf} className="space-y-4">
+              {/* Select Customer */}
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase mb-1">
+                  Target Customer <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formBuyerId}
+                  onChange={(e) => {
+                    setFormBuyerId(e.target.value);
+                    const selectedC = customers.find(c => c.id === e.target.value);
+                    if (selectedC?.phone) setFormPhone(selectedC.phone);
+                  }}
+                  className="w-full bg-[#FAF7F2] border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800"
+                >
+                  <option value="">-- Select Customer Account --</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.full_name || "Customer"} ({c.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Select Product & Quantity */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-stone-700 uppercase mb-1">
+                    Product <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={formProductId}
+                    onChange={(e) => setFormProductId(e.target.value)}
+                    className="w-full bg-[#FAF7F2] border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800"
+                  >
+                    <option value="">-- Select Product --</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.price} ETB)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase mb-1">
+                    Quantity <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    required
+                    value={formQuantity}
+                    onChange={(e) => setFormQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full bg-[#FAF7F2] border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800 font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Bank Account */}
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase mb-1">
+                  Settlement Bank <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formBankId}
+                  onChange={(e) => setFormBankId(e.target.value)}
+                  className="w-full bg-[#FAF7F2] border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800"
+                >
+                  <option value="">-- Select Active Bank Account --</option>
+                  {banks.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.bank_name} - {b.account_number}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Delivery Address & Phone */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase mb-1">
+                    Delivery Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formAddress}
+                    onChange={(e) => setFormAddress(e.target.value)}
+                    placeholder="Bole, Addis Ababa"
+                    className="w-full bg-[#FAF7F2] border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase mb-1">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={formPhone}
+                    onChange={(e) => setFormPhone(e.target.value)}
+                    placeholder="+251 911 000 000"
+                    className="w-full bg-[#FAF7F2] border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase mb-1">
+                  Notes
+                </label>
+                <input
+                  type="text"
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
+                  placeholder="Order placed by manager on behalf of customer"
+                  className="w-full bg-[#FAF7F2] border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCreateModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-stone-600 hover:bg-stone-100 text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isCreatingOrder}
+                  className="px-5 py-2 rounded-full bg-[#1E3B2E] text-white font-bold text-xs hover:bg-[#8C4B31] disabled:opacity-50 transition-colors shadow-xs"
+                >
+                  {isCreatingOrder ? "Creating Order..." : "Create Order"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

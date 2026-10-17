@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
+import { pool } from "@/utils/db";
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  pending_payment: ["pending_verification", "cancelled"],
+  pending_verification: ["approved", "rejected", "cancelled"],
+  rejected: ["pending_verification", "cancelled"],
+  approved: ["in_production", "cancelled"],
+  in_production: ["ready", "cancelled"],
+  ready: ["completed"],
+  completed: [],
+  cancelled: [],
+};
 
 export async function GET(
   request: NextRequest,
@@ -10,6 +22,20 @@ export async function GET(
     const user = await requireUser();
     const resolvedParams = await params;
     const orderId = resolvedParams.id;
+
+    // Check existence and ownership in DB first to distinguish 404 vs 403 under RLS
+    const { rows: orderRows } = await pool.query("SELECT id, buyer_id FROM public.orders WHERE id = $1", [orderId]);
+    if (orderRows.length === 0) {
+      return NextResponse.json({ error: "Order not found." }, { status: 404 });
+    }
+
+    if (user.role === "customer" && orderRows[0].buyer_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
+    }
+
+    if (user.role === "teacher") {
+      return NextResponse.json({ error: "Forbidden: Teachers do not manage customer orders." }, { status: 403 });
+    }
 
     const supabase = await createClient();
 
@@ -29,15 +55,6 @@ export async function GET(
 
     if (error || !order) {
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
-    }
-
-    // Role check: customer can only view own order
-    if (user.role === "customer" && order.buyer_id !== user.id) {
-      return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
-    }
-
-    if (user.role === "teacher") {
-      return NextResponse.json({ error: "Forbidden: Teachers do not manage customer orders." }, { status: 403 });
     }
 
     // Sort status history chronologically
@@ -68,6 +85,16 @@ export async function PATCH(
     const resolvedParams = await params;
     const orderId = resolvedParams.id;
 
+    // Check existence and ownership in DB first to distinguish 404 vs 403 under RLS
+    const { rows: patchOrderRows } = await pool.query("SELECT id, buyer_id FROM public.orders WHERE id = $1", [orderId]);
+    if (patchOrderRows.length === 0) {
+      return NextResponse.json({ error: "Order not found." }, { status: 404 });
+    }
+
+    if (user.role === "customer" && patchOrderRows[0].buyer_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const { action, status, rejectionReason, paymentProofPath, note } = body;
 
@@ -89,6 +116,11 @@ export async function PATCH(
     if (user.role === "customer") {
       if (order.buyer_id !== user.id) {
         return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
+      }
+
+      // Customer cannot approve payments or change fulfillment status
+      if (action === "approve" || status === "approved" || status === "in_production" || status === "ready" || status === "completed") {
+        return NextResponse.json({ error: "Forbidden: Customers cannot approve payments or modify manufacturing status." }, { status: 403 });
       }
 
       if (action === "cancel") {
@@ -121,6 +153,11 @@ export async function PATCH(
           return NextResponse.json({ error: "Payment proof path is required." }, { status: 400 });
         }
 
+        // Only allowed if pending_payment, pending_verification or rejected
+        if (!["pending_payment", "pending_verification", "rejected"].includes(oldStatus)) {
+          return NextResponse.json({ error: "Receipt cannot be uploaded for an already approved or cancelled order." }, { status: 400 });
+        }
+
         const { data: updated, error } = await supabase
           .from("orders")
           .update({
@@ -140,8 +177,26 @@ export async function PATCH(
           from_status: oldStatus,
           to_status: "pending_verification",
           changed_by: user.id,
-          note: "Customer uploaded payment verification receipt.",
+          note: oldStatus === "rejected"
+            ? "Customer re-uploaded payment verification receipt after rejection."
+            : "Customer uploaded payment verification receipt.",
         });
+
+        // Notify admins
+        const { data: adminProfiles } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("role", "admin");
+
+        if (adminProfiles && adminProfiles.length > 0) {
+          const notifications = adminProfiles.map(adm => ({
+            user_id: adm.id,
+            title: `Payment Receipt Uploaded: ${order.order_number}`,
+            body: `${user.full_name} submitted payment receipt for verification.`,
+            link: `/admin/payments?order=${order.id}`,
+          }));
+          await supabase.from("notifications").insert(notifications);
+        }
 
         return NextResponse.json({ success: true, order: updated });
       }
@@ -151,11 +206,11 @@ export async function PATCH(
 
     // Admin actions
     if (user.role === "admin") {
-      let targetStatus = status;
+      let targetStatus: string | null = status || null;
       const updates: Record<string, any> = { updated_at: new Date().toISOString() };
 
       if (action === "approve") {
-        targetStatus = "verified";
+        targetStatus = "approved";
         updates.verified_by = user.id;
         updates.verified_at = new Date().toISOString();
         updates.rejection_reason = null;
@@ -171,6 +226,14 @@ export async function PATCH(
 
       if (!targetStatus) {
         return NextResponse.json({ error: "Target status or action is required." }, { status: 400 });
+      }
+
+      // Check transition against state machine
+      const allowedNext = VALID_TRANSITIONS[oldStatus] || [];
+      if (!allowedNext.includes(targetStatus)) {
+        return NextResponse.json({
+          error: `Invalid status transition: cannot change order from '${oldStatus}' to '${targetStatus}'.`,
+        }, { status: 400 });
       }
 
       updates.status = targetStatus;
@@ -202,6 +265,15 @@ export async function PATCH(
           ? `Your payment of ${Number(order.total_price).toLocaleString()} ETB has been verified. Production will begin shortly!`
           : `Order status has progressed to ${targetStatus.replace("_", " ")}.`,
         link: `/dashboard/orders/${order.id}`,
+      });
+
+      // Audit log
+      await supabase.from("audit_log").insert({
+        actor_id: user.id,
+        action: `ORDER_${targetStatus.toUpperCase()}`,
+        entity: "orders",
+        entity_id: orderId,
+        metadata: { from: oldStatus, to: targetStatus, rejectionReason: updates.rejection_reason || null },
       });
 
       return NextResponse.json({ success: true, order: updated });

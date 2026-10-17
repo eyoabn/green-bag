@@ -305,7 +305,7 @@ export default function ProductsPage() {
               <Sparkles size={14} /> 100% Real Production Batches • Made in Ethiopia
             </span>
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 tracking-tight">
-              Our Products & Manufacturing Catalog
+              Our Packaging Catalog & Factory Portfolio
             </h1>
             <p className="text-stone-600 text-lg mt-4 leading-relaxed">
               Explore authentic paper bags and packaging manufactured at our Addis Ababa facility for top Ethiopian coffee roasters, boutique fashion houses, hotels, and bakeries.

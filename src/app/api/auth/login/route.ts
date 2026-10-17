@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError || !authData.user) {
+      console.error("DEBUG LOGIN authError:", authError?.message, "for email:", trimmedEmail);
       return NextResponse.json(
         { error: authError?.message || "Invalid credentials. Please verify your email and password." },
         { status: 401 }

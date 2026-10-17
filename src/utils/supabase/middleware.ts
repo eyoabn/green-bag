@@ -78,7 +78,7 @@ export async function updateSession(request: NextRequest) {
       if (!user) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
-        url.searchParams.set('redirect', pathname)
+        url.searchParams.set('returnTo', pathname)
         return NextResponse.redirect(url)
       }
       if (role !== 'admin') {
@@ -93,7 +93,7 @@ export async function updateSession(request: NextRequest) {
       if (!user) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
-        url.searchParams.set('redirect', pathname)
+        url.searchParams.set('returnTo', pathname)
         return NextResponse.redirect(url)
       }
       if (role !== 'teacher' && role !== 'admin') {
@@ -108,7 +108,7 @@ export async function updateSession(request: NextRequest) {
       if (!user) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
-        url.searchParams.set('redirect', pathname)
+        url.searchParams.set('returnTo', pathname)
         return NextResponse.redirect(url)
       }
     }

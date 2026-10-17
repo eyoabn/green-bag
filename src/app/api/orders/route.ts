@@ -35,16 +35,18 @@ export async function GET(request: NextRequest) {
       `)
       .order("created_at", { ascending: false });
 
+    const mappedStatus = statusFilter === "pending" ? "pending_verification" : statusFilter;
+
     // Enforce role-based isolation
     if (user.role === "admin") {
-      if (statusFilter && statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+      if (mappedStatus && mappedStatus !== "all") {
+        query = query.eq("status", mappedStatus);
       }
     } else if (user.role === "customer") {
       // Customer can view ONLY their own orders
       query = query.eq("buyer_id", user.id);
-      if (statusFilter && statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+      if (mappedStatus && mappedStatus !== "all") {
+        query = query.eq("status", mappedStatus);
       }
     } else {
       // Teachers do not manage customer orders
@@ -320,7 +322,7 @@ export async function PATCH(request: NextRequest) {
       let updates: Record<string, any> = { updated_at: new Date().toISOString() };
 
       if (action === "approve") {
-        targetStatus = "approved";
+        targetStatus = "verified";
         updates.verified_by = user.id;
         updates.verified_at = new Date().toISOString();
         updates.rejection_reason = null;

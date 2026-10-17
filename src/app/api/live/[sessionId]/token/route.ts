@@ -45,7 +45,7 @@ export async function POST(
         return NextResponse.json({ error: "You are not enrolled in this session." }, { status: 403 });
       }
 
-      if (enrollment.status !== "confirmed" && enrollment.status !== "attended") {
+      if (enrollment.status !== "confirmed" && enrollment.status !== "approved" && enrollment.status !== "attended") {
         return NextResponse.json({
           error: `Your enrollment is currently "${enrollment.status}". Access is only granted once payment is verified and confirmed.`,
         }, { status: 403 });

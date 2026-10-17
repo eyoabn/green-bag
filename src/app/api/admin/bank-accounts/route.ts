@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       accounts: accounts || [],
+      bankAccounts: accounts || [],
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to load bank accounts" }, { status: 500 });

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import { createClient } from "@/utils/supabase/client";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -179,13 +180,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-xl text-stone-700 bg-stone-100 hover:bg-stone-200 cursor-pointer"
-          aria-label="Toggle Admin Navigation"
-        >
-          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-xl text-stone-700 bg-stone-100 hover:bg-stone-200 cursor-pointer"
+            aria-label="Toggle Admin Navigation"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar: Fixed on Desktop, Slide-over on Mobile */}
@@ -282,10 +286,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
       )}
 
-      {/* Main Admin Content Stage */}
-      <main className="flex-1 md:ml-64 p-6 sm:p-8">
-        {children}
-      </main>
+      {/* Main Admin Content Stage with Desktop Top Bar */}
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+        <header data-testid="admin-topbar" className="flex max-md:hidden h-16 bg-white border-b border-stone-200 px-8 items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">Plant Administration</span>
+            <span className="text-stone-300">/</span>
+            <span className="text-xs font-bold text-stone-800 capitalize">
+              {pathname === "/admin" ? "Overview" : pathname.replace("/admin/", "").replace(/-/g, " ")}
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <NotificationBell />
+            <div className="h-6 w-px bg-stone-200" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-bold text-xs">
+                {currentUser.full_name?.charAt(0) || "A"}
+              </div>
+              <span className="text-xs font-bold text-stone-800">{currentUser.full_name}</span>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 p-6 sm:p-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

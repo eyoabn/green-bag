@@ -308,10 +308,11 @@ export default function Navbar() {
               </div>
             )}
 
+            <div className="pt-1">
               <Link
                 href="/products"
                 onClick={() => setMobileMenuOpen(false)}
-                className="bg-[#1E3B2E] text-white text-xs font-bold px-4 py-2 rounded-xl"
+                className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-4 py-2.5 rounded-xl block text-center transition-colors"
               >
                 Order Bags
               </Link>

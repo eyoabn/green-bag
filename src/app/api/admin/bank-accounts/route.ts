@@ -1,125 +1,151 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireRole } from "@/utils/roles";
-import { createClient } from "@/utils/supabase/server";
+import { pool } from "@/utils/db";
+import { logAuditEvent } from "@/utils/audit";
 
-// GET /api/admin/bank-accounts - Fetch bank settlement accounts
+const createBankAccountSchema = z.object({
+  bank_name: z.string().min(2, "Bank name must be at least 2 characters"),
+  account_name: z.string().min(2, "Account holder name is required"),
+  account_number: z.string().min(3, "Account number must be at least 3 digits"),
+  instructions: z.string().optional().default("Use your Order Number as payment reference."),
+  is_active: z.boolean().optional().default(true),
+});
+
+const updateBankAccountSchema = z.object({
+  id: z.string().uuid("Invalid bank account ID"),
+  bank_name: z.string().min(2).optional(),
+  account_name: z.string().min(2).optional(),
+  account_number: z.string().min(3).optional(),
+  instructions: z.string().optional(),
+  is_active: z.boolean().optional(),
+});
+
+// GET /api/admin/bank-accounts - List all settlement accounts
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get("activeOnly") === "true";
 
-    let query = supabase
-      .from("bank_accounts")
-      .select("id, bank_name, account_name, account_number, instructions, is_active, created_at")
-      .order("created_at", { ascending: true });
+    let query = `
+      SELECT id, bank_name, account_name, account_number, instructions, is_active, created_at, updated_at
+      FROM public.bank_accounts
+    `;
+    const params: any[] = [];
 
     if (activeOnly) {
-      query = query.eq("is_active", true);
+      query += ` WHERE is_active = true`;
     }
 
-    const { data: accounts, error } = await query;
-    if (error) throw error;
+    query += ` ORDER BY created_at ASC`;
+
+    const res = await pool.query(query, params);
 
     return NextResponse.json({
       success: true,
-      accounts: accounts || [],
-      bankAccounts: accounts || [],
+      accounts: res.rows || [],
+      bankAccounts: res.rows || [],
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to load bank accounts" }, { status: 500 });
   }
 }
 
-// POST /api/admin/bank-accounts - Create new settlement bank account
+// POST /api/admin/bank-accounts - Create new bank account
 export async function POST(request: NextRequest) {
   try {
     const admin = await requireRole(["admin"]);
     const body = await request.json().catch(() => ({}));
-    const { bank_name, account_name, account_number, instructions, is_active = true } = body;
-
-    if (!bank_name || !account_number) {
-      return NextResponse.json({ error: "Bank name and account number are required." }, { status: 400 });
+    
+    const parsed = createBankAccountSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(", ");
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const { bank_name, account_name, account_number, instructions, is_active } = parsed.data;
 
-    const { data, error } = await supabase
-      .from("bank_accounts")
-      .insert({
-        bank_name: String(bank_name).trim(),
-        account_name: account_name ? String(account_name).trim() : "Arenguade Paper Products PLC",
-        account_number: String(account_number).trim(),
-        instructions: instructions ? String(instructions).trim() : "Reference your Order Number in the deposit/transfer remark.",
-        is_active: Boolean(is_active),
-      })
-      .select()
-      .single();
+    const res = await pool.query(
+      `
+      INSERT INTO public.bank_accounts (bank_name, account_name, account_number, instructions, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      RETURNING id, bank_name, account_name, account_number, instructions, is_active, created_at, updated_at;
+    `,
+      [bank_name.trim(), account_name.trim(), account_number.trim(), instructions?.trim() || "", is_active]
+    );
 
-    if (error) throw error;
+    const account = res.rows[0];
 
-    // Write to audit log
-    await supabase.from("audit_log").insert({
-      actor_id: admin.id,
+    await logAuditEvent({
+      actorId: admin.id,
       action: "CREATE_BANK_ACCOUNT",
       entity: "bank_accounts",
-      entity_id: data.id,
-      metadata: { bank_name: data.bank_name, account_number: data.account_number },
+      entityId: account.id,
+      metadata: { bank_name, account_number, is_active },
     });
 
-    return NextResponse.json({ success: true, account: data });
+    return NextResponse.json({ success: true, account });
   } catch (err: any) {
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to create bank account" }, { status });
   }
 }
 
-// PATCH /api/admin/bank-accounts - Update bank account details or active status
+// PATCH /api/admin/bank-accounts - Update bank account
 export async function PATCH(request: NextRequest) {
   try {
     const admin = await requireRole(["admin"]);
     const body = await request.json().catch(() => ({}));
-    const { id, is_active, bank_name, account_name, account_number, instructions } = body;
 
-    if (!id) {
-      return NextResponse.json({ error: "Account ID is required." }, { status: 400 });
+    const parsed = updateBankAccountSchema.safeParse(body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues.map((i) => i.message).join(", ");
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
 
-    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
-    if (is_active !== undefined) updates.is_active = Boolean(is_active);
-    if (bank_name !== undefined) updates.bank_name = String(bank_name).trim();
-    if (account_name !== undefined) updates.account_name = String(account_name).trim();
-    if (account_number !== undefined) updates.account_number = String(account_number).trim();
-    if (instructions !== undefined) updates.instructions = String(instructions).trim();
+    const { id, ...fields } = parsed.data;
 
-    const supabase = await createClient();
+    const setClauses: string[] = ["updated_at = NOW()"];
+    const values: any[] = [id];
+    let paramIdx = 2;
 
-    const { data, error } = await supabase
-      .from("bank_accounts")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
+    for (const [k, v] of Object.entries(fields)) {
+      if (v !== undefined) {
+        setClauses.push(`${k} = $${paramIdx++}`);
+        values.push(v);
+      }
+    }
 
-    if (error) throw error;
+    const updateQuery = `
+      UPDATE public.bank_accounts
+      SET ${setClauses.join(", ")}
+      WHERE id = $1
+      RETURNING id, bank_name, account_name, account_number, instructions, is_active, created_at, updated_at;
+    `;
 
-    // Write to audit log
-    await supabase.from("audit_log").insert({
-      actor_id: admin.id,
+    const res = await pool.query(updateQuery, values);
+    if (res.rowCount === 0) {
+      return NextResponse.json({ error: "Bank account not found." }, { status: 404 });
+    }
+
+    const account = res.rows[0];
+
+    await logAuditEvent({
+      actorId: admin.id,
       action: "UPDATE_BANK_ACCOUNT",
       entity: "bank_accounts",
-      entity_id: id,
-      metadata: updates,
+      entityId: id,
+      metadata: fields,
     });
 
-    return NextResponse.json({ success: true, account: data });
+    return NextResponse.json({ success: true, account });
   } catch (err: any) {
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to update bank account" }, { status });
   }
 }
 
-// DELETE /api/admin/bank-accounts - Remove bank account
+// DELETE /api/admin/bank-accounts - Remove or deactivate bank account
 export async function DELETE(request: NextRequest) {
   try {
     const admin = await requireRole(["admin"]);
@@ -127,49 +153,39 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "Account ID is required." }, { status: 400 });
+      return NextResponse.json({ error: "Bank account ID is required." }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    // Check if account is referenced by existing orders
+    const ordersCheck = await pool.query("SELECT COUNT(*) as count FROM public.orders WHERE bank_account_id = $1", [id]);
+    const linkedCount = parseInt(ordersCheck.rows[0]?.count || "0", 10);
 
-    // Check if account has linked orders
-    const { count } = await supabase
-      .from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("bank_account_id", id);
+    if (linkedCount > 0) {
+      // Deactivate rather than hard delete to preserve financial audit trail
+      await pool.query("UPDATE public.bank_accounts SET is_active = false, updated_at = NOW() WHERE id = $1", [id]);
 
-    if (count && count > 0) {
-      // Instead of hard deleting, deactivate to preserve order history integrity
-      const { error: deactErr } = await supabase
-        .from("bank_accounts")
-        .update({ is_active: false, updated_at: new Date().toISOString() })
-        .eq("id", id);
-
-      if (deactErr) throw deactErr;
-
-      await supabase.from("audit_log").insert({
-        actor_id: admin.id,
+      await logAuditEvent({
+        actorId: admin.id,
         action: "DEACTIVATE_BANK_ACCOUNT_HISTORICAL",
         entity: "bank_accounts",
-        entity_id: id,
-        metadata: { reason: "Has linked historical orders", linked_orders: count },
+        entityId: id,
+        metadata: { linked_orders: linkedCount, reason: "Preserve order history" },
       });
 
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         deactivated: true,
-        message: "Account has linked order history; it has been deactivated rather than purged." 
+        message: "Account has linked orders; it has been deactivated to preserve order audit history.",
       });
     }
 
-    const { error } = await supabase.from("bank_accounts").delete().eq("id", id);
-    if (error) throw error;
+    await pool.query("DELETE FROM public.bank_accounts WHERE id = $1", [id]);
 
-    await supabase.from("audit_log").insert({
-      actor_id: admin.id,
+    await logAuditEvent({
+      actorId: admin.id,
       action: "DELETE_BANK_ACCOUNT",
       entity: "bank_accounts",
-      entity_id: id,
+      entityId: id,
       metadata: { deleted: true },
     });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -10,11 +11,45 @@ import {
   ShieldCheck, 
   ArrowUpRight, 
   Heart,
-  FileText
+  FileText,
+  Send
 } from "lucide-react";
+
+interface SiteSettings {
+  company_name: string;
+  contact_phone: string;
+  contact_email: string;
+  address: string;
+  social_links?: {
+    facebook?: string;
+    instagram?: string;
+    telegram?: string;
+    linkedin?: string;
+  };
+}
 
 export default function Footer() {
   const pathname = usePathname();
+  const [settings, setSettings] = useState<SiteSettings>({
+    company_name: "Ethiopia Arenguade Paper Product PLC",
+    contact_phone: "+251 911 223 344",
+    contact_email: "info@arenguadepaper.com",
+    address: "Bole Sub-City, Woreda 03, Addis Ababa, Ethiopia",
+  });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.settings) {
+          setSettings((prev) => ({
+            ...prev,
+            ...data.settings,
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Hide on admin and dashboard internal pages
   if (pathname?.startsWith("/admin") || pathname?.startsWith("/dashboard")) {
@@ -36,10 +71,10 @@ export default function Footer() {
               </div>
               <div className="flex flex-col">
                 <span className="font-serif text-2xl font-bold tracking-tight text-white">
-                  Arenguade
+                  {settings.company_name?.includes("Arenguade") ? "Arenguade" : settings.company_name}
                 </span>
                 <span className="text-[11px] font-semibold tracking-wider text-[#E0B382] uppercase">
-                  Ethiopia Paper Products & Academy
+                  {settings.company_name}
                 </span>
               </div>
             </div>
@@ -58,6 +93,56 @@ export default function Footer() {
                 ISO 14001 Compliant
               </span>
             </div>
+
+            {/* Social Links */}
+            {settings.social_links && (settings.social_links.telegram || settings.social_links.instagram || settings.social_links.facebook || settings.social_links.linkedin) && (
+              <div className="flex items-center gap-3 pt-1">
+                {settings.social_links.telegram && (
+                  <a
+                    href={settings.social_links.telegram.startsWith("http") ? settings.social_links.telegram : `https://t.me/${settings.social_links.telegram.replace("@", "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#8C4B31] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                    title="Telegram"
+                  >
+                    <Send size={14} />
+                  </a>
+                )}
+                {settings.social_links.instagram && (
+                  <a
+                    href={settings.social_links.instagram}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#8C4B31] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                    title="Instagram"
+                  >
+                    IG
+                  </a>
+                )}
+                {settings.social_links.facebook && (
+                  <a
+                    href={settings.social_links.facebook}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#8C4B31] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                    title="Facebook"
+                  >
+                    FB
+                  </a>
+                )}
+                {settings.social_links.linkedin && (
+                  <a
+                    href={settings.social_links.linkedin}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#8C4B31] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                    title="LinkedIn"
+                  >
+                    IN
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Catalog Links */}
@@ -90,19 +175,19 @@ export default function Footer() {
             <ul className="space-y-3 text-xs text-stone-400">
               <li className="flex items-start gap-2.5">
                 <MapPin size={15} className="text-[#8C4B31] shrink-0 mt-0.5" />
-                <span>Bole Subcity, Woreda 03, Industrial Zone, Addis Ababa, Ethiopia</span>
+                <span className="leading-relaxed">{settings.address}</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone size={15} className="text-[#8C4B31] shrink-0" />
-                <span>+251 911 234 567 / +251 116 890 123</span>
+                <span>{settings.contact_phone}</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail size={15} className="text-[#8C4B31] shrink-0" />
-                <span>invest@arenguade.et</span>
+                <span>{settings.contact_email}</span>
               </li>
               <li className="pt-2">
                 <a 
-                  href="mailto:invest@arenguade.et?subject=Investor%20Inquiry%20-%20Arenguade"
+                  href={`mailto:${settings.contact_email}?subject=Inquiry%20-%20Arenguade`}
                   className="inline-flex items-center gap-1 text-xs font-semibold text-[#E0B382] hover:underline"
                 >
                   <FileText size={13} />
@@ -126,7 +211,7 @@ export default function Footer() {
           </div>
 
           <div className="flex items-center gap-2 text-stone-400">
-            <span>© 2026 Ethiopia Arenguade Paper Product PLC.</span>
+            <span>© 2026 {settings.company_name}.</span>
             <span>Crafted with</span>
             <Heart size={12} className="text-[#8C4B31] fill-current" />
             <span>in Addis Ababa</span>

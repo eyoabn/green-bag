@@ -147,7 +147,7 @@ test.describe("Ethiopia Arenguade Paper Product - Master Flows v2", () => {
     });
     if (regRes.status() === 400) {
       const regErr = await regRes.json();
-      expect(regErr.error).toMatch(/already have an active registration|Session is already full|not open for registration/i);
+      expect(regErr.error).toMatch(/already_enrolled|active enrollment|already have an active registration|Session is already full|not open for registration/i);
     } else {
       expect(regRes.ok()).toBeTruthy();
       const regData = await regRes.json();

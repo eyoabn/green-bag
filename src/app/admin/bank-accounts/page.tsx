@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { 
   CreditCard, 
   Plus, 
-  CheckCircle2, 
-  Trash2, 
   Building2, 
-  Smartphone,
-  X,
-  AlertCircle,
-  Check
+  X, 
+  AlertCircle, 
+  Check, 
+  Power, 
+  Edit3, 
+  Trash2, 
+  HelpCircle 
 } from "lucide-react";
 
 interface BankAccount {
@@ -21,6 +22,7 @@ interface BankAccount {
   instructions: string;
   is_active: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 export default function AdminBankAccountsPage() {
@@ -28,14 +30,19 @@ export default function AdminBankAccountsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
+
+  // Modal State (Create or Edit)
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   
-  // New bank form state
+  // Form State
   const [bankName, setBankName] = useState("");
   const [accountName, setAccountName] = useState("Ethiopia Arenguade Paper Product PLC");
   const [accountNumber, setAccountNumber] = useState("");
   const [instructions, setInstructions] = useState("Use your Order Number as payment reference.");
+  const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const fetchBanks = async () => {
     setLoading(true);
@@ -59,6 +66,28 @@ export default function AdminBankAccountsPage() {
     fetchBanks();
   }, []);
 
+  const openCreateModal = () => {
+    setEditingAccount(null);
+    setBankName("");
+    setAccountName("Ethiopia Arenguade Paper Product PLC");
+    setAccountNumber("");
+    setInstructions("Use your Order Number as payment reference.");
+    setIsActive(true);
+    setFormError("");
+    setModalOpen(true);
+  };
+
+  const openEditModal = (account: BankAccount) => {
+    setEditingAccount(account);
+    setBankName(account.bank_name);
+    setAccountName(account.account_name);
+    setAccountNumber(account.account_number);
+    setInstructions(account.instructions || "Use your Order Number as payment reference.");
+    setIsActive(account.is_active);
+    setFormError("");
+    setModalOpen(true);
+  };
+
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     setActionSuccess("");
     try {
@@ -72,7 +101,7 @@ export default function AdminBankAccountsPage() {
         setBanks((prev) =>
           prev.map((b) => (b.id === id ? { ...b, is_active: !currentStatus } : b))
         );
-        setActionSuccess(`Bank status ${!currentStatus ? "ACTIVATED" : "DISABLED"} successfully.`);
+        setActionSuccess(`Bank account ${!currentStatus ? "ACTIVATED" : "DISABLED"} successfully.`);
         setTimeout(() => setActionSuccess(""), 3500);
       } else {
         alert(resJson?.error || "Failed to toggle status");
@@ -101,34 +130,60 @@ export default function AdminBankAccountsPage() {
     }
   };
 
-  const handleAddAccount = async (e: React.FormEvent) => {
+  const handleSaveAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setFormError("");
+
     try {
-      const res = await fetch("/api/admin/bank-accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bank_name: bankName,
-          account_name: accountName,
-          account_number: accountNumber,
-          instructions,
-          is_active: true,
-        }),
-      });
-      const resJson = await res.json();
-      if (res.ok && resJson?.success) {
-        setModalOpen(false);
-        setBankName("");
-        setAccountNumber("");
-        fetchBanks();
-        setActionSuccess("Settlement bank account created successfully.");
-        setTimeout(() => setActionSuccess(""), 3500);
+      if (editingAccount) {
+        // UPDATE (PATCH)
+        const res = await fetch("/api/admin/bank-accounts", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: editingAccount.id,
+            bank_name: bankName.trim(),
+            account_name: accountName.trim(),
+            account_number: accountNumber.trim(),
+            instructions: instructions.trim(),
+            is_active: isActive,
+          }),
+        });
+        const resJson = await res.json();
+        if (res.ok && resJson?.success) {
+          setModalOpen(false);
+          fetchBanks();
+          setActionSuccess("Bank account updated successfully.");
+          setTimeout(() => setActionSuccess(""), 3500);
+        } else {
+          setFormError(resJson?.error || "Failed to update account");
+        }
       } else {
-        alert(resJson?.error || "Failed to create account");
+        // CREATE (POST)
+        const res = await fetch("/api/admin/bank-accounts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bank_name: bankName.trim(),
+            account_name: accountName.trim(),
+            account_number: accountNumber.trim(),
+            instructions: instructions.trim(),
+            is_active: isActive,
+          }),
+        });
+        const resJson = await res.json();
+        if (res.ok && resJson?.success) {
+          setModalOpen(false);
+          fetchBanks();
+          setActionSuccess("New settlement bank account added successfully.");
+          setTimeout(() => setActionSuccess(""), 3500);
+        } else {
+          setFormError(resJson?.error || "Failed to create account");
+        }
       }
     } catch (err: any) {
-      alert(err?.message || "Error creating bank account");
+      setFormError(err?.message || "Error processing account submission");
     } finally {
       setIsSubmitting(false);
     }
@@ -150,13 +205,13 @@ export default function AdminBankAccountsPage() {
             Settlement Bank Accounts
           </h1>
           <p className="text-xs text-stone-500 mt-1">
-            Manage official Ethiopian banking channels and Telebirr merchant accounts. Only active accounts appear at checkout.
+            Manage Ethiopian banking institutions, CBE, Telebirr, and private accounts. Only active accounts appear at customer checkout.
           </p>
         </div>
 
         <button
-          onClick={() => setModalOpen(true)}
-          className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all shadow-sm flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+          onClick={openCreateModal}
+          className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-[#E0B382] hover:text-white text-xs font-bold px-5 py-2.5 rounded-2xl transition-all shadow-sm flex items-center gap-2 self-start sm:self-auto cursor-pointer"
         >
           <Plus size={16} />
           <span>Add Bank Account</span>
@@ -164,15 +219,15 @@ export default function AdminBankAccountsPage() {
       </div>
 
       {actionSuccess && (
-        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-medium animate-fadeIn">
-          <Check size={16} className="text-emerald-600" />
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-semibold">
+          <Check size={16} className="text-emerald-600 shrink-0" />
           <span>{actionSuccess}</span>
         </div>
       )}
 
       {error && (
-        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
-          <AlertCircle size={16} className="text-red-600" />
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+          <AlertCircle size={16} className="text-red-600 shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -185,9 +240,18 @@ export default function AdminBankAccountsPage() {
             Loading settlement bank accounts...
           </div>
         ) : banks.length === 0 ? (
-          <div className="col-span-full py-16 text-center text-stone-400 text-xs">
-            <CreditCard size={32} className="mx-auto text-stone-300 mb-2" />
-            No settlement bank accounts configured.
+          <div className="col-span-full py-16 text-center bg-white rounded-3xl border border-stone-200 p-8">
+            <CreditCard size={36} className="mx-auto text-stone-300 mb-2" />
+            <h3 className="font-bold text-stone-800 text-base mb-1">No settlement accounts configured</h3>
+            <p className="text-xs text-stone-500 max-w-sm mx-auto mb-4">
+              Add your official corporate bank accounts (e.g. Commercial Bank of Ethiopia, Awash, Telebirr) to accept customer payments.
+            </p>
+            <button
+              onClick={openCreateModal}
+              className="px-4 py-2 rounded-xl bg-[#1E3B2E] text-[#E0B382] text-xs font-bold cursor-pointer"
+            >
+              Add First Account
+            </button>
           </div>
         ) : (
           banks.map((b) => (
@@ -195,172 +259,217 @@ export default function AdminBankAccountsPage() {
               key={b.id}
               className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${
                 b.is_active
-                  ? "bg-white border-stone-200 shadow-sm"
-                  : "bg-stone-50/70 border-dashed border-stone-300 opacity-60"
+                  ? "bg-white border-stone-200/90 shadow-sm hover:shadow-md"
+                  : "bg-stone-100/70 border-dashed border-stone-300 opacity-70"
               }`}
             >
               <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-2xl ${
-                    b.bank_name.toLowerCase().includes("telebirr")
-                      ? "bg-amber-100 text-amber-900"
-                      : "bg-[#1E3B2E]/10 text-[#1E3B2E]"
-                  }`}>
-                    {b.bank_name.toLowerCase().includes("telebirr") ? (
-                      <Smartphone size={22} />
-                    ) : (
-                      <Building2 size={22} />
-                    )}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-2xl bg-[#1E3B2E]/10 border border-[#1E3B2E]/20 text-[#1E3B2E] flex items-center justify-center">
+                      <Building2 size={18} />
+                    </div>
+                    <span className="font-serif font-bold text-base text-stone-900">{b.bank_name}</span>
                   </div>
 
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    b.is_active ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-600"
-                  }`}>
-                    {b.is_active ? "Active at Checkout" : "Disabled"}
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      b.is_active
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                        : "bg-stone-200 text-stone-600 border border-stone-300"
+                    }`}
+                  >
+                    {b.is_active ? "Active" : "Disabled"}
                   </span>
                 </div>
 
-                <h3 className="font-serif text-lg font-bold text-stone-900 leading-tight">
-                  {b.bank_name}
-                </h3>
-                <p className="text-xs text-stone-500 font-medium mt-1">
-                  {b.account_name}
-                </p>
+                <div className="space-y-2 mt-4 text-xs">
+                  <div>
+                    <span className="text-stone-400 text-[10px] uppercase font-bold tracking-wider block">
+                      Account Name
+                    </span>
+                    <span className="font-semibold text-stone-800">{b.account_name}</span>
+                  </div>
 
-                <div className="mt-4 p-3 rounded-2xl bg-[#FAF7F2] border border-stone-200/60 font-mono text-sm font-bold text-stone-900 tracking-wider">
-                  {b.account_number}
+                  <div>
+                    <span className="text-stone-400 text-[10px] uppercase font-bold tracking-wider block">
+                      Account Number
+                    </span>
+                    <span className="font-mono text-sm font-bold text-[#1E3B2E] tracking-wider select-all">
+                      {b.account_number}
+                    </span>
+                  </div>
+
+                  {b.instructions && (
+                    <div className="pt-2 border-t border-stone-100">
+                      <span className="text-stone-400 text-[10px] uppercase font-bold tracking-wider block mb-0.5">
+                        Transfer Remark Instructions
+                      </span>
+                      <p className="text-stone-600 text-[11px] bg-stone-50 p-2.5 rounded-xl border border-stone-100 leading-relaxed">
+                        {b.instructions}
+                      </p>
+                    </div>
+                  )}
                 </div>
-
-                {b.instructions && (
-                  <p className="text-[11px] text-stone-500 mt-3 italic leading-relaxed">
-                    &ldquo;{b.instructions}&rdquo;
-                  </p>
-                )}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between">
+              {/* Action Buttons */}
+              <div className="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between gap-2">
                 <button
                   onClick={() => toggleStatus(b.id, b.is_active)}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
                     b.is_active
                       ? "bg-stone-100 hover:bg-stone-200 text-stone-700"
-                      : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800"
                   }`}
                 >
-                  {b.is_active ? "Disable" : "Enable"}
+                  <Power size={13} />
+                  <span>{b.is_active ? "Disable" : "Enable"}</span>
                 </button>
 
-                <button
-                  onClick={() => handleDeleteBank(b.id)}
-                  className="p-1.5 text-stone-400 hover:text-red-700 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                  title="Remove account"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => openEditModal(b)}
+                    className="p-2 rounded-xl text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors cursor-pointer"
+                    title="Edit Account Details"
+                  >
+                    <Edit3 size={15} />
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteBank(b.id)}
+                    className="p-2 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+                    title="Remove Account"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Add Bank Account Modal */}
+      {/* Modal for Create / Edit */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-stone-200 shadow-2xl relative animate-fadeIn">
-            <button
-              onClick={() => setModalOpen(false)}
-              className="absolute top-5 right-5 p-1 rounded-full text-stone-400 hover:bg-stone-100 text-stone-600 cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 rounded-xl bg-[#1E3B2E]/10 text-[#1E3B2E]">
-                <CreditCard size={18} />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-stone-200 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#1E3B2E]/10 flex items-center justify-center text-[#1E3B2E]">
+                  <CreditCard size={16} />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-stone-900">
+                    {editingAccount ? "Edit Settlement Account" : "Add Settlement Bank"}
+                  </h3>
+                  <p className="text-[11px] text-stone-500">Configure bank credentials for customer payment checkout</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-serif text-lg font-bold text-stone-900">Add Settlement Account</h3>
-                <p className="text-[11px] text-stone-500">Configure bank or Telebirr account for customer checkout</p>
-              </div>
+              <button
+                onClick={() => setModalOpen(false)}
+                className="p-1.5 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-700 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <form onSubmit={handleAddAccount} className="space-y-3.5 text-xs">
+            {formError && (
+              <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2 text-red-800 text-xs">
+                <AlertCircle size={14} className="shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveAccount} className="space-y-4 mt-5">
               <div>
-                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1 text-[10px]">
-                  Bank / Channel Name
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                  Bank / Provider Name *
                 </label>
                 <input
                   type="text"
                   required
+                  placeholder="e.g. Commercial Bank of Ethiopia (CBE) or Telebirr"
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  placeholder="e.g. Commercial Bank of Ethiopia (CBE), Telebirr..."
-                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-[#1E3B2E]/20 focus:border-[#1E3B2E] outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1 text-[10px]">
-                  Account Holder Name
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                  Account Holder Name *
                 </label>
                 <input
                   type="text"
                   required
+                  placeholder="e.g. Ethiopia Arenguade Paper Product PLC"
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
-                  placeholder="Arenguade Paper Products PLC"
-                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-[#1E3B2E]/20 focus:border-[#1E3B2E] outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1 text-[10px]">
-                  Account / Phone Number
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                  Account Number / PayBill Code *
                 </label>
                 <input
                   type="text"
                   required
+                  placeholder="e.g. 1000123456789"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  placeholder="1000... or +251 9..."
-                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs font-mono font-bold focus:ring-2 focus:ring-[#1E3B2E]/20 focus:border-[#1E3B2E] outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1 text-[10px]">
-                  Payment Instructions for Customer
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                  Payer Instructions / Remark Guide
                 </label>
                 <textarea
-                  rows={2}
+                  rows={3}
+                  placeholder="e.g. Please put Order Number in transfer remark and upload receipt screenshot."
                   value={instructions}
                   onChange={(e) => setInstructions(e.target.value)}
-                  placeholder="e.g. Put your Order Number in the deposit/transfer remark."
-                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-[#1E3B2E]/20 focus:border-[#1E3B2E] outline-none"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="accountActiveCheckbox"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                  className="w-4 h-4 rounded text-[#1E3B2E] focus:ring-[#1E3B2E] border-stone-300 cursor-pointer"
+                />
+                <label htmlFor="accountActiveCheckbox" className="text-xs font-medium text-stone-700 cursor-pointer">
+                  Activate account immediately for customer checkout
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-100">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:bg-stone-50 font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#1E3B2E] text-[#E0B382] hover:bg-[#8C4B31] hover:text-white transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {isSubmitting ? "Saving..." : "Add Account"}
+                  {isSubmitting ? "Saving..." : editingAccount ? "Update Account" : "Create Account"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 }

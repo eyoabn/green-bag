@@ -1,43 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/utils/roles";
-import { createClient } from "@/utils/supabase/server";
-import { Client } from "pg";
+import { pool } from "@/utils/db";
+import { logAuditEvent } from "@/utils/audit";
 
-const directUrl = process.env.DIRECT_URL || 'postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
-
-// GET /api/admin/users - List all platform users directly from Supabase profiles
+// GET /api/admin/users - List all platform users with filtering & pagination
 export async function GET(request: NextRequest) {
   try {
     await requireRole(["admin"]);
-    const supabase = await createClient();
 
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search") || "";
+    const search = searchParams.get("search")?.trim() || "";
     const roleFilter = searchParams.get("role") || "";
+    const activeFilter = searchParams.get("active") || "";
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "10", 10)));
+    const offset = (page - 1) * pageSize;
 
-    let query = supabase
-      .from("profiles")
-      .select("id, full_name, phone, email, role, is_active, avatar_url, created_at")
-      .order("created_at", { ascending: false });
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIdx = 1;
 
     if (roleFilter && ["admin", "teacher", "customer"].includes(roleFilter)) {
-      query = query.eq("role", roleFilter);
+      conditions.push(`role = $${paramIdx++}::user_role`);
+      params.push(roleFilter);
     }
 
-    if (search.trim()) {
-      const s = search.trim();
-      query = query.or(`full_name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
+    if (activeFilter === "true" || activeFilter === "active") {
+      conditions.push(`is_active = true`);
+    } else if (activeFilter === "false" || activeFilter === "inactive") {
+      conditions.push(`is_active = false`);
     }
 
-    const { data: users, error } = await query;
-
-    if (error) {
-      throw error;
+    if (search) {
+      conditions.push(`(full_name ILIKE $${paramIdx} OR email ILIKE $${paramIdx} OR phone ILIKE $${paramIdx})`);
+      params.push(`%${search}%`);
+      paramIdx++;
     }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // Count query
+    const countRes = await pool.query(`SELECT COUNT(*) as total FROM public.profiles ${whereClause}`, params);
+    const totalCount = parseInt(countRes.rows[0]?.total || "0", 10);
+
+    // Data query
+    const dataParams = [...params, pageSize, offset];
+    const dataQuery = `
+      SELECT id, full_name, email, phone, role, is_active, avatar_url, created_at
+      FROM public.profiles
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT $${paramIdx++} OFFSET $${paramIdx++}
+    `;
+    const usersRes = await pool.query(dataQuery, dataParams);
 
     return NextResponse.json({
       success: true,
-      users: users || [],
+      users: usersRes.rows || [],
+      totalCount,
+      page,
+      pageSize,
     });
   } catch (err: any) {
     const status = err.status || 500;
@@ -45,7 +67,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH /api/admin/users - Update user role, active status, or profile info
+// PATCH /api/admin/users - Update user role or active status
 export async function PATCH(request: NextRequest) {
   try {
     const admin = await requireRole(["admin"]);
@@ -54,6 +76,22 @@ export async function PATCH(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required." }, { status: 400 });
+    }
+
+    // Guard: An admin cannot demote or deactivate their own account
+    if (userId === admin.id) {
+      if (role !== undefined && role !== "admin") {
+        return NextResponse.json(
+          { error: "Administrators cannot demote their own account." },
+          { status: 403 }
+        );
+      }
+      if (is_active !== undefined && !is_active) {
+        return NextResponse.json(
+          { error: "Administrators cannot deactivate their own account." },
+          { status: 403 }
+        );
+      }
     }
 
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
@@ -72,53 +110,52 @@ export async function PATCH(request: NextRequest) {
     if (full_name !== undefined) updates.full_name = String(full_name).trim();
     if (phone !== undefined) updates.phone = String(phone).trim();
 
-    const pgClient = new Client({ connectionString: directUrl, ssl: { rejectUnauthorized: false } });
-    await pgClient.connect();
+    const setClauses: string[] = [];
+    const values: any[] = [userId];
+    let paramIdx = 2;
 
-    try {
-      // Build dynamic update query to bypass RLS safely as admin
-      const setClauses: string[] = [];
-      const values: any[] = [userId];
-      let paramIdx = 2;
-
-      for (const [key, val] of Object.entries(updates)) {
-        if (key === 'role') {
-          setClauses.push(`role = $${paramIdx}::user_role`);
-        } else {
-          setClauses.push(`${key} = $${paramIdx}`);
-        }
-        values.push(val);
-        paramIdx++;
+    for (const [key, val] of Object.entries(updates)) {
+      if (key === "role") {
+        setClauses.push(`role = $${paramIdx}::user_role`);
+      } else {
+        setClauses.push(`${key} = $${paramIdx}`);
       }
-
-      const updateQuery = `
-        UPDATE public.profiles
-        SET ${setClauses.join(", ")}
-        WHERE id = $1
-        RETURNING id, full_name, email, phone, role, is_active, created_at;
-      `;
-
-      const res = await pgClient.query(updateQuery, values);
-
-      if (res.rowCount === 0) {
-        return NextResponse.json({ error: "User not found." }, { status: 404 });
-      }
-
-      const updatedUser = res.rows[0];
-
-      // Audit log entry
-      await pgClient.query(`
-        INSERT INTO public.audit_log (actor_id, action, entity, entity_id, metadata)
-        VALUES ($1, 'UPDATE_USER', 'profiles', $2, $3::jsonb);
-      `, [admin.id, userId, JSON.stringify({ updates, target_user: updatedUser.email })]);
-
-      return NextResponse.json({
-        success: true,
-        user: updatedUser,
-      });
-    } finally {
-      await pgClient.end();
+      values.push(val);
+      paramIdx++;
     }
+
+    const updateQuery = `
+      UPDATE public.profiles
+      SET ${setClauses.join(", ")}
+      WHERE id = $1
+      RETURNING id, full_name, email, phone, role, is_active, created_at;
+    `;
+
+    const res = await pool.query(updateQuery, values);
+
+    if (res.rowCount === 0) {
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
+
+    const updatedUser = res.rows[0];
+
+    // Central audit log event
+    await logAuditEvent({
+      actorId: admin.id,
+      action: "UPDATE_USER",
+      entity: "profiles",
+      entityId: userId,
+      metadata: {
+        updates,
+        target_email: updatedUser.email,
+        target_name: updatedUser.full_name,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      user: updatedUser,
+    });
   } catch (err: any) {
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to update user" }, { status });
@@ -140,67 +177,76 @@ export async function POST(request: NextRequest) {
     const assignedRole = ["customer", "teacher", "admin"].includes(role) ? role : "teacher";
     const userPassword = password || "Password123!";
 
-    const pgClient = new Client({ connectionString: directUrl, ssl: { rejectUnauthorized: false } });
-    await pgClient.connect();
+    // 1. Create or update in auth.users
+    const existingUser = await pool.query("SELECT id FROM auth.users WHERE email = $1", [trimmedEmail]);
+    let userId: string;
 
-    try {
-      // 1. Create or update auth.users
-      const existingUser = await pgClient.query('SELECT id FROM auth.users WHERE email = $1', [trimmedEmail]);
-      let userId: string;
-
-      if (existingUser.rows.length > 0) {
-        userId = existingUser.rows[0].id;
-        await pgClient.query(`
-          UPDATE auth.users
-          SET encrypted_password = crypt($2, gen_salt('bf')),
-              email_confirmed_at = NOW(),
-              raw_user_meta_data = json_build_object('full_name', $3::text, 'phone', $4::text, 'role', $5::text),
-              updated_at = NOW()
-          WHERE id = $1;
-        `, [userId, userPassword, fullName.trim(), phone?.trim() || "", assignedRole]);
-      } else {
-        const insertAuth = await pgClient.query(`
-          INSERT INTO auth.users (
-            instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-            raw_app_meta_data, raw_user_meta_data, created_at, updated_at
-          ) VALUES (
-            '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
-            $1, crypt($2, gen_salt('bf')), NOW(),
-            '{"provider": "email", "providers": ["email"]}',
-            json_build_object('full_name', $3::text, 'phone', $4::text, 'role', $5::text),
-            NOW(), NOW()
-          ) RETURNING id;
-        `, [trimmedEmail, userPassword, fullName.trim(), phone?.trim() || "", assignedRole]);
-        userId = insertAuth.rows[0].id;
-      }
-
-      // 2. Upsert profile with email
-      const profileRes = await pgClient.query(`
-        INSERT INTO public.profiles (id, full_name, phone, role, email, is_active, updated_at)
-        VALUES ($1, $2, $3, $4::user_role, $5, true, NOW())
-        ON CONFLICT (id) DO UPDATE SET
-          full_name = EXCLUDED.full_name,
-          phone = EXCLUDED.phone,
-          role = EXCLUDED.role,
-          email = EXCLUDED.email,
-          is_active = true,
-          updated_at = NOW()
-        RETURNING id, full_name, email, phone, role, is_active, created_at;
-      `, [userId, fullName.trim(), phone?.trim() || "", assignedRole, trimmedEmail]);
-
-      // 3. Write to audit_log
-      await pgClient.query(`
-        INSERT INTO public.audit_log (actor_id, action, entity, entity_id, metadata)
-        VALUES ($1, 'PROVISION_USER', 'profiles', $2, $3::jsonb);
-      `, [admin.id, userId, JSON.stringify({ email: trimmedEmail, role: assignedRole, fullName })]);
-
-      return NextResponse.json({
-        success: true,
-        user: profileRes.rows[0],
-      });
-    } finally {
-      await pgClient.end();
+    if (existingUser.rows.length > 0) {
+      userId = existingUser.rows[0].id;
+      await pool.query(
+        `
+        UPDATE auth.users
+        SET encrypted_password = crypt($2, gen_salt('bf')),
+            email_confirmed_at = NOW(),
+            raw_user_meta_data = json_build_object('full_name', $3::text, 'phone', $4::text, 'role', $5::text),
+            updated_at = NOW()
+        WHERE id = $1;
+      `,
+        [userId, userPassword, fullName.trim(), phone?.trim() || "", assignedRole]
+      );
+    } else {
+      const insertAuth = await pool.query(
+        `
+        INSERT INTO auth.users (
+          instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+          raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+        ) VALUES (
+          '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
+          $1, crypt($2, gen_salt('bf')), NOW(),
+          '{"provider": "email", "providers": ["email"]}',
+          json_build_object('full_name', $3::text, 'phone', $4::text, 'role', $5::text),
+          NOW(), NOW()
+        ) RETURNING id;
+      `,
+        [trimmedEmail, userPassword, fullName.trim(), phone?.trim() || "", assignedRole]
+      );
+      userId = insertAuth.rows[0].id;
     }
+
+    // 2. Upsert profile with email and role
+    const profileRes = await pool.query(
+      `
+      INSERT INTO public.profiles (id, full_name, phone, role, email, is_active, updated_at)
+      VALUES ($1, $2, $3, $4::user_role, $5, true, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        full_name = EXCLUDED.full_name,
+        phone = EXCLUDED.phone,
+        role = EXCLUDED.role,
+        email = EXCLUDED.email,
+        is_active = true,
+        updated_at = NOW()
+      RETURNING id, full_name, email, phone, role, is_active, created_at;
+    `,
+      [userId, fullName.trim(), phone?.trim() || "", assignedRole, trimmedEmail]
+    );
+
+    // 3. Central audit log event
+    await logAuditEvent({
+      actorId: admin.id,
+      action: "PROVISION_USER",
+      entity: "profiles",
+      entityId: userId,
+      metadata: {
+        email: trimmedEmail,
+        role: assignedRole,
+        fullName: fullName.trim(),
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      user: profileRes.rows[0],
+    });
   } catch (err: any) {
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to provision user" }, { status });

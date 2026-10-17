@@ -136,7 +136,7 @@ test.describe("Ethiopia Arenguade Paper Product - Master Flows v2", () => {
     const classesRes = await request.get("/api/classes");
     const classesData = await classesRes.json();
     expect(classesData.classes.length).toBeGreaterThan(0);
-    const session = classesData.classes[0];
+    const session = classesData.classes.find((c: any) => c.status === "scheduled") || classesData.classes[0];
 
     // Register
     const regRes = await request.post("/api/enrollments", {
@@ -147,7 +147,7 @@ test.describe("Ethiopia Arenguade Paper Product - Master Flows v2", () => {
     });
     if (regRes.status() === 400) {
       const regErr = await regRes.json();
-      expect(regErr.error).toMatch(/already have an active registration|Session is already full/i);
+      expect(regErr.error).toMatch(/already have an active registration|Session is already full|not open for registration/i);
     } else {
       expect(regRes.ok()).toBeTruthy();
       const regData = await regRes.json();

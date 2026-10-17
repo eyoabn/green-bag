@@ -137,12 +137,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4637,
+                      "duration": 2451,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T10:59:30.462Z",
+                      "startTime": "2026-10-17T11:06:20.144Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -171,12 +171,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1768,
+                      "duration": 2364,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T10:59:35.242Z",
+                      "startTime": "2026-10-17T11:06:22.754Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -205,12 +205,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6931,
+                      "duration": 6161,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T10:59:37.032Z",
+                      "startTime": "2026-10-17T11:06:25.137Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -239,12 +239,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4744,
+                      "duration": 5014,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T10:59:43.984Z",
+                      "startTime": "2026-10-17T11:06:31.320Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -259,7 +259,7 @@
             },
             {
               "title": "5. Class session atomic registration and overcapacity protection",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -272,48 +272,18 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 2561,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatch\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected pattern: \u001b[32m/already have an active registration|Session is already full/i\u001b[39m\nReceived string:  \u001b[31m\"Class session is not open for registration (status: live)\"\u001b[39m",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatch\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected pattern: \u001b[32m/already have an active registration|Session is already full/i\u001b[39m\nReceived string:  \u001b[31m\"Class session is not open for registration (status: live)\"\u001b[39m\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:150:28",
-                        "location": {
-                          "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
-                          "column": 28,
-                          "line": 150
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 148 |\u001b[39m     \u001b[36mif\u001b[39m (regRes\u001b[33m.\u001b[39mstatus() \u001b[33m===\u001b[39m \u001b[35m400\u001b[39m) {\n \u001b[90m 149 |\u001b[39m       \u001b[36mconst\u001b[39m regErr \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m regRes\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 150 |\u001b[39m       expect(regErr\u001b[33m.\u001b[39merror)\u001b[33m.\u001b[39mtoMatch(\u001b[35m/already have an active registration|Session is already full/i\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 151 |\u001b[39m     } \u001b[36melse\u001b[39m {\n \u001b[90m 152 |\u001b[39m       expect(regRes\u001b[33m.\u001b[39mok())\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m 153 |\u001b[39m       \u001b[36mconst\u001b[39m regData \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m regRes\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
-                            "column": 28,
-                            "line": 150
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatch\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected pattern: \u001b[32m/already have an active registration|Session is already full/i\u001b[39m\nReceived string:  \u001b[31m\"Class session is not open for registration (status: live)\"\u001b[39m\n\n  148 |     if (regRes.status() === 400) {\n  149 |       const regErr = await regRes.json();\n> 150 |       expect(regErr.error).toMatch(/already have an active registration|Session is already full/i);\n      |                            ^\n  151 |     } else {\n  152 |       expect(regRes.ok()).toBeTruthy();\n  153 |       const regData = await regRes.json();\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:150:28"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 3271,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T10:59:48.742Z",
+                      "startTime": "2026-10-17T11:06:36.352Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\us\\greenwork\\test-results\\master-flows-Ethiopia-Aren-e6fc9-and-overcapacity-protection-chromium\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
-                        "column": 28,
-                        "line": 150
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "7d9eaf825ac121dedd69-be60260733554d0202b6",
@@ -323,7 +293,7 @@
             },
             {
               "title": "6. Admin portal navigation and management modules",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -334,50 +304,20 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 19430,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('h1')\nExpected pattern: \u001b[32m/Factory Management Hub|Plant Operations|Manufacturing & Academy Operations/i\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('h1') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('h1')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('h1')\nExpected pattern: \u001b[32m/Factory Management Hub|Plant Operations|Manufacturing & Academy Operations/i\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('h1') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('h1')\u001b[22m\n\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:166:38",
-                        "location": {
-                          "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
-                          "column": 38,
-                          "line": 166
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 164 |\u001b[39m\n \u001b[90m 165 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/\\/admin/\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 166 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m\"h1\"\u001b[39m))\u001b[33m.\u001b[39mtoContainText(\u001b[35m/Factory Management Hub|Plant Operations|Manufacturing & Academy Operations/i\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 167 |\u001b[39m\n \u001b[90m 168 |\u001b[39m     \u001b[90m// Visit /admin/users\u001b[39m\n \u001b[90m 169 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m\"/admin/users\"\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
-                            "column": 38,
-                            "line": 166
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('h1')\nExpected pattern: \u001b[32m/Factory Management Hub|Plant Operations|Manufacturing & Academy Operations/i\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('h1') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('h1')\u001b[22m\n\n\n  164 |\n  165 |     await expect(page).toHaveURL(/\\/admin/);\n> 166 |     await expect(page.locator(\"h1\")).toContainText(/Factory Management Hub|Plant Operations|Manufacturing & Academy Operations/i);\n      |                                      ^\n  167 |\n  168 |     // Visit /admin/users\n  169 |     await page.goto(\"/admin/users\");\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:166:38"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 12165,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T10:59:51.904Z",
+                      "startTime": "2026-10-17T11:06:39.638Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\us\\greenwork\\test-results\\master-flows-Ethiopia-Aren-2cb12-tion-and-management-modules-chromium\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
-                        "column": 38,
-                        "line": 166
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "7d9eaf825ac121dedd69-35b6ed3f299780fdcd65",
@@ -398,15 +338,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 14598,
+                      "duration": 6824,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T11:00:12.064Z",
+                      "startTime": "2026-10-17T11:06:51.822Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -432,15 +372,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8690,
+                      "duration": 5714,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T11:00:26.703Z",
+                      "startTime": "2026-10-17T11:06:58.668Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -466,15 +406,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3390,
+                      "duration": 3736,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T11:00:35.410Z",
+                      "startTime": "2026-10-17T11:07:04.396Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -500,15 +440,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10567,
+                      "duration": 9354,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T11:00:38.908Z",
+                      "startTime": "2026-10-17T11:07:08.148Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -534,15 +474,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3691,
+                      "duration": 2982,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T11:00:49.489Z",
+                      "startTime": "2026-10-17T11:07:17.519Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -562,11 +502,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-17T10:59:29.647Z",
-    "duration": 83654.08499999999,
-    "expected": 9,
+    "startTime": "2026-10-17T11:06:19.144Z",
+    "duration": 61505.612,
+    "expected": 11,
     "skipped": 0,
-    "unexpected": 2,
+    "unexpected": 0,
     "flaky": 0
   }
 }

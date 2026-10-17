@@ -25,9 +25,22 @@ export { isValidUUID, toValidUUID };
  * Ensures the returned user has a valid UUID format id.
  */
 export async function getCurrentUser(): Promise<AppUser | null> {
+  // 1. Instant client hydration from localStorage
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("arenguade_user");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && (parsed.id || parsed.email)) {
+          return parsed as AppUser;
+        }
+      }
+    } catch {}
+  }
+
   const supabase = createClient();
 
-  // 1. Try Supabase Auth getUser()
+  // 2. Try Supabase Auth getUser()
   try {
     const { data } = await supabase.auth.getUser();
     if (data?.user) {

@@ -30,10 +30,10 @@ export default function Navbar() {
     return () => window.removeEventListener("arenguade_auth_change", updateUser);
   }, [pathname]);
 
-  // Hide on admin and dashboard internal pages to prevent double navigation
-  const isAdminOrDashboard = pathname?.startsWith("/admin") || pathname?.startsWith("/dashboard");
+  // Hide on admin, teacher, and dashboard internal pages to prevent double navigation
+  const isInternalPortal = pathname?.startsWith("/admin") || pathname?.startsWith("/dashboard") || pathname?.startsWith("/teacher");
 
-  if (isAdminOrDashboard) {
+  if (isInternalPortal) {
     return null;
   }
 
@@ -104,21 +104,29 @@ export default function Navbar() {
 
             {/* Role-Based Account Link */}
             {user ? (
-              user.role === "student" ? (
+              user.role === "admin" ? (
                 <Link
-                  href="/dashboard?tab=classes"
+                  href="/admin"
+                  className="text-xs font-semibold text-red-950 px-3.5 py-1.5 rounded-full bg-red-100 hover:bg-red-200 transition-colors flex items-center gap-1.5 border border-red-200"
+                >
+                  <Award size={13} className="text-red-700" />
+                  <span>Admin Panel</span>
+                </Link>
+              ) : user.role === "teacher" ? (
+                <Link
+                  href="/teacher"
                   className="text-xs font-semibold text-amber-950 px-3.5 py-1.5 rounded-full bg-amber-100/70 hover:bg-amber-200 transition-colors flex items-center gap-1.5 border border-amber-200"
                 >
                   <BookOpen size={13} className="text-[#8C4B31]" />
-                  <span>My Academy</span>
+                  <span>Teacher Portal</span>
                 </Link>
               ) : (
                 <Link
-                  href="/dashboard?tab=orders"
+                  href="/dashboard"
                   className="text-xs font-semibold text-stone-800 hover:text-[#1E3B2E] px-3.5 py-1.5 rounded-full bg-stone-200/60 hover:bg-stone-200 transition-colors flex items-center gap-1.5 border border-stone-300/50"
                 >
                   <ShoppingBag size={13} className="text-[#1E3B2E]" />
-                  <span>My Orders</span>
+                  <span>My Dashboard</span>
                 </Link>
               )
             ) : (
@@ -175,23 +183,32 @@ export default function Navbar() {
 
             <div className="flex items-center justify-between pt-1">
               {user ? (
-                user.role === "student" ? (
+                user.role === "admin" ? (
                   <Link
-                    href="/dashboard?tab=classes"
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-xs font-bold text-red-950 px-4 py-2 rounded-xl bg-red-100 hover:bg-red-200 flex items-center gap-1.5"
+                  >
+                    <Award size={13} className="text-red-700" />
+                    <span>Admin Panel</span>
+                  </Link>
+                ) : user.role === "teacher" ? (
+                  <Link
+                    href="/teacher"
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold text-amber-950 px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 flex items-center gap-1.5"
                   >
                     <BookOpen size={13} className="text-[#8C4B31]" />
-                    <span>My Workshops ({user.full_name.split(" ")[0]})</span>
+                    <span>Teacher Portal</span>
                   </Link>
                 ) : (
                   <Link
-                    href="/dashboard?tab=orders"
+                    href="/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold text-[#1E3B2E] px-4 py-2 rounded-xl bg-stone-200/60 hover:bg-stone-200 flex items-center gap-1.5"
                   >
                     <ShoppingBag size={13} className="text-[#1E3B2E]" />
-                    <span>My Orders ({user.full_name.split(" ")[0]})</span>
+                    <span>My Dashboard ({user.full_name.split(" ")[0]})</span>
                   </Link>
                 )
               ) : (

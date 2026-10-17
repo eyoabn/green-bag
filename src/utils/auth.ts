@@ -8,7 +8,9 @@ export interface AppUser {
   email: string;
   full_name: string;
   phone?: string;
-  role: "customer" | "student" | "admin";
+  role: "customer" | "teacher" | "admin";
+  avatar_url?: string;
+  is_active?: boolean;
 }
 
 import { isValidUUID, toValidUUID } from "@/utils/uuid";
@@ -111,9 +113,6 @@ export async function getCurrentUser(): Promise<AppUser | null> {
   return null;
 }
 
-/**
- * Stores the user in localStorage and dispatches an auth change event
- */
 export function setLocalUser(user: AppUser | null) {
   if (typeof window === "undefined") return;
   if (user) {
@@ -124,4 +123,15 @@ export function setLocalUser(user: AppUser | null) {
     sessionStorage.removeItem("arenguade_admin_authenticated");
   }
   window.dispatchEvent(new Event("arenguade_auth_change"));
+}
+
+export async function signOutUser() {
+  const supabase = createClient();
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch {}
+  try {
+    await supabase.auth.signOut();
+  } catch {}
+  setLocalUser(null);
 }

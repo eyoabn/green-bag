@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ethiopia Arenguade Paper Product
 
-## Getting Started
+Enterprise e-commerce, custom packaging design, and interactive live learning platform for Ethiopia Arenguade Paper Product.
 
-First, run the development server:
+---
 
+## 🔐 Seed User Credentials
+
+| Role | Name | Email | Password | Primary Portal |
+|---|---|---|---|---|
+| **Admin** | Abebe Admin (Owner) | `admin@arenguade.com` | `Password123!` | `/admin` |
+| **Teacher** | Tigist Tadesse | `teacher.tigist@arenguade.com` | `Password123!` | `/teacher` |
+| **Teacher** | Dawit Haile | `teacher.dawit@arenguade.com` | `Password123!` | `/teacher` |
+| **Customer** | Selam Kebede | `customer.selam@gmail.com` | `Password123!` | `/dashboard` |
+| **Customer** | Tariku Alemu | `customer.tariku@gmail.com` | `Password123!` | `/dashboard` |
+| **Customer** | Helen Berhanu | `customer.helen@gmail.com` | `Password123!` | `/dashboard` |
+
+---
+
+## 🚀 Setup & Execution
+
+### 1. Install Dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Configuration
+Verify `.env.local` contains valid Supabase and LiveKit credentials:
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+DIRECT_URL=postgresql://...
+DATABASE_URL=postgresql://...
+LIVEKIT_URL=wss://...
+NEXT_PUBLIC_LIVEKIT_URL=wss://...
+LIVEKIT_API_KEY=...
+LIVEKIT_API_SECRET=...
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Database Migration & Seeding
+```bash
+# Run PostgreSQL master schema migration
+node scripts/run-migration.js
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Seed users, products, classes, bank accounts, and orders
+npm run seed
+```
 
-## Learn More
+### 4. Run Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000)
 
-To learn more about Next.js, take a look at the following resources:
+### 5. Run Automated Tests
+```bash
+npx playwright test
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛡️ Architecture & Security
+- **Strict Role-Based Routing**: Next.js Edge Middleware enforces `/admin/*` (admin only), `/teacher/*` (teacher & admin), and `/dashboard/*` (authenticated customer/users).
+- **Server Authorization Helpers**: `requireRole(['admin'])` and `requireUser()` in server actions and API routes.
+- **Row Level Security (RLS)**: Enforced across all PostgreSQL tables.
+- **Atomic Capacity RPC**: Prevents overbooking on class enrollments with `register_for_session`.
+- **LiveKit Server Gating**: Host-only endpoints for room creation, participant mute, speaking grant/revoke, and session termination.

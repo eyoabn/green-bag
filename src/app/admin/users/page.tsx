@@ -10,11 +10,13 @@ import {
   UserPlus, 
   X, 
   Check, 
-  Trash2, 
   AlertCircle, 
   Sparkles,
+  Search,
+  BookOpen,
   ShoppingBag,
-  BookOpen
+  ShieldAlert,
+  Power
 } from "lucide-react";
 
 type PlatformUser = {
@@ -22,9 +24,9 @@ type PlatformUser = {
   email: string;
   full_name: string;
   phone: string;
-  role: "admin" | "customer" | "student";
+  role: "admin" | "teacher" | "customer";
   created_at: string;
-  status: string;
+  is_active: boolean;
 };
 
 export default function AdminUsersPage() {
@@ -32,26 +34,34 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
 
-  // Modal State
+  // Modal State for Provisioning
   const [showAddModal, setShowAddModal] = useState(false);
   const [newFullName, setNewFullName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState<"customer" | "student" | "admin">("customer");
+  const [newPassword, setNewPassword] = useState("Password123!");
+  const [newRole, setNewRole] = useState<"customer" | "teacher" | "admin">("teacher");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [roleFilter]);
 
   const fetchUsers = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/users");
+      let url = "/api/admin/users";
+      const params = new URLSearchParams();
+      if (roleFilter !== "all") params.set("role", roleFilter);
+      if (searchTerm.trim()) params.set("search", searchTerm.trim());
+      if (params.toString()) url += `?${params.toString()}`;
+
+      const res = await fetch(url);
       const resJson = await res.json();
       if (res.ok && resJson?.success) {
         setUsers(resJson.users || []);
@@ -65,7 +75,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: "admin" | "customer" | "student") => {
+  const handleRoleChange = async (userId: string, newRole: "admin" | "teacher" | "customer") => {
     setActionSuccess("");
     try {
       const res = await fetch("/api/admin/users", {
@@ -80,12 +90,37 @@ export default function AdminUsersPage() {
           prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
         );
         setActionSuccess(`Role updated to ${newRole.toUpperCase()} successfully.`);
-        setTimeout(() => setActionSuccess(""), 3000);
+        setTimeout(() => setActionSuccess(""), 3500);
       } else {
         alert(resJson?.error || "Failed to update role");
       }
     } catch (err: any) {
       alert(err?.message || "Failed to update user role");
+    }
+  };
+
+  const handleToggleActive = async (userId: string, currentStatus: boolean) => {
+    setActionSuccess("");
+    const newStatus = !currentStatus;
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, is_active: newStatus }),
+      });
+      const resJson = await res.json();
+
+      if (res.ok && resJson?.success) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, is_active: newStatus } : u))
+        );
+        setActionSuccess(`User account ${newStatus ? "ACTIVATED" : "DEACTIVATED"} successfully.`);
+        setTimeout(() => setActionSuccess(""), 3500);
+      } else {
+        alert(resJson?.error || "Failed to update account status");
+      }
+    } catch (err: any) {
+      alert(err?.message || "Failed to toggle user status");
     }
   };
 
@@ -99,241 +134,257 @@ export default function AdminUsersPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: newEmail.trim(),
-          password: newPassword || "arenguade2026",
           fullName: newFullName.trim(),
+          email: newEmail.trim().toLowerCase(),
           phone: newPhone.trim(),
+          password: newPassword,
           role: newRole,
         }),
       });
-      const resJson = await res.json();
 
-      if (res.ok && resJson?.success && resJson?.user) {
+      const resJson = await res.json();
+      if (res.ok && resJson?.success) {
         setShowAddModal(false);
         setNewFullName("");
         setNewEmail("");
         setNewPhone("");
-        setNewPassword("");
-        setNewRole("customer");
-        setActionSuccess(`User ${resJson.user.full_name} (${resJson.user.role}) added successfully.`);
+        setNewPassword("Password123!");
         fetchUsers();
+        setActionSuccess(`Account provisioned successfully for ${resJson.user.email} (${newRole.toUpperCase()})!`);
+        setTimeout(() => setActionSuccess(""), 4000);
       } else {
-        setModalError(resJson?.error || "Failed to create user account.");
+        setModalError(resJson?.error || "Failed to provision user");
       }
     } catch (err: any) {
-      setModalError(err?.message || "Network error creating user.");
+      setModalError(err?.message || "Connection error provisioning user");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to remove account "${userName}"?`)) return;
-
-    try {
-      const res = await fetch(`/api/admin/users?userId=${encodeURIComponent(userId)}`, {
-        method: "DELETE",
-      });
-      const resJson = await res.json();
-
-      if (res.ok && resJson?.success) {
-        setUsers((prev) => prev.filter((u) => u.id !== userId));
-        setActionSuccess(`Account "${userName}" has been removed.`);
-        setTimeout(() => setActionSuccess(""), 3000);
-      } else {
-        alert(resJson?.error || "Failed to delete user.");
-      }
-    } catch (err: any) {
-      alert(err?.message || "Error deleting user.");
-    }
-  };
-
-  if (loading) {
+  const filteredUsers = users.filter((u) => {
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase();
     return (
-      <div className="flex flex-col items-center justify-center h-72 gap-3">
-        <div className="w-9 h-9 rounded-full border-3 border-[#1E3B2E] border-t-transparent animate-spin" />
-        <span className="text-xs text-stone-500 font-semibold">Loading platform users & roles...</span>
-      </div>
+      u.full_name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.phone?.toLowerCase().includes(q)
     );
-  }
+  });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header with Stats & Actions */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 border-b border-stone-200 pb-6">
+    <div className="flex flex-col max-w-6xl mx-auto space-y-6">
+      
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider mb-2">
-            <Sparkles size={13} />
-            <span>Role-Based Access Control</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">
+              Identity & Security Management
+            </span>
           </div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">Registered Platform Users</h1>
-          <p className="text-stone-500 text-xs mt-1">
-            Real registered platform accounts with dynamic role classifications and clearance management.
+          <h1 className="font-serif text-3xl font-bold text-stone-900 mt-1">
+            Platform Users & Staff
+          </h1>
+          <p className="text-xs text-stone-500 mt-1">
+            Realtime directory of clients, certified teachers, and plant administrators.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white border border-stone-200 text-stone-700 text-xs font-bold shadow-xs">
-            <Users size={15} className="text-[#1E3B2E]" />
-            <span>{users.length} Total Users</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-colors shadow-sm cursor-pointer"
-          >
-            <UserPlus size={15} />
-            <span>Add User / Admin</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all shadow-sm flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+        >
+          <UserPlus size={15} />
+          <span>Provision Teacher / Staff</span>
+        </button>
       </div>
 
       {actionSuccess && (
-        <div className="p-4 bg-emerald-50 text-emerald-800 rounded-2xl text-xs border border-emerald-200 flex items-center gap-2 font-medium">
-          <Check size={16} className="text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-medium animate-fadeIn">
+          <Check size={16} className="text-emerald-600" />
           <span>{actionSuccess}</span>
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 text-red-700 rounded-2xl text-xs border border-red-200 flex items-center gap-2">
-          <AlertCircle size={16} className="text-red-600 shrink-0" />
+        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+          <AlertCircle size={16} className="text-red-600" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Users Table */}
-      <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs whitespace-nowrap">
-            <thead>
-              <tr className="bg-stone-50/80 border-b border-stone-200 text-stone-500 uppercase tracking-wider text-[10px]">
-                <th className="px-6 py-4 font-bold">User Identity</th>
-                <th className="px-6 py-4 font-bold">Contact Details</th>
-                <th className="px-6 py-4 font-bold">Assigned Role</th>
-                <th className="px-6 py-4 font-bold">Role Classification</th>
-                <th className="px-6 py-4 font-bold">Registered On</th>
-                <th className="px-6 py-4 font-bold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-stone-50/60 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold font-serif text-sm shadow-xs ${
-                        user.role === "admin"
-                          ? "bg-red-900 text-white"
-                          : user.role === "student"
-                          ? "bg-[#8C4B31] text-white"
-                          : "bg-[#1E3B2E] text-white"
-                      }`}>
-                        {user.full_name ? user.full_name.charAt(0).toUpperCase() : "U"}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-stone-900 text-sm">{user.full_name || "Valued User"}</span>
-                        <span className="text-[11px] text-stone-400 font-mono">{user.email || user.id.slice(0, 16)}</span>
-                      </div>
-                    </div>
-                  </td>
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-stone-200 shadow-xs">
+        <div className="relative w-full sm:w-80">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or phone..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-[#FAF7F2] border border-stone-200 rounded-full pl-9 pr-4 py-2 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+          />
+        </div>
 
-                  <td className="px-6 py-4 text-stone-600">
-                    <div className="space-y-1">
-                      {user.email && (
-                        <div className="flex items-center gap-1.5 text-stone-700">
-                          <Mail size={13} className="text-stone-400" />
-                          <span>{user.email}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1.5 text-stone-500 text-[11px]">
-                        <Phone size={13} className="text-stone-400" />
-                        <span>{user.phone || "No phone registered"}</span>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Role Badge */}
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-2xs ${
-                      user.role === "admin"
-                        ? "bg-red-50 text-red-800 border border-red-200"
-                        : user.role === "student"
-                        ? "bg-amber-50 text-amber-800 border border-amber-200"
-                        : "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                    }`}>
-                      {user.role === "admin" && <ShieldCheck size={13} className="text-red-700" />}
-                      {user.role === "student" && <BookOpen size={13} className="text-amber-700" />}
-                      {user.role === "customer" && <ShoppingBag size={13} className="text-emerald-700" />}
-                      <span>{user.role === "admin" ? "Plant Admin" : user.role === "student" ? "Academy Student" : "Packaging Buyer"}</span>
-                    </span>
-                  </td>
-
-                  {/* Inline Role Modifier */}
-                  <td className="px-6 py-4">
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value as any)}
-                      className="bg-stone-50 border border-stone-200 text-stone-800 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]/30 font-medium cursor-pointer"
-                    >
-                      <option value="customer">Buyer (customer)</option>
-                      <option value="student">Student (student)</option>
-                      <option value="admin">Administrator (admin)</option>
-                    </select>
-                  </td>
-
-                  <td className="px-6 py-4 text-stone-500">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar size={13} className="text-stone-400" />
-                      <span>{new Date(user.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteUser(user.id, user.full_name)}
-                      className="p-2 rounded-xl text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                      title="Remove User"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-stone-500">
-                    No registered platform accounts found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {/* Role Filter Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+          {["all", "customer", "teacher", "admin"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setRoleFilter(tab)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                roleFilter === tab
+                  ? "bg-[#1E3B2E] text-white shadow-xs"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Modal: Add User / Admin */}
+      {/* Users Table */}
+      <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="py-20 text-center text-stone-400 text-xs">
+            <div className="w-8 h-8 border-2 border-[#1E3B2E] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            Loading registered accounts...
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="py-16 text-center text-stone-400 text-xs">
+            <Users size={32} className="mx-auto text-stone-300 mb-2" />
+            No platform users matching criteria.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-stone-700">
+              <thead className="bg-[#FAF7F2] border-b border-stone-200 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="py-3.5 px-6">User / Identity</th>
+                  <th className="py-3.5 px-4">Contact</th>
+                  <th className="py-3.5 px-4">System Role</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Registered</th>
+                  <th className="py-3.5 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {filteredUsers.map((u) => (
+                  <tr key={u.id} className="hover:bg-stone-50/60 transition-colors">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase ${
+                          u.role === "admin" 
+                            ? "bg-red-100 text-red-900 border border-red-200"
+                            : u.role === "teacher"
+                            ? "bg-amber-100 text-amber-900 border border-amber-200"
+                            : "bg-[#1E3B2E]/10 text-[#1E3B2E] border border-stone-200"
+                        }`}>
+                          {u.full_name?.charAt(0) || "U"}
+                        </div>
+                        <div>
+                          <p className="font-bold text-stone-900 text-xs leading-tight">
+                            {u.full_name || "Valued User"}
+                          </p>
+                          <p className="text-[10px] text-stone-500 font-mono mt-0.5">
+                            {u.email}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4 text-stone-600">
+                      {u.phone ? (
+                        <span className="flex items-center gap-1 font-mono text-[11px]">
+                          <Phone size={11} className="text-stone-400" />
+                          {u.phone}
+                        </span>
+                      ) : (
+                        <span className="text-stone-400 text-[10px] italic">No phone</span>
+                      )}
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleRoleChange(u.id, e.target.value as any)}
+                        className={`text-[11px] font-bold rounded-lg px-2.5 py-1 border transition-colors cursor-pointer ${
+                          u.role === "admin"
+                            ? "bg-red-50 text-red-900 border-red-200"
+                            : u.role === "teacher"
+                            ? "bg-amber-50 text-amber-900 border-amber-200"
+                            : "bg-emerald-50 text-emerald-900 border-emerald-200"
+                        }`}
+                      >
+                        <option value="customer">Customer (Buyer)</option>
+                        <option value="teacher">Teacher (Instructor)</option>
+                        <option value="admin">Admin (Plant Owner)</option>
+                      </select>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        u.is_active
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-red-100 text-red-800"
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${u.is_active ? "bg-emerald-600" : "bg-red-600"}`} />
+                        {u.is_active ? "Active" : "Deactivated"}
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-4 text-stone-400 text-[11px]">
+                      {new Date(u.created_at).toLocaleDateString()}
+                    </td>
+
+                    <td className="py-4 px-6 text-right">
+                      <button
+                        onClick={() => handleToggleActive(u.id, u.is_active)}
+                        className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors cursor-pointer ${
+                          u.is_active
+                            ? "bg-stone-100 hover:bg-red-100 text-stone-600 hover:text-red-800"
+                            : "bg-emerald-100 hover:bg-emerald-200 text-emerald-800"
+                        }`}
+                        title={u.is_active ? "Deactivate User Access" : "Re-activate User"}
+                      >
+                        {u.is_active ? "Deactivate" : "Activate"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Provision Teacher Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 md:p-8 shadow-2xl border border-stone-200 relative animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-stone-200 shadow-2xl relative animate-fadeIn">
+            
             <button
               onClick={() => setShowAddModal(false)}
-              className="absolute top-5 right-5 text-stone-400 hover:text-stone-700 p-1 rounded-xl"
+              className="absolute top-5 right-5 p-1 rounded-full text-stone-400 hover:bg-stone-100 text-stone-600 cursor-pointer"
             >
               <X size={18} />
             </button>
 
-            <div className="mb-5">
-              <h2 className="font-serif text-xl font-bold text-stone-900">Provision User Account</h2>
-              <p className="text-xs text-stone-500 mt-0.5">
-                Register a new customer, student, or executive administrator.
-              </p>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 rounded-xl bg-[#1E3B2E]/10 text-[#1E3B2E]">
+                <UserPlus size={18} />
+              </div>
+              <div>
+                <h3 className="font-serif text-lg font-bold text-stone-900">Provision Staff Account</h3>
+                <p className="text-[11px] text-stone-500">Create a certified teacher or staff user</p>
+              </div>
             </div>
 
             {modalError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-xs border border-red-200 flex items-center gap-2">
+              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
                 <AlertCircle size={15} className="shrink-0" />
                 <span>{modalError}</span>
               </div>
@@ -341,7 +392,7 @@ export default function AdminUsersPage() {
 
             <form onSubmit={handleCreateUser} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1 text-[10px]">
                   Full Name
                 </label>
                 <input
@@ -349,13 +400,13 @@ export default function AdminUsersPage() {
                   required
                   value={newFullName}
                   onChange={(e) => setNewFullName(e.target.value)}
-                  placeholder="e.g. Almaz Ayana"
-                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]/30"
+                  placeholder="e.g. Tigist Tadesse"
+                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1 text-[10px]">
                   Email Address
                 </label>
                 <input
@@ -363,90 +414,64 @@ export default function AdminUsersPage() {
                   required
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="almaz@domain.et"
-                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]/30"
+                  placeholder="teacher@arenguade.com"
+                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1 text-[10px]">
                   Phone Number
                 </label>
                 <input
                   type="tel"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
-                  placeholder="0911002233"
-                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]/30"
+                  placeholder="+251 911 000 000"
+                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1 text-[10px]">
                   Initial Password
                 </label>
                 <input
                   type="password"
+                  required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Default: arenguade2026"
-                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]/30"
+                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
-                  Assigned Platform Role
+                <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1 text-[10px]">
+                  Account Role
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewRole("customer")}
-                    className={`py-2 px-2 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer ${
-                      newRole === "customer"
-                        ? "bg-[#1E3B2E] text-white border-[#1E3B2E]"
-                        : "bg-stone-50 text-stone-700 border-stone-200"
-                    }`}
-                  >
-                    Buyer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewRole("student")}
-                    className={`py-2 px-2 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer ${
-                      newRole === "student"
-                        ? "bg-[#8C4B31] text-white border-[#8C4B31]"
-                        : "bg-stone-50 text-stone-700 border-stone-200"
-                    }`}
-                  >
-                    Student
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewRole("admin")}
-                    className={`py-2 px-2 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer ${
-                      newRole === "admin"
-                        ? "bg-red-900 text-white border-red-950"
-                        : "bg-stone-50 text-stone-700 border-stone-200"
-                    }`}
-                  >
-                    Admin
-                  </button>
-                </div>
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value as any)}
+                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-stone-900 font-bold"
+                >
+                  <option value="teacher">Teacher (Classroom Instructor)</option>
+                  <option value="admin">Administrator (Full Control)</option>
+                  <option value="customer">Customer</option>
+                </select>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-stone-200 text-stone-600 font-semibold hover:bg-stone-50 cursor-pointer"
+                  className="px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:bg-stone-50 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? "Provisioning..." : "Create Account"}
                 </button>
@@ -455,6 +480,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

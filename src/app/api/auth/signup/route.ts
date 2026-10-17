@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { UserStore } from "@/utils/userStore";
-
-// Admin security keys must be stored in ADMIN_SECURITY_KEYS env var (comma-separated)
-// e.g. ADMIN_SECURITY_KEYS="key1,key2,key3"
-// If not set, admin self-registration is disabled.
-const VALID_ADMIN_KEYS = process.env.ADMIN_SECURITY_KEYS
-  ? process.env.ADMIN_SECURITY_KEYS.split(",").map((k) => k.trim()).filter(Boolean)
-  : [];
-
+import { createClient } from "@/utils/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { email, password, fullName, phone, role = "customer", adminSecurityKey } = body;
+    const { email, password, fullName, phone } = body;
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
@@ -24,51 +16,39 @@ export async function POST(request: NextRequest) {
 
     const trimmedEmail = String(email).trim().toLowerCase();
     const displayName = (fullName && fullName.trim()) || trimmedEmail.split("@")[0];
+    const phoneNum = (phone && phone.trim()) || "";
 
-    // Explicit Role Classification
-    let assignedRole: "admin" | "customer" | "student" = "customer";
+    const supabase = await createClient();
 
-    if (role === "admin") {
-      // Validate Admin Authorization Security Key
-      if (!adminSecurityKey || !VALID_ADMIN_KEYS.includes(String(adminSecurityKey).trim())) {
-        return NextResponse.json(
-          { error: "Invalid Admin Security Passphrase. Factory Executive clearance required." },
-          { status: 403 }
-        );
-      }
-      assignedRole = "admin";
-    } else if (role === "student") {
-      assignedRole = "student";
-    } else {
-      assignedRole = "customer";
-    }
-
-    // Owner check: Always grant executive admin role to project founder
-    if (
-      trimmedEmail.includes("joabniguise") ||
-      trimmedEmail.includes("eyoabniguise") ||
-      trimmedEmail === "admin@arenguade.et"
-    ) {
-      assignedRole = "admin";
-    }
-
-    // Persist real user in persistent store and database
-    const user = await UserStore.registerUser({
+    // In accordance with Section 2, all public signups are strictly granted role 'customer'
+    const { data, error } = await supabase.auth.signUp({
       email: trimmedEmail,
       password: String(password),
-      fullName: displayName,
-      phone: phone || "",
-      role: assignedRole,
+      options: {
+        data: {
+          full_name: displayName,
+          phone: phoneNum,
+          role: "customer",
+        },
+      },
     });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (!data.user) {
+      return NextResponse.json({ error: "Registration could not be completed." }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
       user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        phone: user.phone,
-        role: user.role,
+        id: data.user.id,
+        email: data.user.email,
+        full_name: displayName,
+        phone: phoneNum,
+        role: "customer",
       },
     });
   } catch (err: any) {

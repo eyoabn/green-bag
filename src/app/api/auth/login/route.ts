@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { UserStore } from "@/utils/userStore";
+import { createClient } from "@/utils/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,47 +12,49 @@ export async function POST(request: NextRequest) {
 
     const trimmedEmail = String(email).trim().toLowerCase();
 
-    // 1. Look up user in real persistent UserStore
-    let user = UserStore.findByEmail(trimmedEmail);
+    const supabase = await createClient();
 
-    // If user is founder/admin and not yet in store, seed them immediately
-    if (!user && (trimmedEmail.includes("joabniguise") || trimmedEmail.includes("eyoabniguise") || trimmedEmail === "admin@arenguade.et")) {
-      user = await UserStore.registerUser({
-        email: trimmedEmail,
-        password: String(password),
-        fullName: "Eyoab Niguise",
-        phone: "0911000001",
-        role: "admin",
-      });
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: trimmedEmail,
+      password: String(password),
+    });
+
+    if (authError || !authData.user) {
+      return NextResponse.json(
+        { error: authError?.message || "Invalid credentials. Please verify your email and password." },
+        { status: 401 }
+      );
     }
 
-    if (user) {
-      // Real PBKDF2 password verification
-      const isValid = UserStore.verifyPassword(user, String(password));
-      if (!isValid) {
-        return NextResponse.json(
-          { error: "Incorrect password. Please verify your credentials or reset your password." },
-          { status: 401 }
-        );
-      }
+    // Query real profile from PostgreSQL
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles")
+      .select("id, full_name, phone, role, is_active, avatar_url")
+      .eq("id", authData.user.id)
+      .maybeSingle();
 
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          full_name: user.full_name,
-          phone: user.phone,
-          role: user.role,
-        },
-      });
+    if (profile && profile.is_active === false) {
+      await supabase.auth.signOut();
+      return NextResponse.json(
+        { error: "Your account has been deactivated. Please contact support." },
+        { status: 403 }
+      );
     }
 
-    // Account not found
-    return NextResponse.json(
-      { error: "No account found with this email. Please verify your email or create an account." },
-      { status: 404 }
-    );
+    const userPayload = {
+      id: authData.user.id,
+      email: authData.user.email,
+      full_name: profile?.full_name || authData.user.user_metadata?.full_name || "Valued User",
+      phone: profile?.phone || authData.user.user_metadata?.phone || "",
+      role: profile?.role || "customer",
+      is_active: profile?.is_active ?? true,
+      avatar_url: profile?.avatar_url || "",
+    };
+
+    return NextResponse.json({
+      success: true,
+      user: userPayload,
+    });
   } catch (err: any) {
     console.error("Login API error:", err);
     return NextResponse.json({ error: "Authentication service temporarily unavailable." }, { status: 500 });

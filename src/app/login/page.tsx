@@ -18,21 +18,20 @@ function LoginFormContent() {
 
   const completeLogin = (user: AppUser) => {
     setLocalUser(user);
-    const isAdmin = user.role === "admin";
-    const isStudent = user.role === "student";
+    const role = user.role;
 
-    setSuccessMessage(`Authenticated as ${user.role.toUpperCase()} (${user.full_name}). Loading workspace...`);
+    setSuccessMessage(`Authenticated as ${role.toUpperCase()} (${user.full_name}). Loading workspace...`);
     setTimeout(() => {
       if (returnTo) {
         router.push(returnTo);
-      } else if (isAdmin) {
+      } else if (role === "admin") {
         router.push("/admin");
-      } else if (isStudent) {
-        router.push("/dashboard?tab=classes");
+      } else if (role === "teacher") {
+        router.push("/teacher");
       } else {
-        router.push("/dashboard?tab=orders");
+        router.push("/dashboard");
       }
-    }, 600);
+    }, 500);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -201,37 +200,37 @@ function LoginFormContent() {
           <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
-              onClick={() => handleQuickLogin("joabniguise@gmail.com")}
+              onClick={() => handleQuickLogin("admin@arenguade.com", "Password123!")}
               className="py-2 px-2 rounded-xl border border-red-200 bg-red-50/60 hover:bg-red-900 hover:text-white transition-all text-red-900 text-center flex flex-col items-center gap-1 cursor-pointer"
             >
               <ShieldCheck size={14} className="text-red-700 shrink-0" />
               <div className="overflow-hidden">
                 <p className="text-[10px] font-bold truncate">Admin</p>
-                <p className="text-[8px] opacity-70">Eyoab Niguise</p>
+                <p className="text-[8px] opacity-70">Abebe Admin</p>
               </div>
             </button>
 
             <button
               type="button"
-              onClick={() => handleQuickLogin("tadesse@oromiaroast.et")}
-              className="py-2 px-2 rounded-xl border border-emerald-200 bg-emerald-50/60 hover:bg-[#1E3B2E] hover:text-white transition-all text-emerald-950 text-center flex flex-col items-center gap-1 cursor-pointer"
-            >
-              <UserCheck size={14} className="text-emerald-700 shrink-0" />
-              <div className="overflow-hidden">
-                <p className="text-[10px] font-bold truncate">Buyer</p>
-                <p className="text-[8px] opacity-70">Tadesse G.</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("chala.student@arenguade.et")}
+              onClick={() => handleQuickLogin("teacher.tigist@arenguade.com", "Password123!")}
               className="py-2 px-2 rounded-xl border border-amber-200 bg-amber-50/60 hover:bg-[#8C4B31] hover:text-white transition-all text-amber-950 text-center flex flex-col items-center gap-1 cursor-pointer"
             >
               <BookOpen size={14} className="text-amber-700 shrink-0" />
               <div className="overflow-hidden">
-                <p className="text-[10px] font-bold truncate">Student</p>
-                <p className="text-[8px] opacity-70">Chala D.</p>
+                <p className="text-[10px] font-bold truncate">Teacher</p>
+                <p className="text-[8px] opacity-70">Tigist Tadesse</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleQuickLogin("customer.selam@gmail.com", "Password123!")}
+              className="py-2 px-2 rounded-xl border border-emerald-200 bg-emerald-50/60 hover:bg-[#1E3B2E] hover:text-white transition-all text-emerald-950 text-center flex flex-col items-center gap-1 cursor-pointer"
+            >
+              <UserCheck size={14} className="text-emerald-700 shrink-0" />
+              <div className="overflow-hidden">
+                <p className="text-[10px] font-bold truncate">Customer</p>
+                <p className="text-[8px] opacity-70">Selam Kebede</p>
               </div>
             </button>
           </div>

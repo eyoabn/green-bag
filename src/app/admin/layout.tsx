@@ -17,7 +17,9 @@ import {
   ShieldCheck,
   Package,
   ArrowRight,
-  GraduationCap
+  GraduationCap,
+  CheckCircle2,
+  Settings
 } from "lucide-react";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import { createClient } from "@/utils/supabase/client";
@@ -151,12 +153,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // 4. Authenticated Admin Console Layout
   const navLinks = [
     { href: "/admin", label: "Dashboard Overview", icon: LayoutDashboard },
-    { href: "/admin/orders", label: "Orders & Verification", icon: ShoppingBag },
+    { href: "/admin/payments", label: "Payment Queue", icon: CheckCircle2 },
+    { href: "/admin/orders", label: "Orders & Fulfillment", icon: ShoppingBag },
     { href: "/admin/products", label: "Product Catalog", icon: Package },
     { href: "/admin/classes", label: "Classrooms & Workshops", icon: GraduationCap },
-    { href: "/admin/users", label: "Users & Accounts", icon: Users },
+    { href: "/admin/users", label: "Users & Staff", icon: Users },
     { href: "/admin/designs", label: "Design Submissions", icon: PenTool },
     { href: "/admin/bank-accounts", label: "Banking & Settlement", icon: CreditCard },
+    { href: "/admin/settings", label: "Factory Settings", icon: Settings },
   ];
 
   return (

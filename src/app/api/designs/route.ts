@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
+import { pool } from "@/utils/db";
 
 // GET /api/designs - List designs by role (Admin sees all, Customer sees own)
 export async function GET(request: NextRequest) {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("designs")
       .select(`
-        id, submitted_by, file_path, description, quoted_price, status, created_at, updated_at,
+        id, submitted_by, title, file_path, description, admin_reply, quoted_price, status, linked_order_id, created_at, updated_at,
         profiles:submitted_by(id, full_name, email, phone)
       `)
       .order("created_at", { ascending: false });
@@ -48,37 +49,58 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireUser();
     const body = await request.json().catch(() => ({}));
-    const { filePath, description } = body;
+    const { title, filePath, description } = body;
 
     if (!filePath) {
       return NextResponse.json({ error: "File path or design specification is required." }, { status: 400 });
     }
+
+    const designTitle = (title && String(title).trim()) || "Custom Paper Packaging Design";
 
     const supabase = await createClient();
     const { data: design, error } = await supabase
       .from("designs")
       .insert({
         submitted_by: user.id,
+        title: designTitle,
         file_path: filePath,
         description: description || "Custom kraft packaging specification",
-        status: "submitted",
+        status: "new",
       })
       .select(`
-        id, submitted_by, file_path, description, quoted_price, status, created_at
+        id, submitted_by, title, file_path, description, admin_reply, quoted_price, status, linked_order_id, created_at
       `)
       .single();
 
     if (error) throw error;
+
+    // Notify all admin users
+    const { rows: admins } = await pool.query(
+      "SELECT id FROM public.profiles WHERE role = 'admin'"
+    );
+
+    for (const adm of admins) {
+      await pool.query(
+        `INSERT INTO public.notifications (user_id, title, body, link)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          adm.id,
+          "New Custom Design Submitted",
+          `Customer ${user.full_name || user.email} submitted a new packaging design: "${designTitle}".`,
+          `/admin/designs?id=${design.id}`,
+        ]
+      );
+    }
 
     await supabase.from("audit_log").insert({
       actor_id: user.id,
       action: "SUBMIT_DESIGN",
       entity: "designs",
       entity_id: design.id,
-      metadata: { filePath },
+      metadata: { title: designTitle, filePath },
     });
 
-    return NextResponse.json({ success: true, design });
+    return NextResponse.json({ success: true, design }, { status: 201 });
   } catch (err: any) {
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to submit design" }, { status });

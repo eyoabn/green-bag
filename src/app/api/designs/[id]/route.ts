@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
+import { pool } from "@/utils/db";
 
 // GET /api/designs/[id] - Fetch single design
 export async function GET(
@@ -10,21 +11,36 @@ export async function GET(
   try {
     const { id } = await params;
     const user = await requireUser();
-    const supabase = await createClient();
 
-    let query = supabase
-      .from("designs")
-      .select(`
-        id, submitted_by, file_path, description, quoted_price, status, created_at, updated_at,
-        profiles:submitted_by(id, full_name, email, phone)
-      `)
-      .eq("id", id);
-
-    if (user.role !== "admin") {
-      query = query.eq("submitted_by", user.id);
+    // Check existence and ownership in DB first to distinguish 404 vs 403 under RLS
+    const { rows: designRows } = await pool.query(
+      "SELECT id, submitted_by FROM public.designs WHERE id = $1",
+      [id]
+    );
+    if (designRows.length === 0) {
+      return NextResponse.json({ error: "Design request not found." }, { status: 404 });
     }
 
-    const { data: design, error } = await query.maybeSingle();
+    // Customer can view ONLY their own designs
+    if (user.role !== "admin" && designRows[0].submitted_by !== user.id) {
+      return NextResponse.json(
+        { error: "Access denied: You cannot view another customer's design." },
+        { status: 403 }
+      );
+    }
+
+    const supabase = await createClient();
+
+    // Fetch design to verify existence
+    const { data: design, error } = await supabase
+      .from("designs")
+      .select(`
+        id, submitted_by, title, file_path, description, admin_reply, quoted_price, status, linked_order_id, created_at, updated_at,
+        profiles:submitted_by(id, full_name, email, phone)
+      `)
+      .eq("id", id)
+      .maybeSingle();
+
     if (error) throw error;
     if (!design) {
       return NextResponse.json({ error: "Design request not found." }, { status: 404 });
@@ -46,124 +62,235 @@ export async function PATCH(
     const { id } = await params;
     const user = await requireUser();
     const body = await request.json().catch(() => ({}));
-    const supabase = await createClient();
 
-    // Fetch existing design
-    const { data: existing, error: exErr } = await supabase
-      .from("designs")
-      .select("id, submitted_by, status, quoted_price, description, file_path")
-      .eq("id", id)
-      .maybeSingle();
+    // Fetch existing design via pool to bypass RLS isolation for ownership verification
+    const { rows: existingRows } = await pool.query(
+      "SELECT id, submitted_by, title, status, quoted_price, admin_reply, description, file_path, linked_order_id FROM public.designs WHERE id = $1",
+      [id]
+    );
 
-    if (exErr || !existing) {
+    if (existingRows.length === 0) {
       return NextResponse.json({ error: "Design request not found." }, { status: 404 });
     }
+    const existing = existingRows[0];
 
+    const supabase = await createClient();
+
+    // Role-based authorization & mutation rules
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
 
     if (user.role === "admin") {
-      if (body.status !== undefined) updates.status = body.status;
-      if (body.quoted_price !== undefined) updates.quoted_price = Number(body.quoted_price);
-      if (body.description !== undefined) updates.description = String(body.description);
-
-      // One-click convert to order
-      if (body.action === "convert") {
+      // 1. Convert to order action
+      if (body.action === "convert" || body.action === "create_order") {
         if (!existing.quoted_price || Number(existing.quoted_price) <= 0) {
-          return NextResponse.json({ error: "Cannot convert to order without a valid quoted price." }, { status: 400 });
+          return NextResponse.json({ error: "Cannot create order without a valid quoted price." }, { status: 400 });
         }
 
-        // Fetch an active bank account for order assignment
-        const { data: bank } = await supabase
-          .from("bank_accounts")
-          .select("id")
-          .eq("is_active", true)
-          .limit(1)
-          .maybeSingle();
+        // Fetch active bank account
+        const { rows: bankRows } = await pool.query(
+          "SELECT id FROM public.bank_accounts WHERE is_active = true LIMIT 1"
+        );
+        const bankId = bankRows.length > 0 ? bankRows[0].id : null;
 
-        // Create order
-        const { data: newOrder, error: orderErr } = await supabase
-          .from("orders")
-          .insert({
-            buyer_id: existing.submitted_by,
-            total_price: Number(existing.quoted_price),
-            bank_account_id: bank?.id || null,
-            delivery_address: "Addis Ababa Plant Dispatch",
-            phone: "0911000000",
-            notes: `Converted from Custom Design #${existing.id.substring(0, 8)}. Spec: ${existing.description}`,
-            status: "pending",
-          })
-          .select()
-          .single();
+        const orderNumber = `ARN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        if (orderErr) throw orderErr;
+        // Create order in pending_payment status (Phase 5 payment flow)
+        const { rows: orderRows } = await pool.query(
+          `INSERT INTO public.orders (order_number, buyer_id, total_price, bank_account_id, delivery_address, phone, notes, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending_payment')
+           RETURNING *`,
+          [
+            orderNumber,
+            existing.submitted_by,
+            Number(existing.quoted_price),
+            bankId,
+            "Addis Ababa Plant Dispatch",
+            "0911000000",
+            `Custom Design Order: ${existing.title || "Custom Bag"} (Ref: #${existing.id.substring(0, 8)})`,
+          ]
+        );
+        const newOrder = orderRows[0];
 
-        updates.status = "accepted";
+        // Add order items (requires valid product_id foreign key)
+        const { rows: prodRows } = await pool.query(
+          "SELECT id FROM public.products WHERE is_available = true LIMIT 1"
+        );
+        const productId = prodRows.length > 0 ? prodRows[0].id : null;
 
-        await supabase.from("notifications").insert({
-          user_id: existing.submitted_by,
-          title: "Design Converted to Order!",
-          message: `Your custom design has been converted into Order #${newOrder.order_number || newOrder.id}. Please upload your payment receipt to begin manufacturing.`,
-          link: `/dashboard/orders/${newOrder.id}`,
-        });
+        if (productId) {
+          await pool.query(
+            `INSERT INTO public.order_items (order_id, product_id, quantity, unit_price_snapshot)
+             VALUES ($1, $2, 1, $3)`,
+            [newOrder.id, productId, Number(existing.quoted_price)]
+          );
+        }
 
-        const { data: updatedDesign } = await supabase
-          .from("designs")
-          .update(updates)
-          .eq("id", id)
-          .select()
-          .single();
+        // Record initial status history
+        await pool.query(
+          `INSERT INTO public.order_status_history (order_id, from_status, to_status, changed_by, note)
+           VALUES ($1, null, 'pending_payment', $2, 'Order created from approved custom packaging design.')`,
+          [newOrder.id, user.id]
+        );
+
+        // Update design
+        await pool.query(
+          `UPDATE public.designs SET status = 'accepted', linked_order_id = $1, updated_at = NOW() WHERE id = $2`,
+          [newOrder.id, id]
+        );
+
+        // Notify customer
+        await pool.query(
+          `INSERT INTO public.notifications (user_id, title, body, link)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            existing.submitted_by,
+            "Order Created from Your Custom Design!",
+            `Your custom packaging design "${existing.title}" has been converted to Order #${newOrder.order_number}. Please upload your payment receipt to begin manufacturing.`,
+            `/dashboard/orders/${newOrder.id}`,
+          ]
+        );
+
+        const { rows: updatedDesignRows } = await pool.query("SELECT * FROM public.designs WHERE id = $1", [id]);
 
         return NextResponse.json({
           success: true,
           converted: true,
           order: newOrder,
-          design: updatedDesign,
+          design: updatedDesignRows[0],
         });
       }
 
-      // If status changed to 'quoted', notify customer
-      if (body.status === "quoted" && body.quoted_price) {
-        await supabase.from("notifications").insert({
-          user_id: existing.submitted_by,
-          title: "Custom Bag Quote Ready!",
-          message: `Our plant has quoted your custom packaging design at ${body.quoted_price} ETB. Tap to review and accept the quotation.`,
-          link: `/dashboard?tab=designs`,
-        });
+      // 2. Admin normal update
+      if (body.status !== undefined) {
+        const validStatuses = ["new", "reviewing", "quoted", "accepted", "declined"];
+        if (!validStatuses.includes(body.status)) {
+          return NextResponse.json({ error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` }, { status: 400 });
+        }
+        updates.status = body.status;
       }
+
+      if (body.quoted_price !== undefined) {
+        const p = Number(body.quoted_price);
+        if (isNaN(p) || p < 0) {
+          return NextResponse.json({ error: "Quoted price must be a positive number." }, { status: 400 });
+        }
+        updates.quoted_price = p;
+      }
+
+      if (body.admin_reply !== undefined) {
+        updates.admin_reply = String(body.admin_reply).trim();
+      }
+
+      if (body.description !== undefined) {
+        updates.description = String(body.description);
+      }
+
+      // Customer is notified on every change
+      let notifMsg = `Your custom packaging design "${existing.title}" status is now ${updates.status || existing.status}.`;
+      if (updates.status === "quoted" || updates.quoted_price !== undefined) {
+        notifMsg = `Our plant quoted your custom design "${existing.title}" at ${updates.quoted_price ?? existing.quoted_price} ETB. ${updates.admin_reply ? `Note: "${updates.admin_reply}"` : ""}`;
+      } else if (updates.admin_reply) {
+        notifMsg = `Plant Engineer message on "${existing.title}": "${updates.admin_reply}".`;
+      }
+
+      await pool.query(
+        `INSERT INTO public.notifications (user_id, title, body, link)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          existing.submitted_by,
+          "Design Request Update",
+          notifMsg,
+          "/dashboard/designs",
+        ]
+      );
+
     } else {
-      // Customer can accept or decline quote
+      // Customer role checks
       if (existing.submitted_by !== user.id) {
         return NextResponse.json({ error: "Access denied." }, { status: 403 });
       }
 
+      // Customer cannot set quoted price or arbitrary status
+      if (body.quoted_price !== undefined) {
+        return NextResponse.json({ error: "Customers cannot set or modify quoted prices." }, { status: 403 });
+      }
+
+      if (body.status === "quoted") {
+        return NextResponse.json({ error: "Customers cannot set status to quoted." }, { status: 403 });
+      }
+
+      if (existing.status !== "quoted") {
+        return NextResponse.json({ error: `Cannot accept or decline quote when status is "${existing.status}". A quote must be provided first.` }, { status: 400 });
+      }
+
       if (body.action === "accept" || body.status === "accepted") {
         updates.status = "accepted";
+
+        // Notify admins that customer accepted quote
+        const { rows: admins } = await pool.query(
+          "SELECT id FROM public.profiles WHERE role = 'admin'"
+        );
+        for (const adm of admins) {
+          await pool.query(
+            `INSERT INTO public.notifications (user_id, title, body, link)
+             VALUES ($1, $2, $3, $4)`,
+            [
+              adm.id,
+              "Custom Design Quote Accepted!",
+              `Customer ${user.full_name || user.email} accepted the quotation of ${existing.quoted_price} ETB for design "${existing.title}". You can now convert it to an order.`,
+              `/admin/designs?id=${existing.id}`,
+            ]
+          );
+        }
       } else if (body.action === "decline" || body.status === "declined") {
         updates.status = "declined";
+
+        const { rows: admins } = await pool.query(
+          "SELECT id FROM public.profiles WHERE role = 'admin'"
+        );
+        for (const adm of admins) {
+          await pool.query(
+            `INSERT INTO public.notifications (user_id, title, body, link)
+             VALUES ($1, $2, $3, $4)`,
+            [
+              adm.id,
+              "Custom Design Quote Declined",
+              `Customer ${user.full_name || user.email} declined the quote for design "${existing.title}".`,
+              `/admin/designs?id=${existing.id}`,
+            ]
+          );
+        }
       } else {
         return NextResponse.json({ error: "Customers can only accept or decline quotes." }, { status: 403 });
       }
     }
 
-    const { data: updated, error: updErr } = await supabase
-      .from("designs")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
+    // Apply updates to designs table via pool
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIdx = 1;
 
-    if (updErr) throw updErr;
+    for (const [key, val] of Object.entries(updates)) {
+      setClauses.push(`${key} = $${paramIdx++}`);
+      values.push(val);
+    }
+    values.push(id);
 
-    await supabase.from("audit_log").insert({
-      actor_id: user.id,
-      action: "UPDATE_DESIGN",
-      entity: "designs",
-      entity_id: id,
-      metadata: updates,
-    });
+    const { rows: updatedRows } = await pool.query(
+      `UPDATE public.designs SET ${setClauses.join(", ")} WHERE id = $${paramIdx} RETURNING *`,
+      values
+    );
+    const updated = updatedRows[0];
+
+    await pool.query(
+      `INSERT INTO public.audit_log (actor_id, action, entity, entity_id, metadata)
+       VALUES ($1, 'UPDATE_DESIGN', 'designs', $2, $3)`,
+      [user.id, id, JSON.stringify(updates)]
+    );
 
     return NextResponse.json({ success: true, design: updated });
   } catch (err: any) {
+    console.error("PATCH /api/designs/[id] error:", err);
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to update design" }, { status });
   }

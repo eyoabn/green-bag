@@ -238,6 +238,19 @@ export default function DesignSubmissionPage() {
       let finalFilePath = `custom-specs/${user.id}_${Date.now()}.json`;
 
       if (dielineFile) {
+        if (dielineFile.size > 5 * 1024 * 1024) {
+          alert("File exceeds maximum allowed size of 5 MB.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+        if (!allowedTypes.includes(dielineFile.type)) {
+          alert("Invalid file format. Allowed formats: JPG, PNG, WEBP, PDF.");
+          setIsSubmitting(false);
+          return;
+        }
+
         const formData = new FormData();
         formData.append("file", dielineFile);
         formData.append("bucket", "designs");
@@ -267,11 +280,14 @@ export default function DesignSubmissionPage() {
         notes: dielineNotes || (activeMode === "design" ? `Front print: "${brandTitle}". Subtitle: "${brandSubtitle}". Foil/Ink: ${textColorName}. Base color: ${bagColorName}.` : "Uploaded bespoke dieline artwork."),
       });
 
+      const designTitle = companyName || brandTitle || "Custom Paper Packaging Design";
+
       // 3. Post to real PostgreSQL /api/designs endpoint
       const res = await fetch("/api/designs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          title: designTitle,
           filePath: finalFilePath,
           description: notePayload,
         }),

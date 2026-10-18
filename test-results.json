@@ -4,8 +4,9 @@
       "C:\\Program Files\\nodejs\\node.exe",
       "C:\\Users\\us\\greenwork\\node_modules\\@playwright\\test\\cli.js",
       "test",
-      "tests/e2e/phase2-auth-roles-middleware.spec.ts",
-      "tests/e2e/phase3-admin.spec.ts"
+      "tests/e2e/phase9-notifications-admin.spec.ts",
+      "-g",
+      "4. Admin Dashboard Metrics"
     ],
     "configFile": "C:\\Users\\us\\greenwork\\playwright.config.ts",
     "rootDir": "C:/Users/us/greenwork/tests/e2e",
@@ -111,20 +112,20 @@
   },
   "suites": [
     {
-      "title": "phase2-auth-roles-middleware.spec.ts",
-      "file": "phase2-auth-roles-middleware.spec.ts",
+      "title": "phase9-notifications-admin.spec.ts",
+      "file": "phase9-notifications-admin.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Phase 2: Auth, Roles, Middleware & Navigation",
-          "file": "phase2-auth-roles-middleware.spec.ts",
-          "line": 22,
+          "title": "Phase 9: Realtime Notifications, Audit Log & Admin Dashboard",
+          "file": "phase9-notifications-admin.spec.ts",
+          "line": 24,
           "column": 6,
           "specs": [
             {
-              "title": "1. New signup becomes role customer and lands on /dashboard",
+              "title": "4. Admin Dashboard Metrics: Real DB numbers match direct SQL counts with zero fakes",
               "ok": true,
               "tags": [],
               "tests": [
@@ -139,12 +140,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 13301,
+                      "duration": 38898,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T17:04:25.023Z",
+                      "startTime": "2026-10-18T17:34:56.618Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -152,536 +153,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "48a191f2169af3231f25-05b719c7e758a7b5620d",
-              "file": "phase2-auth-roles-middleware.spec.ts",
-              "line": 25,
-              "column": 7
-            },
-            {
-              "title": "2. Customer visiting /admin and /teacher is redirected to /dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 16918,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:04:38.622Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "48a191f2169af3231f25-9a504bd3a960c6db6793",
-              "file": "phase2-auth-roles-middleware.spec.ts",
-              "line": 54,
-              "column": 7
-            },
-            {
-              "title": "3. Teacher visiting /admin is redirected; teacher reaching /teacher works",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 23141,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:04:55.581Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "48a191f2169af3231f25-8bfdd1a2415a415fcc13",
-              "file": "phase2-auth-roles-middleware.spec.ts",
-              "line": 74,
-              "column": 7
-            },
-            {
-              "title": "4. Admin can reach all three areas (/admin, /teacher, /dashboard)",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 16006,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:05:18.757Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "48a191f2169af3231f25-13e8bac0ec385a758886",
-              "file": "phase2-auth-roles-middleware.spec.ts",
-              "line": 89,
-              "column": 7
-            },
-            {
-              "title": "5. Customer attempting to PATCH their own role via API fails",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3769,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:05:34.818Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "48a191f2169af3231f25-eba6f775d5cb86b531c8",
-              "file": "phase2-auth-roles-middleware.spec.ts",
-              "line": 109,
-              "column": 7
-            },
-            {
-              "title": "6. Deactivated user cannot log in",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4980,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:05:38.628Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "48a191f2169af3231f25-8138699ce93b688dc82f",
-              "file": "phase2-auth-roles-middleware.spec.ts",
-              "line": 134,
-              "column": 7
-            },
-            {
-              "title": "7. Logout then navigating to protected route redirects to login",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 22070,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:05:43.666Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "48a191f2169af3231f25-c767842328239672f745",
-              "file": "phase2-auth-roles-middleware.spec.ts",
-              "line": 163,
-              "column": 7
-            },
-            {
-              "title": "8. Password reset flow: /forgot-password and /reset-password pages function",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 10328,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:06:05.779Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "48a191f2169af3231f25-cac21f53ed8d8c1bc5a2",
-              "file": "phase2-auth-roles-middleware.spec.ts",
-              "line": 190,
-              "column": 7
-            },
-            {
-              "title": "9. Profile page: view read-only role and update contact information",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 17904,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:06:16.140Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "48a191f2169af3231f25-17e563fc13c49552266f",
-              "file": "phase2-auth-roles-middleware.spec.ts",
-              "line": 218,
-              "column": 7
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "phase3-admin.spec.ts",
-      "file": "phase3-admin.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Phase 3: Admin Shell, Users, Bank Accounts, Settings",
-          "file": "phase3-admin.spec.ts",
-          "line": 23,
-          "column": 6,
-          "specs": [
-            {
-              "title": "1. Admin layout displays full 9-link navigation and desktop top bar with notification bell",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 10201,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:06:34.115Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-47d5914ff99e838f5d56",
-              "file": "phase3-admin.spec.ts",
-              "line": 29,
-              "column": 7
-            },
-            {
-              "title": "2. Admin cannot demote or deactivate self (UI locked and API returns 403)",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 28522,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:06:44.355Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-8cb8f76bf7feb4f5548a",
-              "file": "phase3-admin.spec.ts",
-              "line": 62,
-              "column": 7
-            },
-            {
-              "title": "3. Non-admin users calling /api/admin/* receive HTTP 403 Forbidden",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4903,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:07:12.907Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-490ba0f083347baacf01",
-              "file": "phase3-admin.spec.ts",
-              "line": 113,
-              "column": 7
-            },
-            {
-              "title": "4. Admin promotes customer to teacher and writes audit log",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 17883,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:07:17.863Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-cb25fbfb1b4b4340b443",
-              "file": "phase3-admin.spec.ts",
-              "line": 135,
-              "column": 7
-            },
-            {
-              "title": "5. Admin provisions a new teacher account and verifies profile & audit log",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3860,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:07:35.814Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-19071afce8b860bb12e6",
-              "file": "phase3-admin.spec.ts",
-              "line": 172,
-              "column": 7
-            },
-            {
-              "title": "6. Admin bank accounts CRUD and disabled account filtered out of checkout",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7082,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:07:39.707Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-94af610a0427f9ceba54",
-              "file": "phase3-admin.spec.ts",
-              "line": 210,
-              "column": 7
-            },
-            {
-              "title": "7. Updating settings updates database, public footer, and audit log",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 9935,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-18T17:07:46.833Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-38258fdcb9a883a2bc36",
-              "file": "phase3-admin.spec.ts",
-              "line": 265,
+              "id": "ed6c4318eeeede302e6a-59d358611d1a3ee0d423",
+              "file": "phase9-notifications-admin.spec.ts",
+              "line": 255,
               "column": 7
             }
           ]
@@ -691,9 +165,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-18T17:04:23.214Z",
-    "duration": 213862.414,
-    "expected": 16,
+    "startTime": "2026-10-18T17:34:54.410Z",
+    "duration": 51888.478,
+    "expected": 1,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

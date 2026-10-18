@@ -194,7 +194,7 @@ export default function AdminDashboardPage() {
                 <PenTool size={22} />
               </div>
               <div>
-                <span className="font-serif text-2xl font-bold text-stone-900 block leading-tight">
+                <span data-testid="stat-new-designs" className="font-serif text-2xl font-bold text-stone-900 block leading-tight">
                   {stats.newDesignsCount}
                 </span>
                 <span className="text-xs font-bold text-stone-700">New Design Inquiries</span>
@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
                 <GraduationCap size={22} />
               </div>
               <div>
-                <span className="font-serif text-2xl font-bold text-stone-900 block leading-tight">
+                <span data-testid="stat-upcoming-count" className="font-serif text-2xl font-bold text-stone-900 block leading-tight">
                   {stats.upcomingSessionsCount}
                 </span>
                 <span className="text-xs font-bold text-stone-700">Scheduled Workshops</span>
@@ -228,7 +228,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* 2. BELOW: Exactly 4 Simple Numbers Max */}
-      <div className="space-y-3">
+      <div data-testid="orders-pipeline" className="space-y-3">
         <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
           Core Operating Metrics
         </span>
@@ -271,7 +271,7 @@ export default function AdminDashboardPage() {
 
       {/* 3. Single Small Clean Revenue Chart */}
       {stats.revenueOverTime.length > 0 && (
-        <div className="bg-white p-6 rounded-3xl border border-stone-200 space-y-4">
+        <div data-testid="revenue-chart" className="bg-white p-6 rounded-3xl border border-stone-200 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-serif text-base font-bold text-stone-900">
@@ -301,7 +301,7 @@ export default function AdminDashboardPage() {
       )}
 
       {/* 4. Recent Audit Activity Stream */}
-      <div className="bg-white p-6 rounded-3xl border border-stone-200 space-y-4">
+      <div data-testid="recent-activity-feed" className="bg-white p-6 rounded-3xl border border-stone-200 space-y-4">
         <div className="flex items-center justify-between border-b border-stone-100 pb-3">
           <h3 className="font-serif text-base font-bold text-stone-900 flex items-center gap-2">
             <History size={16} className="text-[#1E3B2E]" />

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { User, ShoppingBag, BookOpen, LogOut, Menu, X, ArrowLeft, Sparkles, Layers, ShieldCheck, ArrowRight } from "lucide-react";
+import { User, ShoppingBag, BookOpen, LogOut, Menu, X, ArrowLeft, Sparkles, Layers, ShieldCheck, ArrowRight, Bell } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 
@@ -40,6 +40,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     { href: "/dashboard/orders", tabId: "orders", label: "My Orders & Receipts", icon: ShoppingBag },
     { href: "/dashboard/classes", tabId: "classes", label: "My Academy Workshops", icon: BookOpen },
     { href: "/dashboard?tab=designs", tabId: "designs", label: "Custom 3D Designs", icon: Sparkles },
+    { href: "/dashboard/notifications", tabId: "notifications", label: "Notifications & Alerts", icon: Bell },
   ];
 
   const userName = user?.full_name || "Valued User";

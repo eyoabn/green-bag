@@ -232,6 +232,7 @@ export default function Navbar() {
 
           {/* Mobile Cart & Hamburger Buttons */}
           <div className="flex lg:hidden items-center gap-2">
+            {user && <NotificationBell />}
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-2 rounded-full text-stone-700 hover:bg-stone-200/60 transition-colors"

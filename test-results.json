@@ -3,8 +3,7 @@
     "argv": [
       "C:\\Program Files\\nodejs\\node.exe",
       "C:\\Users\\us\\greenwork\\node_modules\\@playwright\\test\\cli.js",
-      "test",
-      "tests/e2e/phase6-classes.spec.ts"
+      "test"
     ],
     "configFile": "C:\\Users\\us\\greenwork\\playwright.config.ts",
     "rootDir": "C:/Users/us/greenwork/tests/e2e",
@@ -110,6 +109,1909 @@
   },
   "suites": [
     {
+      "title": "master-flows.spec.ts",
+      "file": "master-flows.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Ethiopia Arenguade Paper Product - Master Flows v2",
+          "file": "master-flows.spec.ts",
+          "line": 22,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1. Visitor can browse /products and view single product",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5024,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:06:47.172Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-c2d715954a790e67bb74",
+              "file": "master-flows.spec.ts",
+              "line": 25,
+              "column": 7
+            },
+            {
+              "title": "2. Visitor is redirected from protected routes to login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3000,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:06:52.485Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-60f1af4f6202de05fd58",
+              "file": "master-flows.spec.ts",
+              "line": 44,
+              "column": 7
+            },
+            {
+              "title": "3. Customer sign-up creates profile with customer role",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9028,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:06:55.518Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-e1cf1570d1532f617398",
+              "file": "master-flows.spec.ts",
+              "line": 59,
+              "column": 7
+            },
+            {
+              "title": "4. Customer places order with payment proof and snapshots recorded",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6343,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:07:04.590Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-37785745100aad36665f",
+              "file": "master-flows.spec.ts",
+              "line": 86,
+              "column": 7
+            },
+            {
+              "title": "5. Class session atomic registration and overcapacity protection",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3070,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:07:11.007Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-be60260733554d0202b6",
+              "file": "master-flows.spec.ts",
+              "line": 126,
+              "column": 7
+            },
+            {
+              "title": "6. Admin portal navigation and management modules",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 17164,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:07:14.140Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-35b6ed3f299780fdcd65",
+              "file": "master-flows.spec.ts",
+              "line": 159,
+              "column": 7
+            },
+            {
+              "title": "7. Admin approves payment proof in unified queue",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4975,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"\u001b[7mverifi\u001b[27med\"\u001b[39m\nReceived: \u001b[31m\"\u001b[7mapprov\u001b[27med\"\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"\u001b[7mverifi\u001b[27med\"\u001b[39m\nReceived: \u001b[31m\"\u001b[7mapprov\u001b[27med\"\u001b[39m\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:208:40",
+                        "location": {
+                          "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                          "column": 40,
+                          "line": 208
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 206 |\u001b[39m       \u001b[36mconst\u001b[39m approveData \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m approveRes\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\n \u001b[90m 207 |\u001b[39m       expect(approveRes\u001b[33m.\u001b[39mok())\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 208 |\u001b[39m       expect(approveData\u001b[33m.\u001b[39morder\u001b[33m.\u001b[39mstatus)\u001b[33m.\u001b[39mtoBe(\u001b[32m\"verified\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 209 |\u001b[39m     }\n \u001b[90m 210 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 211 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                            "column": 40,
+                            "line": 208
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"\u001b[7mverifi\u001b[27med\"\u001b[39m\nReceived: \u001b[31m\"\u001b[7mapprov\u001b[27med\"\u001b[39m\n\n  206 |       const approveData = await approveRes.json();\n  207 |       expect(approveRes.ok()).toBeTruthy();\n> 208 |       expect(approveData.order.status).toBe(\"verified\");\n      |                                        ^\n  209 |     }\n  210 |   });\n  211 |\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:208:40"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:07:31.347Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\us\\greenwork\\test-results\\master-flows-Ethiopia-Aren-9e3fe-ment-proof-in-unified-queue-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                        "column": 40,
+                        "line": 208
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-7abda45c19e5e8403bcf",
+              "file": "master-flows.spec.ts",
+              "line": 186,
+              "column": 7
+            },
+            {
+              "title": "8. Order lifecycle advancement to delivered",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6657,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:238:23",
+                        "location": {
+                          "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                          "column": 23,
+                          "line": 238
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 236 |\u001b[39m       data\u001b[33m:\u001b[39m { action\u001b[33m:\u001b[39m \u001b[32m\"advance_status\"\u001b[39m\u001b[33m,\u001b[39m status\u001b[33m:\u001b[39m \u001b[32m\"delivered\"\u001b[39m }\u001b[33m,\u001b[39m\n \u001b[90m 237 |\u001b[39m     })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 238 |\u001b[39m     expect(dRes\u001b[33m.\u001b[39mok())\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 239 |\u001b[39m     \u001b[36mconst\u001b[39m dData \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m dRes\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\n \u001b[90m 240 |\u001b[39m     expect(dData\u001b[33m.\u001b[39morder\u001b[33m.\u001b[39mstatus)\u001b[33m.\u001b[39mtoBe(\u001b[32m\"delivered\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 241 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                            "column": 23,
+                            "line": 238
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  236 |       data: { action: \"advance_status\", status: \"delivered\" },\n  237 |     });\n> 238 |     expect(dRes.ok()).toBeTruthy();\n      |                       ^\n  239 |     const dData = await dRes.json();\n  240 |     expect(dData.order.status).toBe(\"delivered\");\n  241 |   });\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:238:23"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:07:37.571Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\us\\greenwork\\test-results\\master-flows-Ethiopia-Aren-d1ea5-le-advancement-to-delivered-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                        "column": 23,
+                        "line": 238
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-a0e4f477ec0b903c87c4",
+              "file": "master-flows.spec.ts",
+              "line": 213,
+              "column": 7
+            },
+            {
+              "title": "9. Teacher portal access and assigned workshops",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5722,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:07:45.599Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-23fb11a7430419cc57a7",
+              "file": "master-flows.spec.ts",
+              "line": 244,
+              "column": 7
+            },
+            {
+              "title": "10. LiveKit token generation privileges by role",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 2664,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:274:27",
+                        "location": {
+                          "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                          "column": 27,
+                          "line": 274
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 272 |\u001b[39m\n \u001b[90m 273 |\u001b[39m     \u001b[36mconst\u001b[39m startRes \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m request\u001b[33m.\u001b[39mpost(\u001b[32m`/api/live/${liveSession.id}/start`\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 274 |\u001b[39m     expect(startRes\u001b[33m.\u001b[39mok())\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                           \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 275 |\u001b[39m\n \u001b[90m 276 |\u001b[39m     \u001b[90m// 3. Teacher gets token -> isHost = true, canPublish = true\u001b[39m\n \u001b[90m 277 |\u001b[39m     \u001b[36mconst\u001b[39m teacherTokenRes \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m request\u001b[33m.\u001b[39mpost(\u001b[32m`/api/live/${liveSession.id}/token`\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                            "column": 27,
+                            "line": 274
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  272 |\n  273 |     const startRes = await request.post(`/api/live/${liveSession.id}/start`);\n> 274 |     expect(startRes.ok()).toBeTruthy();\n      |                           ^\n  275 |\n  276 |     // 3. Teacher gets token -> isHost = true, canPublish = true\n  277 |     const teacherTokenRes = await request.post(`/api/live/${liveSession.id}/token`);\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:274:27"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:07:51.735Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\us\\greenwork\\test-results\\master-flows-Ethiopia-Aren-bc1cc-neration-privileges-by-role-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                        "column": 27,
+                        "line": 274
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-c4190752a0315c3a5bf8",
+              "file": "master-flows.spec.ts",
+              "line": 258,
+              "column": 7
+            },
+            {
+              "title": "11. Role enforcement and tenant isolation (RLS / API Guard)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3251,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:07:55.727Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-4a6a9435155fdef0e89e",
+              "file": "master-flows.spec.ts",
+              "line": 308,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "phase2-auth-roles-middleware.spec.ts",
+      "file": "phase2-auth-roles-middleware.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 2: Auth, Roles, Middleware & Navigation",
+          "file": "phase2-auth-roles-middleware.spec.ts",
+          "line": 22,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1. New signup becomes role customer and lands on /dashboard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5344,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:07:59.118Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48a191f2169af3231f25-05b719c7e758a7b5620d",
+              "file": "phase2-auth-roles-middleware.spec.ts",
+              "line": 25,
+              "column": 7
+            },
+            {
+              "title": "2. Customer visiting /admin and /teacher is redirected to /dashboard",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7484,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:08:04.876Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48a191f2169af3231f25-9a504bd3a960c6db6793",
+              "file": "phase2-auth-roles-middleware.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "3. Teacher visiting /admin is redirected; teacher reaching /teacher works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5520,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:08:12.399Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48a191f2169af3231f25-8bfdd1a2415a415fcc13",
+              "file": "phase2-auth-roles-middleware.spec.ts",
+              "line": 74,
+              "column": 7
+            },
+            {
+              "title": "4. Admin can reach all three areas (/admin, /teacher, /dashboard)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5676,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:08:17.954Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48a191f2169af3231f25-13e8bac0ec385a758886",
+              "file": "phase2-auth-roles-middleware.spec.ts",
+              "line": 89,
+              "column": 7
+            },
+            {
+              "title": "5. Customer attempting to PATCH their own role via API fails",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4231,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:08:23.670Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48a191f2169af3231f25-eba6f775d5cb86b531c8",
+              "file": "phase2-auth-roles-middleware.spec.ts",
+              "line": 109,
+              "column": 7
+            },
+            {
+              "title": "6. Deactivated user cannot log in",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2715,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:08:27.933Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48a191f2169af3231f25-8138699ce93b688dc82f",
+              "file": "phase2-auth-roles-middleware.spec.ts",
+              "line": 134,
+              "column": 7
+            },
+            {
+              "title": "7. Logout then navigating to protected route redirects to login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6595,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:08:30.682Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48a191f2169af3231f25-c767842328239672f745",
+              "file": "phase2-auth-roles-middleware.spec.ts",
+              "line": 163,
+              "column": 7
+            },
+            {
+              "title": "8. Password reset flow: /forgot-password and /reset-password pages function",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6605,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:08:37.321Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48a191f2169af3231f25-cac21f53ed8d8c1bc5a2",
+              "file": "phase2-auth-roles-middleware.spec.ts",
+              "line": 190,
+              "column": 7
+            },
+            {
+              "title": "9. Profile page: view read-only role and update contact information",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11425,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:08:43.958Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48a191f2169af3231f25-17e563fc13c49552266f",
+              "file": "phase2-auth-roles-middleware.spec.ts",
+              "line": 218,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "phase3-admin.spec.ts",
+      "file": "phase3-admin.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 3: Admin Shell, Users, Bank Accounts, Settings",
+          "file": "phase3-admin.spec.ts",
+          "line": 23,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1. Admin layout displays full 9-link navigation and desktop top bar with notification bell",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6148,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:08:55.475Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-47d5914ff99e838f5d56",
+              "file": "phase3-admin.spec.ts",
+              "line": 29,
+              "column": 7
+            },
+            {
+              "title": "2. Admin cannot demote or deactivate self (UI locked and API returns 403)",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 23352,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('tr').filter({ hasText: 'admin@arenguade.com' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('tr').filter({ hasText: 'admin@arenguade.com' }) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('tr').filter({ hasText: 'admin@arenguade.com' })\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('tr').filter({ hasText: 'admin@arenguade.com' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('tr').filter({ hasText: 'admin@arenguade.com' }) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('tr').filter({ hasText: 'admin@arenguade.com' })\u001b[22m\n\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\phase3-admin.spec.ts:83:27",
+                        "location": {
+                          "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase3-admin.spec.ts",
+                          "column": 27,
+                          "line": 83
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 81 |\u001b[39m     \u001b[90m// Verify admin self-row shows \"ADMIN (Locked)\" and cannot be deactivated\u001b[39m\n \u001b[90m 82 |\u001b[39m     \u001b[36mconst\u001b[39m selfRow \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m\"tr\"\u001b[39m)\u001b[33m.\u001b[39mfilter({ hasText\u001b[33m:\u001b[39m \u001b[33mSEED_USERS\u001b[39m\u001b[33m.\u001b[39madmin\u001b[33m.\u001b[39memail })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 83 |\u001b[39m     \u001b[36mawait\u001b[39m expect(selfRow)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                           \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 84 |\u001b[39m     \u001b[36mawait\u001b[39m expect(selfRow\u001b[33m.\u001b[39mlocator(\u001b[32m\"text=ADMIN (Locked)\"\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 85 |\u001b[39m     \n \u001b[90m 86 |\u001b[39m     \u001b[90m// Inactive button on self is disabled\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase3-admin.spec.ts",
+                            "column": 27,
+                            "line": 83
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('tr').filter({ hasText: 'admin@arenguade.com' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('tr').filter({ hasText: 'admin@arenguade.com' }) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('tr').filter({ hasText: 'admin@arenguade.com' })\u001b[22m\n\n\n  81 |     // Verify admin self-row shows \"ADMIN (Locked)\" and cannot be deactivated\n  82 |     const selfRow = page.locator(\"tr\").filter({ hasText: SEED_USERS.admin.email });\n> 83 |     await expect(selfRow).toBeVisible();\n     |                           ^\n  84 |     await expect(selfRow.locator(\"text=ADMIN (Locked)\")).toBeVisible();\n  85 |     \n  86 |     // Inactive button on self is disabled\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\phase3-admin.spec.ts:83:27"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:09:01.703Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\us\\greenwork\\test-results\\phase3-admin-Phase-3-Admin-aabe7-locked-and-API-returns-403--chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase3-admin.spec.ts",
+                        "column": 27,
+                        "line": 83
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-8cb8f76bf7feb4f5548a",
+              "file": "phase3-admin.spec.ts",
+              "line": 62,
+              "column": 7
+            },
+            {
+              "title": "3. Non-admin users calling /api/admin/* receive HTTP 403 Forbidden",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4888,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:09:26.470Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-490ba0f083347baacf01",
+              "file": "phase3-admin.spec.ts",
+              "line": 117,
+              "column": 7
+            },
+            {
+              "title": "4. Admin promotes customer to teacher and writes audit log",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8367,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:09:31.707Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-cb25fbfb1b4b4340b443",
+              "file": "phase3-admin.spec.ts",
+              "line": 139,
+              "column": 7
+            },
+            {
+              "title": "5. Admin provisions a new teacher account and verifies profile & audit log",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3263,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:09:40.191Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-19071afce8b860bb12e6",
+              "file": "phase3-admin.spec.ts",
+              "line": 176,
+              "column": 7
+            },
+            {
+              "title": "6. Admin bank accounts CRUD and disabled account filtered out of checkout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8120,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:09:43.506Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-94af610a0427f9ceba54",
+              "file": "phase3-admin.spec.ts",
+              "line": 214,
+              "column": 7
+            },
+            {
+              "title": "7. Updating settings updates database, public footer, and audit log",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8110,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:09:51.720Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-38258fdcb9a883a2bc36",
+              "file": "phase3-admin.spec.ts",
+              "line": 269,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "phase4-products.spec.ts",
+      "file": "phase4-products.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 4: Products and Public Pages",
+          "file": "phase4-products.spec.ts",
+          "line": 15,
+          "column": 15,
+          "specs": [
+            {
+              "title": "1. Non-admin (customer) calling product mutations receives HTTP 403 Forbidden",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                        "line": 15,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13466,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:09:59.909Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                            "line": 15,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a5d19fde1f8f119cbf72-06cd1ac9922c6f5b7e0b",
+              "file": "phase4-products.spec.ts",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "2. Product images upload enforces admin authorization and file validation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                        "line": 15,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4173,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:10:13.433Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                            "line": 15,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a5d19fde1f8f119cbf72-8d62057eac8d2b0dc3de",
+              "file": "phase4-products.spec.ts",
+              "line": 62,
+              "column": 7
+            },
+            {
+              "title": "3. Admin creates product with 3 images; dynamically visible on /products and landing page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                        "line": 15,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11153,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:10:17.649Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                            "line": 15,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a5d19fde1f8f119cbf72-1dd689fb1b94a29ecdfb",
+              "file": "phase4-products.spec.ts",
+              "line": 101,
+              "column": 7
+            },
+            {
+              "title": "4. Toggling product availability hides from public catalog and disables ordering",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                        "line": 15,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10170,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:10:28.988Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                            "line": 15,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a5d19fde1f8f119cbf72-a9ad1ba5a0a3eb16fa08",
+              "file": "phase4-products.spec.ts",
+              "line": 149,
+              "column": 7
+            },
+            {
+              "title": "5. Public /products/[id] renders gallery, specs, price, and Add to Cart/Order controls",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                        "line": 15,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13976,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:10:39.238Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                            "line": 15,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a5d19fde1f8f119cbf72-99591a3f92ddbcd72afa",
+              "file": "phase4-products.spec.ts",
+              "line": 192,
+              "column": 7
+            },
+            {
+              "title": "6. Public /products catalog filters by search, category pills, and pagination",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                        "line": 15,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7266,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:10:53.255Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                            "line": 15,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a5d19fde1f8f119cbf72-bbbaf8a7c75c5300b73c",
+              "file": "phase4-products.spec.ts",
+              "line": 218,
+              "column": 7
+            },
+            {
+              "title": "7. Product deletion enforces soft-delete when referenced in orders",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                        "line": 15,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8202,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:11:00.554Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase4-products.spec.ts",
+                            "line": 15,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a5d19fde1f8f119cbf72-3f46dc4d89a414f6df83",
+              "file": "phase4-products.spec.ts",
+              "line": 248,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "phase5-orders.spec.ts",
+      "file": "phase5-orders.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 5: Ordering and Payments",
+          "file": "phase5-orders.spec.ts",
+          "line": 19,
+          "column": 15,
+          "specs": [
+            {
+              "title": "1. Customer orders, uploads proof, admin approves, customer sees approved with timeline",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 17370,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:11:09.247Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2151fdb9a22d53b6edf9-f95622de3d0c991302b8",
+              "file": "phase5-orders.spec.ts",
+              "line": 87,
+              "column": 7
+            },
+            {
+              "title": "2. Admin rejects with a reason, customer sees the reason, re-uploads, status returns to pending_verification",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15312,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:11:27.662Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2151fdb9a22d53b6edf9-d47ecd44c8021e90ba49",
+              "file": "phase5-orders.spec.ts",
+              "line": 172,
+              "column": 7
+            },
+            {
+              "title": "3. Cross-customer isolation: Customer cannot open another customer's order API, detail, or signed proof URL",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11583,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:11:43.000Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2151fdb9a22d53b6edf9-0f733d73a3806dcff0e9",
+              "file": "phase5-orders.spec.ts",
+              "line": 241,
+              "column": 7
+            },
+            {
+              "title": "4. Privilege Escalation Block: Customer cannot approve their own payment or transition to approved",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6376,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:11:54.625Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2151fdb9a22d53b6edf9-f8f927a211235a812dc7",
+              "file": "phase5-orders.spec.ts",
+              "line": 290,
+              "column": 7
+            },
+            {
+              "title": "5. Server computes price strictly from DB; price tampering has no effect; unavailable products rejected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5559,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:12:01.059Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2151fdb9a22d53b6edf9-d613e8cbe9bcb7848446",
+              "file": "phase5-orders.spec.ts",
+              "line": 329,
+              "column": 7
+            },
+            {
+              "title": "6. State Machine Validation: Invalid status jumps are rejected with HTTP 400",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 17482,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:12:06.632Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2151fdb9a22d53b6edf9-3561e105b6e16efc5fdc",
+              "file": "phase5-orders.spec.ts",
+              "line": 371,
+              "column": 7
+            },
+            {
+              "title": "7. Storage Validation: Wrong file format (.exe) and oversized file (>5 MB) are rejected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2605,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:12:24.128Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2151fdb9a22d53b6edf9-a61ebf28968557a7e983",
+              "file": "phase5-orders.spec.ts",
+              "line": 445,
+              "column": 7
+            },
+            {
+              "title": "8. Admin can create an order on behalf of a customer and it appears in customer portal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                        "line": 19,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6146,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:12:26.752Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
+                            "line": 19,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2151fdb9a22d53b6edf9-898eec4bb42244fda516",
+              "file": "phase5-orders.spec.ts",
+              "line": 483,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
       "title": "phase6-classes.spec.ts",
       "file": "phase6-classes.spec.ts",
       "column": 0,
@@ -135,15 +2037,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8018,
+                      "duration": 9411,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T06:30:48.528Z",
+                      "startTime": "2026-10-18T09:12:38.478Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -169,15 +2071,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6773,
+                      "duration": 5585,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T06:30:56.676Z",
+                      "startTime": "2026-10-18T09:12:47.900Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -203,15 +2105,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4523,
+                      "duration": 3495,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T06:31:03.509Z",
+                      "startTime": "2026-10-18T09:12:53.500Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -237,15 +2139,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 12410,
+                      "duration": 9934,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T06:31:08.116Z",
+                      "startTime": "2026-10-18T09:12:57.012Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -271,15 +2173,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8376,
+                      "duration": 7064,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T06:31:20.598Z",
+                      "startTime": "2026-10-18T09:13:06.962Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -305,15 +2207,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7066,
+                      "duration": 5648,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T06:31:29.048Z",
+                      "startTime": "2026-10-18T09:13:14.042Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -339,15 +2241,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7128,
+                      "duration": 6783,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T06:31:36.178Z",
+                      "startTime": "2026-10-18T09:13:19.703Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -373,15 +2275,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 22960,
+                      "duration": 13979,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T06:31:43.380Z",
+                      "startTime": "2026-10-18T09:13:26.503Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -397,15 +2299,712 @@
           ]
         }
       ]
+    },
+    {
+      "title": "phase7-livekit.spec.ts",
+      "file": "phase7-livekit.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 7: LiveKit Live Sessions",
+          "file": "phase7-livekit.spec.ts",
+          "line": 36,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1. Unapproved student token request: returns 403",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10148,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:13:40.659Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "391d41307befe9d255c8-e4bbf7fcfcd33c4e3778",
+              "file": "phase7-livekit.spec.ts",
+              "line": 53,
+              "column": 7
+            },
+            {
+              "title": "2. Approved student token decodes to canPublish: false and no roomAdmin",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9106,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:13:56.892Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "391d41307befe9d255c8-77e5a335592aed357d61",
+              "file": "phase7-livekit.spec.ts",
+              "line": 101,
+              "column": 7
+            },
+            {
+              "title": "3. Teacher token decodes to roomAdmin: true and canPublish: true",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5587,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:14:06.015Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "391d41307befe9d255c8-19877213a2fac41fbeb1",
+              "file": "phase7-livekit.spec.ts",
+              "line": 158,
+              "column": 7
+            },
+            {
+              "title": "4. Student calling start, end, mute, remove, permissions: all return 403",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13678,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:14:11.617Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "391d41307befe9d255c8-4d1c1be9fb767ea34efa",
+              "file": "phase7-livekit.spec.ts",
+              "line": 204,
+              "column": 7
+            },
+            {
+              "title": "5. Teacher B starting Teacher A's session: returns 403",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9499,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:14:25.317Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "391d41307befe9d255c8-38dda15dfd32e01d639d",
+              "file": "phase7-livekit.spec.ts",
+              "line": 263,
+              "column": 7
+            },
+            {
+              "title": "6. Student cannot get a token before the session is live / within the 10-minute window",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16654,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:14:34.824Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "391d41307befe9d255c8-0a1654e3b935f72e5dd3",
+              "file": "phase7-livekit.spec.ts",
+              "line": 307,
+              "column": 7
+            },
+            {
+              "title": "7. Webhook endpoint verifies signature and keeps status in sync",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13304,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:14:51.503Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "391d41307befe9d255c8-2b1fd363f1301a651b29",
+              "file": "phase7-livekit.spec.ts",
+              "line": 372,
+              "column": 7
+            },
+            {
+              "title": "8. Host studio page (/teacher/live/[id]): loads camera, mic, controls, and End Session dialog",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11315,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:15:04.837Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "391d41307befe9d255c8-1996f39deaa15adc696a",
+              "file": "phase7-livekit.spec.ts",
+              "line": 472,
+              "column": 7
+            },
+            {
+              "title": "9. Student live page (/dashboard/live/[id]): pre-join check, live viewer, and no-access screen",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13533,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:15:16.184Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "391d41307befe9d255c8-e2d609cbd765ca1bd6ba",
+              "file": "phase7-livekit.spec.ts",
+              "line": 517,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "phase8-designs.spec.ts",
+      "file": "phase8-designs.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 8: Custom Designs & Quotations",
+          "file": "phase8-designs.spec.ts",
+          "line": 24,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1. Cross-customer isolation: Customer cannot view another customer's design row or file",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9288,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:15:29.760Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0a80963b5cfd01f94f52-adad98f8268901d2df58",
+              "file": "phase8-designs.spec.ts",
+              "line": 38,
+              "column": 7
+            },
+            {
+              "title": "2. Privilege escalation block: Customer cannot set status to quoted or edit quoted price",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8136,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:15:43.774Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0a80963b5cfd01f94f52-10ef5ec0737ff8bdb963",
+              "file": "phase8-designs.spec.ts",
+              "line": 84,
+              "column": 7
+            },
+            {
+              "title": "3. Upload validation: Invalid file type and oversized files are rejected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2502,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:15:51.933Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0a80963b5cfd01f94f52-28a6b98804b25e87b9e9",
+              "file": "phase8-designs.spec.ts",
+              "line": 123,
+              "column": 7
+            },
+            {
+              "title": "4. Full Lifecycle Flow: Submit -> Admin Quotes -> Customer Accepts -> Order Created -> Payment Flow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 33543,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:15:54.468Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0a80963b5cfd01f94f52-416194743c48ddb5a8e9",
+              "file": "phase8-designs.spec.ts",
+              "line": 160,
+              "column": 7
+            },
+            {
+              "title": "5. UI Verification: Customer /dashboard/designs and Admin /admin/designs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 19011,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:16:28.044Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0a80963b5cfd01f94f52-e484db4eaedebdb2dc6c",
+              "file": "phase8-designs.spec.ts",
+              "line": 306,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "phase9-notifications-admin.spec.ts",
+      "file": "phase9-notifications-admin.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Phase 9: Realtime Notifications, Audit Log & Admin Dashboard",
+          "file": "phase9-notifications-admin.spec.ts",
+          "line": 24,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1. Cross-User Notification Isolation: User A cannot read or mark User B's notifications",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8171,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:16:47.119Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed6c4318eeeede302e6a-fd4baa4b9724b13aa5a4",
+              "file": "phase9-notifications-admin.spec.ts",
+              "line": 41,
+              "column": 7
+            },
+            {
+              "title": "2. Realtime Bell & Notifications Page: Admin action updates customer bell live",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 19529,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:16:59.319Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed6c4318eeeede302e6a-80afb625e08bcc496806",
+              "file": "phase9-notifications-admin.spec.ts",
+              "line": 80,
+              "column": 7
+            },
+            {
+              "title": "3. W8 Triggers: Order, enrollment, class cancellation, and live session create notifications",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 27466,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:17:18.875Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed6c4318eeeede302e6a-e03f4a7bdd952189a5aa",
+              "file": "phase9-notifications-admin.spec.ts",
+              "line": 143,
+              "column": 7
+            },
+            {
+              "title": "4. Admin Dashboard Metrics: Real DB numbers match direct SQL counts with zero fakes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 20364,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:17:46.364Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed6c4318eeeede302e6a-59d358611d1a3ee0d423",
+              "file": "phase9-notifications-admin.spec.ts",
+              "line": 255,
+              "column": 7
+            },
+            {
+              "title": "5. Audit Log Explorer: Search, filter by action/entity/date, and inspect metadata",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11019,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T09:18:06.760Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed6c4318eeeede302e6a-83a2db7211e5c363e3a5",
+              "file": "phase9-notifications-admin.spec.ts",
+              "line": 320,
+              "column": 7
+            }
+          ]
+        }
+      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-18T06:30:45.878Z",
-    "duration": 81031.611,
-    "expected": 8,
+    "startTime": "2026-10-18T09:06:44.410Z",
+    "duration": 693560.983,
+    "expected": 65,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 4,
     "flaky": 0
   }
 }

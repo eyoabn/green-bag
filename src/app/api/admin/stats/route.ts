@@ -18,10 +18,10 @@ export async function GET() {
       .select("id", { count: "exact", head: true })
       .eq("status", "pending_verification");
 
-    // 2. Orders by Status
+    // 2. Orders by Status & Revenue
     const { data: allOrders } = await supabase
       .from("orders")
-      .select("id, status, total_price");
+      .select("id, status, total_price, created_at");
 
     const ordersByStatus: Record<string, number> = {
       pending_payment: 0,
@@ -46,7 +46,7 @@ export async function GET() {
     // 3. Approved Enrollments Revenue
     const { data: approvedEnrollments } = await supabase
       .from("enrollments")
-      .select("id, session_id, class_sessions(price)")
+      .select("id, session_id, created_at, class_sessions(price)")
       .eq("status", "approved");
 
     let enrollmentRevenue = 0;
@@ -57,35 +57,94 @@ export async function GET() {
 
     const totalRevenue = orderRevenue + enrollmentRevenue;
 
-    // 4. Upcoming Sessions
+    // 4. Revenue Over Time (Aggregated by day from real verified orders & enrollments)
+    // Build 7-day timeline
+    const revenueMap: Record<string, { orderRevenue: number; enrollmentRevenue: number; totalRevenue: number; orderCount: number; enrollmentCount: number }> = {};
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const key = d.toISOString().split("T")[0];
+      revenueMap[key] = { orderRevenue: 0, enrollmentRevenue: 0, totalRevenue: 0, orderCount: 0, enrollmentCount: 0 };
+    }
+
+    // Populate approved orders into timeline
+    (allOrders || []).forEach((o) => {
+      if (["approved", "in_production", "ready", "completed"].includes(o.status)) {
+        const key = o.created_at ? o.created_at.split("T")[0] : null;
+        if (key) {
+          if (!revenueMap[key]) {
+            revenueMap[key] = { orderRevenue: 0, enrollmentRevenue: 0, totalRevenue: 0, orderCount: 0, enrollmentCount: 0 };
+          }
+          const amt = Number(o.total_price || 0);
+          revenueMap[key].orderRevenue += amt;
+          revenueMap[key].totalRevenue += amt;
+          revenueMap[key].orderCount += 1;
+        }
+      }
+    });
+
+    // Populate approved enrollments into timeline
+    (approvedEnrollments || []).forEach((e: any) => {
+      const key = e.created_at ? e.created_at.split("T")[0] : null;
+      if (key) {
+        if (!revenueMap[key]) {
+          revenueMap[key] = { orderRevenue: 0, enrollmentRevenue: 0, totalRevenue: 0, orderCount: 0, enrollmentCount: 0 };
+        }
+        const amt = Number(e.class_sessions?.price || 0);
+        revenueMap[key].enrollmentRevenue += amt;
+        revenueMap[key].totalRevenue += amt;
+        revenueMap[key].enrollmentCount += 1;
+      }
+    });
+
+    const revenueOverTime = Object.keys(revenueMap)
+      .sort()
+      .map((k) => {
+        const dateObj = new Date(k + "T00:00:00Z");
+        const formattedDate = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+        return {
+          date: formattedDate,
+          rawDate: k,
+          orderRevenue: revenueMap[k].orderRevenue,
+          enrollmentRevenue: revenueMap[k].enrollmentRevenue,
+          totalRevenue: revenueMap[k].totalRevenue,
+          orderCount: revenueMap[k].orderCount,
+          enrollmentCount: revenueMap[k].enrollmentCount,
+        };
+      });
+
+    // 5. Upcoming Sessions
     const { data: upcomingSessionsList, count: upcomingSessionsCount } = await supabase
       .from("class_sessions")
-      .select("id, title, type, starts_at, ends_at, status, capacity, teacher_name")
+      .select("id, title, type, starts_at, ends_at, status, capacity, teacher_name", { count: "exact" })
       .in("status", ["scheduled", "live"])
       .order("starts_at", { ascending: true })
       .limit(5);
 
-    // 5. New Designs
+    // 6. New Designs
     const { count: newDesignsCount } = await supabase
       .from("designs")
       .select("id", { count: "exact", head: true })
       .eq("status", "new");
 
-    // 6. New Users This Week
+    // 7. New Users This Week
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { count: newUsersThisWeek } = await supabase
       .from("profiles")
       .select("id", { count: "exact", head: true })
       .gte("created_at", oneWeekAgo);
 
-    // 7. Recent Audit Log Activity
+    // 8. Recent Audit Log Activity with Actor Profiles
     const { data: recentActivity } = await supabase
       .from("audit_log")
-      .select("id, actor_id, action, entity, entity_id, metadata, created_at")
+      .select(`
+        id, actor_id, action, entity, entity_id, metadata, created_at,
+        profiles:actor_id(full_name, email, role)
+      `)
       .order("created_at", { ascending: false })
       .limit(8);
 
-    // 8. Recent Pending Orders (for immediate action on dashboard)
+    // 9. Recent Pending Orders (for immediate action on dashboard)
     const { data: recentPendingOrders } = await supabase
       .from("orders")
       .select("id, order_number, total_price, created_at, profiles:buyer_id(full_name, phone)")
@@ -105,6 +164,7 @@ export async function GET() {
       orderRevenue,
       enrollmentRevenue,
       totalRevenue,
+      revenueOverTime,
       newUsersThisWeek: newUsersThisWeek || 0,
       recentActivity: recentActivity || [],
       recentPendingOrders: recentPendingOrders || [],

@@ -3,14 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Check, ExternalLink, Sparkles, X } from "lucide-react";
+import { Bell, Check, ExternalLink, ArrowRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-interface NotificationItem {
+export interface NotificationItem {
   id: string;
   user_id: string;
   title: string;
   message: string;
+  body?: string;
   link?: string;
   is_read: boolean;
   created_at: string;
@@ -39,16 +40,16 @@ export default function NotificationBell() {
 
   useEffect(() => {
     const supabase = createClient();
+    let channel: any = null;
 
-    // Check user & load
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setUserId(user.id);
         loadNotifications();
 
-        // Subscribe to Supabase Realtime
-        const channel = supabase
-          .channel(`notifications-${user.id}`)
+        // Subscribe to Supabase Realtime for this user's notifications
+        channel = supabase
+          .channel(`user-notifications-${user.id}`)
           .on(
             "postgres_changes",
             {
@@ -58,18 +59,51 @@ export default function NotificationBell() {
               filter: `user_id=eq.${user.id}`,
             },
             (payload) => {
-              const newNotif = payload.new as NotificationItem;
-              setNotifications((prev) => [newNotif, ...prev]);
-              setUnreadCount((c) => c + 1);
+              const raw = payload.new as any;
+              const newNotif: NotificationItem = {
+                id: raw.id,
+                user_id: raw.user_id,
+                title: raw.title,
+                message: raw.body || raw.message,
+                link: raw.link,
+                is_read: Boolean(raw.is_read),
+                created_at: raw.created_at,
+              };
+              setNotifications((prev) => [newNotif, ...prev.filter((n) => n.id !== raw.id)]);
+              if (!newNotif.is_read) {
+                setUnreadCount((c) => c + 1);
+              }
+            }
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "notifications",
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              const raw = payload.new as any;
+              setNotifications((prev) =>
+                prev.map((n) =>
+                  n.id === raw.id
+                    ? { ...n, is_read: Boolean(raw.is_read), message: raw.body || n.message }
+                    : n
+                )
+              );
+              loadNotifications();
             }
           )
           .subscribe();
-
-        return () => {
-          supabase.removeChannel(channel);
-        };
       }
     });
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   // Close dropdown on outside click
@@ -118,21 +152,28 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        data-testid="notification-bell"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full text-stone-700 hover:text-[#1E3B2E] hover:bg-stone-200/50 transition-colors"
+        className="relative p-2 rounded-full text-stone-700 hover:text-[#1E3B2E] hover:bg-stone-200/50 transition-colors cursor-pointer"
         title="Notifications"
         aria-label="Notifications"
       >
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center animate-pulse">
+          <span
+            data-testid="unread-badge"
+            className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-red-600 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center animate-pulse"
+          >
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-3xl border border-stone-200 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
+        <div
+          data-testid="notification-dropdown"
+          className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-3xl border border-stone-200 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95"
+        >
           <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-[#FAF7F2]">
             <div className="flex items-center gap-2">
               <span className="font-serif text-sm font-bold text-stone-900">Notifications</span>
@@ -145,8 +186,9 @@ export default function NotificationBell() {
 
             {unreadCount > 0 && (
               <button
+                data-testid="mark-all-read"
                 onClick={handleMarkAllRead}
-                className="text-[11px] font-bold text-[#8C4B31] hover:underline"
+                className="text-[11px] font-bold text-[#8C4B31] hover:underline cursor-pointer"
               >
                 Mark all read
               </button>
@@ -162,6 +204,7 @@ export default function NotificationBell() {
               notifications.map((n) => (
                 <div
                   key={n.id}
+                  data-testid="notification-item"
                   onClick={() => handleMarkAsRead(n.id, n.link)}
                   className={`p-3.5 text-xs transition-colors cursor-pointer flex items-start gap-3 ${
                     !n.is_read ? "bg-amber-50/50 hover:bg-amber-100/50" : "hover:bg-stone-50"
@@ -181,6 +224,17 @@ export default function NotificationBell() {
                 </div>
               ))
             )}
+          </div>
+
+          <div className="p-3 bg-stone-50 border-t border-stone-100 text-center">
+            <Link
+              href="/dashboard/notifications"
+              onClick={() => setIsOpen(false)}
+              className="text-xs font-bold text-[#1E3B2E] hover:text-[#8C4B31] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>View all notifications</span>
+              <ArrowRight size={13} />
+            </Link>
           </div>
         </div>
       )}

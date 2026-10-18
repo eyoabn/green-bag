@@ -57,7 +57,7 @@ export async function POST(
       const notifications = confirmedEnrollments.map((enr) => ({
         user_id: enr.student_id,
         title: "Class is Now Live!",
-        message: `Class "${session.title}" has started. Tap to join the live studio room now.`,
+        body: `Class "${session.title}" has started. Tap to join the live studio room now.`,
         link: `/dashboard/live/${session.id}`,
       }));
       await supabase.from("notifications").insert(notifications);

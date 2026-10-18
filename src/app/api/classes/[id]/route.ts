@@ -155,6 +155,7 @@ export async function PATCH(
     if (body.capacity !== undefined) updates.capacity = Number(body.capacity);
     if (body.price !== undefined) updates.price = Number(body.price);
     if (body.status !== undefined) updates.status = body.status;
+    if (body.action === "cancel") updates.status = "cancelled";
     if (body.recording_notes !== undefined) updates.recording_notes = String(body.recording_notes).trim();
     if (body.teacher_id !== undefined && user.role === "admin") updates.teacher_id = body.teacher_id;
 
@@ -168,13 +169,13 @@ export async function PATCH(
     if (error) throw error;
 
     // If cancelled, notify all enrolled students
-    if (body.status === "cancelled") {
+    if (updates.status === "cancelled") {
       await notifyEnrolledStudentsOfCancellation(supabase, id, updated.title, updated.starts_at);
     }
 
     await supabase.from("audit_log").insert({
       actor_id: user.id,
-      action: body.status === "cancelled" ? "CANCEL_CLASS_SESSION" : "UPDATE_CLASS_SESSION",
+      action: updates.status === "cancelled" ? "CANCEL_CLASS_SESSION" : "UPDATE_CLASS_SESSION",
       entity: "class_sessions",
       entity_id: id,
       metadata: updates,

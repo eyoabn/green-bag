@@ -10,15 +10,27 @@ import {
   Activity, 
   Receipt, 
   CheckCircle2, 
-  Sparkles,
-  ArrowRight,
-  TrendingUp,
-  Clock,
-  ExternalLink,
-  GraduationCap,
-  PenTool,
-  AlertCircle
+  Sparkles, 
+  ArrowRight, 
+  TrendingUp, 
+  Clock, 
+  ExternalLink, 
+  GraduationCap, 
+  PenTool, 
+  AlertCircle,
+  History,
+  BarChart3
 } from "lucide-react";
+
+interface RevenueDataPoint {
+  date: string;
+  rawDate: string;
+  orderRevenue: number;
+  enrollmentRevenue: number;
+  totalRevenue: number;
+  orderCount: number;
+  enrollmentCount: number;
+}
 
 interface AdminStats {
   pendingPayments: number;
@@ -40,14 +52,21 @@ interface AdminStats {
   orderRevenue: number;
   enrollmentRevenue: number;
   totalRevenue: number;
+  revenueOverTime: RevenueDataPoint[];
   newUsersThisWeek: number;
   recentActivity: Array<{
     id: string;
+    actor_id?: string;
     action: string;
     entity: string;
     entity_id: string;
     metadata: any;
     created_at: string;
+    profiles?: {
+      full_name: string;
+      email: string;
+      role: string;
+    };
   }>;
   recentPendingOrders: Array<{
     id: string;
@@ -65,6 +84,7 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<RevenueDataPoint | null>(null);
 
   const fetchStats = async () => {
     try {
@@ -91,7 +111,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-stone-500 space-y-3">
         <div className="w-10 h-10 border-3 border-[#1E3B2E] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs font-semibold">Loading real-time plant analytics & queues...</p>
+        <p className="text-xs font-semibold">Loading verified plant analytics & queues...</p>
       </div>
     );
   }
@@ -104,13 +124,19 @@ export default function AdminDashboardPage() {
         <p className="text-xs text-red-700">{error || "Unable to connect to database"}</p>
         <button
           onClick={fetchStats}
-          className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-full transition-colors"
+          className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-full transition-colors cursor-pointer"
         >
           Try Again
         </button>
       </div>
     );
   }
+
+  // Calculate highest revenue point for scaling the chart
+  const maxRevenue = Math.max(
+    ...stats.revenueOverTime.map((p) => p.totalRevenue),
+    1000 // avoid div by zero
+  );
 
   return (
     <div className="flex flex-col max-w-6xl mx-auto space-y-8">
@@ -135,16 +161,17 @@ export default function AdminDashboardPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/admin/payments"
-            className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all shadow-sm flex items-center gap-1.5"
+            className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             <Receipt size={14} />
             <span>Review Payments ({stats.pendingPayments})</span>
           </Link>
           <Link
-            href="/admin/products"
-            className="bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold px-4 py-2.5 rounded-full transition-colors"
+            href="/admin/audit"
+            className="bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold px-4 py-2.5 rounded-full transition-colors flex items-center gap-1.5"
           >
-            Products
+            <History size={14} />
+            <span>Audit Log</span>
           </Link>
         </div>
       </div>
@@ -153,7 +180,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* Metric 1: Verified Revenue */}
-        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <div data-testid="stat-total-revenue" className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
           <div className="flex justify-between items-start mb-3">
             <div className="p-3 rounded-2xl bg-[#8C4B31]/10 text-[#8C4B31]">
               <DollarSign size={22} />
@@ -162,8 +189,8 @@ export default function AdminDashboardPage() {
               <TrendingUp size={13} className="mr-1" /> Realtime
             </span>
           </div>
-          <span className="text-xs text-stone-500 font-medium">Verified Revenue</span>
-          <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-0.5">
+          <span className="text-xs text-stone-500 font-medium">Total Verified Revenue</span>
+          <h3 data-testid="stat-revenue-value" className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-0.5">
             {stats.totalRevenue.toLocaleString()} <span className="text-xs font-sans font-normal text-stone-500">ETB</span>
           </h3>
           <p className="text-[10px] text-stone-400 mt-2">
@@ -172,7 +199,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Metric 2: Pending Verifications */}
-        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <div data-testid="stat-pending-payments" className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
           <div className="flex justify-between items-start mb-3">
             <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-700">
               <Receipt size={22} />
@@ -184,7 +211,7 @@ export default function AdminDashboardPage() {
             )}
           </div>
           <span className="text-xs text-stone-500 font-medium">Pending Payments</span>
-          <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-0.5">
+          <h3 data-testid="stat-pending-count" className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-0.5">
             {stats.pendingPayments}
           </h3>
           <p className="text-[10px] text-stone-400 mt-2">
@@ -193,7 +220,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Metric 3: Upcoming Workshops */}
-        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <div data-testid="stat-upcoming-sessions" className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
           <div className="flex justify-between items-start mb-3">
             <div className="p-3 rounded-2xl bg-[#1E3B2E]/10 text-[#1E3B2E]">
               <GraduationCap size={22} />
@@ -203,14 +230,14 @@ export default function AdminDashboardPage() {
             </span>
           </div>
           <span className="text-xs text-stone-500 font-medium">Upcoming Sessions</span>
-          <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-0.5">
+          <h3 data-testid="stat-upcoming-count" className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-0.5">
             {stats.upcomingSessionsCount}
           </h3>
           <p className="text-[10px] text-stone-400 mt-2">LiveKit & In-Person Masterclasses</p>
         </div>
 
         {/* Metric 4: New Users & Designs */}
-        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <div data-testid="stat-new-users" className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
           <div className="flex justify-between items-start mb-3">
             <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-700">
               <Users size={22} />
@@ -223,13 +250,115 @@ export default function AdminDashboardPage() {
           <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-0.5">
             {stats.newUsersThisWeek} <span className="text-xs font-sans font-normal text-stone-500">users / {stats.newDesignsCount} designs</span>
           </h3>
-          <p className="text-[10px] text-stone-400 mt-2">Recent client registrations</p>
+          <p className="text-[10px] text-stone-400 mt-2">
+            <span data-testid="stat-new-designs">{stats.newDesignsCount}</span> new custom dielines awaiting review
+          </p>
         </div>
 
       </div>
 
+      {/* Revenue Over Time Chart */}
+      <div data-testid="revenue-chart" className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <BarChart3 size={18} className="text-[#1E3B2E]" />
+              <h3 className="font-serif text-lg font-bold text-stone-900">
+                Revenue Over Time
+              </h3>
+            </div>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Verified collections from approved manufacturing orders and vocational class enrollments.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-[#1E3B2E]" />
+              <span className="text-stone-600 font-medium">Orders ({stats.orderRevenue.toLocaleString()} ETB)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-[#8C4B31]" />
+              <span className="text-stone-600 font-medium">Academy ({stats.enrollmentRevenue.toLocaleString()} ETB)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Chart Canvas / Columns */}
+        <div className="space-y-4">
+          <div className="h-56 flex items-end gap-3 sm:gap-6 pt-6 px-2 border-b border-stone-200">
+            {stats.revenueOverTime.map((pt, idx) => {
+              const heightPercent = maxRevenue > 0 ? Math.max((pt.totalRevenue / maxRevenue) * 100, 3) : 3;
+              const isHovered = hoveredPoint?.rawDate === pt.rawDate;
+
+              return (
+                <div
+                  key={pt.rawDate || idx}
+                  className="flex-1 flex flex-col items-center h-full justify-end group relative cursor-pointer"
+                  onMouseEnter={() => setHoveredPoint(pt)}
+                  onMouseLeave={() => setHoveredPoint(null)}
+                >
+                  {/* Tooltip */}
+                  {isHovered && (
+                    <div className="absolute -top-16 z-20 bg-stone-900 text-white text-[11px] py-1.5 px-3 rounded-xl shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 pointer-events-none">
+                      <p className="font-bold text-[#E0B382]">{pt.date}</p>
+                      <p className="text-stone-300">
+                        Total: <span className="font-mono font-bold text-white">{pt.totalRevenue.toLocaleString()} ETB</span>
+                      </p>
+                      <p className="text-[9px] text-stone-400">
+                        Orders: {pt.orderRevenue.toLocaleString()} ETB ({pt.orderCount}) | Workshops: {pt.enrollmentRevenue.toLocaleString()} ETB ({pt.enrollmentCount})
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Stacked Bar */}
+                  <div className="w-full max-w-[42px] flex flex-col justify-end rounded-t-xl overflow-hidden transition-all duration-300 group-hover:scale-y-105"
+                    style={{ height: `${heightPercent}%` }}
+                  >
+                    {/* Enrollment portion */}
+                    {pt.enrollmentRevenue > 0 && (
+                      <div
+                        className="w-full bg-[#8C4B31] transition-all"
+                        style={{
+                          height: `${pt.totalRevenue > 0 ? (pt.enrollmentRevenue / pt.totalRevenue) * 100 : 0}%`,
+                        }}
+                        title={`Academy: ${pt.enrollmentRevenue.toLocaleString()} ETB`}
+                      />
+                    )}
+                    {/* Order portion */}
+                    <div
+                      className={`w-full transition-all ${pt.totalRevenue > 0 ? "bg-[#1E3B2E]" : "bg-stone-200"}`}
+                      style={{
+                        height: `${pt.totalRevenue > 0 ? (pt.orderRevenue / pt.totalRevenue) * 100 : 100}%`,
+                      }}
+                      title={`Orders: ${pt.orderRevenue.toLocaleString()} ETB`}
+                    />
+                  </div>
+
+                  {/* Value on Top if not hovered */}
+                  {pt.totalRevenue > 0 && (
+                    <span className="text-[10px] font-mono text-stone-500 font-bold mb-1 group-hover:opacity-0 transition-opacity">
+                      {pt.totalRevenue >= 1000 ? `${(pt.totalRevenue / 1000).toFixed(1)}k` : pt.totalRevenue}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Date Axis Labels */}
+          <div className="flex items-center justify-between gap-3 sm:gap-6 px-2 text-stone-500 font-mono text-[10px]">
+            {stats.revenueOverTime.map((pt, idx) => (
+              <div key={idx} className="flex-1 text-center truncate">
+                {pt.date}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Orders by Status Pipeline */}
-      <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+      <div data-testid="orders-pipeline" className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-serif text-lg font-bold text-stone-900">Order Fulfillment Pipeline</h3>
           <Link href="/admin/orders" className="text-xs font-bold text-[#8C4B31] hover:underline flex items-center gap-1">
@@ -304,7 +433,7 @@ export default function AdminDashboardPage() {
           <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/admin/classes"
-              className="text-xs font-semibold text-[#1E3B2E] hover:text-[#8C4B31] flex items-center justify-center gap-1.5 py-1"
+              className="text-xs font-semibold text-[#1E3B2E] hover:text-[#8C4B31] flex items-center justify-center gap-1.5 py-1 cursor-pointer"
             >
               <span>Schedule New Workshop</span>
               <ArrowRight size={13} />
@@ -313,16 +442,17 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Column 2: System Audit Log */}
-        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm flex flex-col justify-between">
+        <div data-testid="recent-activity-feed" className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Activity size={18} className="text-[#8C4B31]" />
-                <h3 className="font-serif text-lg font-bold text-stone-900">Recent Audit Log</h3>
+                <h3 className="font-serif text-lg font-bold text-stone-900">Recent Activity Feed</h3>
               </div>
-              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                Immutable Log
-              </span>
+              <Link href="/admin/audit" className="text-xs font-bold text-[#8C4B31] hover:underline flex items-center gap-1">
+                <span>View Full Log</span>
+                <ArrowRight size={13} />
+              </Link>
             </div>
 
             {stats.recentActivity.length === 0 ? (
@@ -331,22 +461,26 @@ export default function AdminDashboardPage() {
               <div className="space-y-2.5">
                 {stats.recentActivity.map((log) => (
                   <div key={log.id} className="p-3 rounded-2xl bg-[#FAF7F2] border border-stone-200/60 flex items-start justify-between gap-3 text-xs">
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-0.5">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-stone-800 uppercase tracking-wider text-[10px] bg-stone-200/80 px-2 py-0.5 rounded">
                           {log.action}
                         </span>
                         <span className="text-[11px] text-stone-600 font-medium">
-                          Entity: {log.entity}
+                          Entity: <span className="font-semibold">{log.entity}</span>
                         </span>
                       </div>
+                      <p className="text-[11px] text-stone-600">
+                        Actor: <span className="font-medium text-stone-900">{log.profiles?.full_name || log.actor_id?.slice(0, 8) || "System"}</span>
+                        {log.profiles?.email && <span className="text-stone-400 text-[10px] ml-1">({log.profiles.email})</span>}
+                      </p>
                       {log.metadata && (
-                        <p className="text-[10px] text-stone-500 font-mono mt-1 truncate max-w-sm">
+                        <p className="text-[10px] text-stone-500 font-mono truncate max-w-sm">
                           {JSON.stringify(log.metadata)}
                         </p>
                       )}
                     </div>
-                    <span className="text-[10px] text-stone-400 shrink-0">
+                    <span className="text-[10px] text-stone-400 shrink-0 font-mono">
                       {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -355,10 +489,14 @@ export default function AdminDashboardPage() {
             )}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-stone-100 text-center">
-            <span className="text-[10px] text-stone-400">
-              All admin actions are cryptographically recorded with actor ID and metadata snapshot.
+          <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-[11px]">
+            <span className="text-stone-400">
+              Immutable PostgreSQL ledger
             </span>
+            <Link href="/admin/audit" className="font-bold text-[#1E3B2E] hover:underline flex items-center gap-1">
+              <span>Open Audit Explorer</span>
+              <ArrowRight size={12} />
+            </Link>
           </div>
         </div>
 

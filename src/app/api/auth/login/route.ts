@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { checkRateLimit } from "@/utils/rateLimit";
+import { LoginSchema } from "@/utils/validation";
 
 export async function POST(request: NextRequest) {
+  // Rate limit protection
+  const rl = checkRateLimit(request, { limit: 20, windowMs: 60000, prefix: "auth:login" });
+  if (!rl.allowed && rl.response) {
+    return rl.response;
+  }
+
   try {
-    const body = await request.json().catch(() => ({}));
-    const { email, password } = body;
-
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
+    const rawBody = await request.json().catch(() => ({}));
+    const parseRes = LoginSchema.safeParse(rawBody);
+    if (!parseRes.success) {
+      return NextResponse.json({ error: parseRes.error.issues[0]?.message || "Invalid credentials." }, { status: 400 });
     }
-
-    const trimmedEmail = String(email).trim().toLowerCase();
+    const { email, password } = parseRes.data;
+    const trimmedEmail = email.trim().toLowerCase();
 
     const supabase = await createClient();
 

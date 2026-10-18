@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { pool } from "@/utils/db";
+import { checkRateLimit } from "@/utils/rateLimit";
+import { SignupSchema } from "@/utils/validation";
 
 export async function POST(request: NextRequest) {
+  // Rate limit protection
+  const rl = checkRateLimit(request, { limit: 15, windowMs: 60000, prefix: "auth:signup" });
+  if (!rl.allowed && rl.response) {
+    return rl.response;
+  }
+
   try {
-    const body = await request.json().catch(() => ({}));
-    const { email, password, fullName, phone } = body;
-
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
+    const rawBody = await request.json().catch(() => ({}));
+    const parseRes = SignupSchema.safeParse(rawBody);
+    if (!parseRes.success) {
+      return NextResponse.json({ error: parseRes.error.issues[0]?.message || "Invalid registration details." }, { status: 400 });
     }
+    const { email, password, fullName, phone } = parseRes.data;
 
-    if (String(password).length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters long." }, { status: 400 });
-    }
-
-    const trimmedEmail = String(email).trim().toLowerCase();
+    const trimmedEmail = email.trim().toLowerCase();
     const displayName = (fullName && fullName.trim()) || trimmedEmail.split("@")[0];
     const phoneNum = (phone && phone.trim()) || "";
 

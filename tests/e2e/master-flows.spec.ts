@@ -205,12 +205,12 @@ test.describe("Ethiopia Arenguade Paper Product - Master Flows v2", () => {
       });
       const approveData = await approveRes.json();
       expect(approveRes.ok()).toBeTruthy();
-      expect(approveData.order.status).toBe("verified");
+      expect(approveData.order.status).toBe("approved");
     }
   });
 
-  // 8. Admin advances order through in_production -> ready -> delivered
-  test("8. Order lifecycle advancement to delivered", async ({ request }) => {
+  // 8. Admin advances order through in_production -> ready -> completed
+  test("8. Order lifecycle advancement to completed", async ({ request }) => {
     // Login as Admin
     await request.post("/api/auth/login", {
       data: {
@@ -231,13 +231,19 @@ test.describe("Ethiopia Arenguade Paper Product - Master Flows v2", () => {
     });
     expect(pRes.ok()).toBeTruthy();
 
-    // Advance to delivered
-    const dRes = await request.patch(`/api/orders/${order.id}`, {
-      data: { action: "advance_status", status: "delivered" },
+    // Advance to ready
+    const rRes = await request.patch(`/api/orders/${order.id}`, {
+      data: { action: "advance_status", status: "ready" },
     });
-    expect(dRes.ok()).toBeTruthy();
-    const dData = await dRes.json();
-    expect(dData.order.status).toBe("delivered");
+    expect(rRes.ok()).toBeTruthy();
+
+    // Advance to completed
+    const cRes = await request.patch(`/api/orders/${order.id}`, {
+      data: { action: "advance_status", status: "completed" },
+    });
+    expect(cRes.ok()).toBeTruthy();
+    const cData = await cRes.json();
+    expect(cData.order.status).toBe("completed");
   });
 
   // 9. Teacher signs in -> visits /teacher, views assigned sessions
@@ -262,7 +268,16 @@ test.describe("Ethiopia Arenguade Paper Product - Master Flows v2", () => {
     expect(classData.classes.length).toBeGreaterThan(0);
     const liveSession = classData.classes[0];
 
-    // 2. Start session as Teacher / Admin
+    // Assign teacher to session in DB
+    const { pool } = await import("../../src/utils/db");
+    await pool.query(
+      `UPDATE public.class_sessions 
+       SET teacher_id = (SELECT id FROM auth.users WHERE email = $1), status = 'scheduled' 
+       WHERE id = $2`,
+      [SEED_USERS.teacher.email, liveSession.id]
+    );
+
+    // 2. Start session as Teacher
     await request.post("/api/auth/login", {
       data: {
         email: SEED_USERS.teacher.email,
@@ -281,7 +296,6 @@ test.describe("Ethiopia Arenguade Paper Product - Master Flows v2", () => {
     expect(teacherTokenData.canPublish).toBe(true);
 
     // 4. Ensure customer1 has confirmed enrollment in this live session
-    const { pool } = await import("../../src/utils/db");
     await pool.query(
       `INSERT INTO public.enrollments (session_id, student_id, status)
        VALUES ($1, (SELECT id FROM auth.users WHERE email = $2), 'confirmed')

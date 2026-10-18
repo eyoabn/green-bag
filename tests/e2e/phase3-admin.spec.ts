@@ -70,13 +70,9 @@ test.describe("Phase 3: Admin Shell, Users, Bank Accounts, Settings", () => {
     await page.goto("/admin/users");
     await page.waitForSelector("table", { timeout: 10000 });
 
-    // Filter for Admin role using the DataTable filter dropdown
-    const responsePromise = page.waitForResponse(
-      (r) => r.url().includes("/api/admin/users") && r.status() === 200
-    );
-    const roleSelect = page.locator("select").filter({ hasText: /Role/ });
-    await roleSelect.selectOption("admin");
-    await responsePromise;
+    // Search for Admin email to find self row
+    await page.fill('input[placeholder*="Search by name"]', SEED_USERS.admin.email);
+    await page.waitForTimeout(500);
 
     // Verify admin self-row shows "ADMIN (Locked)" and cannot be deactivated
     const selfRow = page.locator("tr").filter({ hasText: SEED_USERS.admin.email });

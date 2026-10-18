@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, requireRole } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
+import { checkRateLimit } from "@/utils/rateLimit";
 
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",
@@ -13,6 +14,12 @@ const ALLOWED_MIME_TYPES = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export async function POST(request: NextRequest) {
+  // Rate limit protection (20 uploads/minute)
+  const rl = checkRateLimit(request, { limit: 20, windowMs: 60000, prefix: "upload" });
+  if (!rl.allowed && rl.response) {
+    return rl.response;
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;

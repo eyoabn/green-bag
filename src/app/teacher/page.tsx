@@ -84,7 +84,7 @@ export default function TeacherDashboardPage() {
 
         const mapped: TeacherSession[] = (dbSessions || []).map((s: any) => {
           const enrs = s.enrollments || [];
-          const active = enrs.filter((e: any) => e.status === "confirmed" || e.status === "attended");
+          const active = enrs.filter((e: any) => e.status === "approved" || e.status === "confirmed" || e.status === "attended");
           const attended = enrs.filter((e: any) => e.attended === true);
           return {
             id: s.id,

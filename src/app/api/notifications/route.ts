@@ -10,18 +10,23 @@ export async function GET(request: NextRequest) {
 
     const { data: notifications, error } = await supabase
       .from("notifications")
-      .select("id, user_id, title, message, link, is_read, created_at")
+      .select("id, user_id, title, body, link, is_read, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(20);
 
     if (error) throw error;
 
-    const unreadCount = (notifications || []).filter((n) => !n.is_read).length;
+    const mapped = (notifications || []).map((n: any) => ({
+      ...n,
+      message: n.body,
+    }));
+
+    const unreadCount = mapped.filter((n: any) => !n.is_read).length;
 
     return NextResponse.json({
       success: true,
-      notifications: notifications || [],
+      notifications: mapped,
       unreadCount,
     });
   } catch (err: any) {

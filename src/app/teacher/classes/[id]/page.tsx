@@ -23,7 +23,7 @@ import { createClient } from "@/utils/supabase/client";
 interface EnrollmentItem {
   id: string;
   student_id: string;
-  status: "pending" | "confirmed" | "attended" | "cancelled" | "rejected";
+  status: "pending_verification" | "approved" | "pending" | "confirmed" | "attended" | "cancelled" | "rejected";
   payment_proof_path?: string;
   attended: boolean;
   created_at: string;
@@ -151,7 +151,7 @@ export default function ClassRosterPage({ params }: { params: Promise<{ id: stri
   };
 
   const attendedCount = enrollments.filter((e) => e.attended).length;
-  const confirmedCount = enrollments.filter((e) => e.status === "confirmed" || e.status === "attended").length;
+  const confirmedCount = enrollments.filter((e) => e.status === "approved" || e.status === "confirmed" || e.status === "attended").length;
 
   return (
     <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
@@ -289,9 +289,9 @@ export default function ClassRosterPage({ params }: { params: Promise<{ id: stri
 
                       <td className="py-4 px-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          enr.status === "confirmed" || enr.status === "attended"
+                          enr.status === "approved" || enr.status === "confirmed" || enr.status === "attended"
                             ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                            : enr.status === "pending"
+                            : enr.status === "pending_verification" || enr.status === "pending"
                             ? "bg-amber-50 text-amber-800 border border-amber-200"
                             : "bg-red-50 text-red-800 border border-red-200"
                         }`}>

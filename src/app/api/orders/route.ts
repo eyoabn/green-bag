@@ -412,6 +412,10 @@ export async function PATCH(request: NextRequest) {
         updates.rejection_reason = rejectionReason.trim();
         updates.verified_by = user.id;
         updates.verified_at = new Date().toISOString();
+      } else if (action === "upload_proof") {
+        targetStatus = "pending_verification";
+        updates.payment_proof_path = paymentProofPath;
+        updates.rejection_reason = null;
       }
 
       if (!targetStatus) {

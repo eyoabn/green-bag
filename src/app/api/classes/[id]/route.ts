@@ -1,8 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { requireRole, requireUser } from "@/utils/roles";
+import { requireRole } from "@/utils/roles";
 
-// GET /api/classes/[id] - Fetch class details and enrollment roster
+// Helper to notify all enrolled students when a class is cancelled
+async function notifyEnrolledStudentsOfCancellation(supabase: any, sessionId: string, classTitle: string, startsAt?: string) {
+  try {
+    const { data: enrolledStudents } = await supabase
+      .from("enrollments")
+      .select("student_id")
+      .eq("session_id", sessionId)
+      .neq("status", "cancelled");
+
+    if (enrolledStudents && enrolledStudents.length > 0) {
+      const formattedDate = startsAt ? new Date(startsAt).toLocaleString("en-US", { timeZone: "Africa/Addis_Ababa" }) : "the scheduled time";
+      const notifications = enrolledStudents.map((e: any) => ({
+        user_id: e.student_id,
+        title: `Class Cancelled: ${classTitle}`,
+        body: `The class session "${classTitle}" scheduled for ${formattedDate} (Addis Ababa Time) has been cancelled by the administration.`,
+        link: "/dashboard/classes",
+      }));
+      await supabase.from("notifications").insert(notifications);
+    }
+  } catch (err) {
+    console.error("Failed to notify enrolled students of cancellation:", err);
+  }
+}
+
+// GET /api/classes/[id] - Fetch class details and enrollment roster with role-based isolation
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -10,6 +34,20 @@ export async function GET(
   try {
     const { id } = await params;
     const supabase = await createClient();
+
+    // Check optional authenticated user
+    const { data: { user } } = await supabase.auth.getUser();
+    let userRole = "guest";
+    let userId = null;
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      userRole = profile?.role || "customer";
+      userId = user.id;
+    }
 
     const { data: session, error } = await supabase
       .from("class_sessions")
@@ -30,14 +68,38 @@ export async function GET(
       return NextResponse.json({ error: "Class session not found" }, { status: 404 });
     }
 
+    // Role-based roster isolation:
+    // - Admin: sees full roster
+    // - Teacher: can only see roster if they are the assigned teacher of THIS session
+    // - Customer / Guest: CANNOT see other students' roster
+    let sanitizedEnrollments: any[] = [];
+    if (userRole === "admin") {
+      sanitizedEnrollments = session.enrollments || [];
+    } else if (userRole === "teacher") {
+      if (session.teacher_id === userId) {
+        sanitizedEnrollments = session.enrollments || [];
+      } else {
+        // Teacher A cannot inspect Teacher B's roster
+        sanitizedEnrollments = [];
+      }
+    } else if (userId) {
+      // Customer only sees their own enrollment
+      sanitizedEnrollments = (session.enrollments || []).filter((e: any) => e.student_id === userId);
+    }
+
     const activeEnrollments = (session.enrollments || []).filter(
-      (e: any) => e.status === "confirmed" || e.status === "pending" || e.status === "attended"
+      (e: any) =>
+        e.status === "approved" ||
+        e.status === "pending_verification" ||
+        e.status === "attended" ||
+        e.status === "confirmed"
     );
 
     return NextResponse.json({
       success: true,
       session: {
         ...session,
+        enrollments: sanitizedEnrollments,
         enrolledCount: activeEnrollments.length,
         isFull: activeEnrollments.length >= session.capacity,
         spotsLeft: Math.max(0, session.capacity - activeEnrollments.length),
@@ -72,6 +134,18 @@ export async function PATCH(
       }
     }
 
+    // If teacher_id is being changed by admin, verify new teacher has role 'teacher'
+    if (body.teacher_id !== undefined && user.role === "admin") {
+      const { data: newTeacher } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", body.teacher_id)
+        .single();
+      if (!newTeacher || newTeacher.role !== "teacher") {
+        return NextResponse.json({ error: "Assigned teacher must have the role 'teacher'." }, { status: 400 });
+      }
+    }
+
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
     if (body.title !== undefined) updates.title = String(body.title).trim();
     if (body.description !== undefined) updates.description = String(body.description).trim();
@@ -93,9 +167,14 @@ export async function PATCH(
 
     if (error) throw error;
 
+    // If cancelled, notify all enrolled students
+    if (body.status === "cancelled") {
+      await notifyEnrolledStudentsOfCancellation(supabase, id, updated.title, updated.starts_at);
+    }
+
     await supabase.from("audit_log").insert({
       actor_id: user.id,
-      action: "UPDATE_CLASS_SESSION",
+      action: body.status === "cancelled" ? "CANCEL_CLASS_SESSION" : "UPDATE_CLASS_SESSION",
       entity: "class_sessions",
       entity_id: id,
       metadata: updates,
@@ -118,7 +197,17 @@ export async function DELETE(
     const admin = await requireRole(["admin"]);
     const supabase = await createClient();
 
-    // Soft cancel if enrollments exist
+    const { data: session } = await supabase
+      .from("class_sessions")
+      .select("id, title, starts_at")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!session) {
+      return NextResponse.json({ error: "Class session not found." }, { status: 404 });
+    }
+
+    // Check if any enrollments exist
     const { count } = await supabase
       .from("enrollments")
       .select("id", { count: "exact", head: true })
@@ -130,6 +219,9 @@ export async function DELETE(
         .update({ status: "cancelled", updated_at: new Date().toISOString() })
         .eq("id", id);
 
+      // Notify all enrolled students
+      await notifyEnrolledStudentsOfCancellation(supabase, id, session.title, session.starts_at);
+
       await supabase.from("audit_log").insert({
         actor_id: admin.id,
         action: "CANCEL_CLASS_SESSION_WITH_ENROLLMENTS",
@@ -138,7 +230,11 @@ export async function DELETE(
         metadata: { enrollmentsCount: count },
       });
 
-      return NextResponse.json({ success: true, cancelled: true, message: "Class session cancelled because active enrollments exist." });
+      return NextResponse.json({
+        success: true,
+        cancelled: true,
+        message: "Class session cancelled and enrolled students notified.",
+      });
     }
 
     const { error } = await supabase.from("class_sessions").delete().eq("id", id);

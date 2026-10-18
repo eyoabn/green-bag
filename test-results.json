@@ -4,7 +4,7 @@
       "C:\\Program Files\\nodejs\\node.exe",
       "C:\\Users\\us\\greenwork\\node_modules\\@playwright\\test\\cli.js",
       "test",
-      "tests/e2e/phase5-orders.spec.ts"
+      "tests/e2e/phase6-classes.spec.ts"
     ],
     "configFile": "C:\\Users\\us\\greenwork\\playwright.config.ts",
     "rootDir": "C:/Users/us/greenwork/tests/e2e",
@@ -110,35 +110,26 @@
   },
   "suites": [
     {
-      "title": "phase5-orders.spec.ts",
-      "file": "phase5-orders.spec.ts",
+      "title": "phase6-classes.spec.ts",
+      "file": "phase6-classes.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Phase 5: Ordering and Payments",
-          "file": "phase5-orders.spec.ts",
-          "line": 19,
-          "column": 15,
+          "title": "Phase 6: Classes and Enrollment",
+          "file": "phase6-classes.spec.ts",
+          "line": 22,
+          "column": 6,
           "specs": [
             {
-              "title": "1. Customer orders, uploads proof, admin approves, customer sees approved with timeline",
+              "title": "1. Last-seat race with two customers: exactly one succeeds, the other sees 'full'",
               "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "serial",
-                      "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                        "line": 19,
-                        "column": 15
-                      }
-                    }
-                  ],
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
@@ -147,50 +138,32 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 18489,
+                      "duration": 8018,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T14:25:45.998Z",
-                      "annotations": [
-                        {
-                          "type": "serial",
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                            "line": 19,
-                            "column": 15
-                          }
-                        }
-                      ],
+                      "startTime": "2026-10-18T06:30:48.528Z",
+                      "annotations": [],
                       "attachments": []
                     }
                   ],
                   "status": "expected"
                 }
               ],
-              "id": "2151fdb9a22d53b6edf9-f95622de3d0c991302b8",
-              "file": "phase5-orders.spec.ts",
-              "line": 87,
+              "id": "9b036fa3520f9b30d6b4-849ddfe36df538191e9a",
+              "file": "phase6-classes.spec.ts",
+              "line": 32,
               "column": 7
             },
             {
-              "title": "2. Admin rejects with a reason, customer sees the reason, re-uploads, status returns to pending_verification",
+              "title": "2. Duplicate registration blocked for same customer",
               "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "serial",
-                      "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                        "line": 19,
-                        "column": 15
-                      }
-                    }
-                  ],
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
@@ -199,50 +172,32 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 22650,
+                      "duration": 6773,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T14:26:07.292Z",
-                      "annotations": [
-                        {
-                          "type": "serial",
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                            "line": 19,
-                            "column": 15
-                          }
-                        }
-                      ],
+                      "startTime": "2026-10-18T06:30:56.676Z",
+                      "annotations": [],
                       "attachments": []
                     }
                   ],
                   "status": "expected"
                 }
               ],
-              "id": "2151fdb9a22d53b6edf9-d47ecd44c8021e90ba49",
-              "file": "phase5-orders.spec.ts",
-              "line": 172,
+              "id": "9b036fa3520f9b30d6b4-310ffad4ffe81387214d",
+              "file": "phase6-classes.spec.ts",
+              "line": 119,
               "column": 7
             },
             {
-              "title": "3. Cross-customer isolation: Customer cannot open another customer's order API, detail, or signed proof URL",
+              "title": "3. Past sessions are not registerable",
               "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "serial",
-                      "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                        "line": 19,
-                        "column": 15
-                      }
-                    }
-                  ],
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
@@ -251,50 +206,32 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9311,
+                      "duration": 4523,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T14:26:29.985Z",
-                      "annotations": [
-                        {
-                          "type": "serial",
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                            "line": 19,
-                            "column": 15
-                          }
-                        }
-                      ],
+                      "startTime": "2026-10-18T06:31:03.509Z",
+                      "annotations": [],
                       "attachments": []
                     }
                   ],
                   "status": "expected"
                 }
               ],
-              "id": "2151fdb9a22d53b6edf9-0f733d73a3806dcff0e9",
-              "file": "phase5-orders.spec.ts",
-              "line": 237,
+              "id": "9b036fa3520f9b30d6b4-9679863e0bdfcdd8edc6",
+              "file": "phase6-classes.spec.ts",
+              "line": 174,
               "column": 7
             },
             {
-              "title": "4. Privilege Escalation Block: Customer cannot approve their own payment or transition to approved",
+              "title": "4. Teacher A cannot see or fetch Teacher B's roster (API returns 403 / empty)",
               "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "serial",
-                      "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                        "line": 19,
-                        "column": 15
-                      }
-                    }
-                  ],
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
@@ -303,50 +240,32 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7773,
+                      "duration": 12410,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T14:26:39.374Z",
-                      "annotations": [
-                        {
-                          "type": "serial",
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                            "line": 19,
-                            "column": 15
-                          }
-                        }
-                      ],
+                      "startTime": "2026-10-18T06:31:08.116Z",
+                      "annotations": [],
                       "attachments": []
                     }
                   ],
                   "status": "expected"
                 }
               ],
-              "id": "2151fdb9a22d53b6edf9-f8f927a211235a812dc7",
-              "file": "phase5-orders.spec.ts",
-              "line": 286,
+              "id": "9b036fa3520f9b30d6b4-f9fa63f028e3eaa5225b",
+              "file": "phase6-classes.spec.ts",
+              "line": 217,
               "column": 7
             },
             {
-              "title": "5. Server computes price strictly from DB; price tampering has no effect; unavailable products rejected",
+              "title": "5. Customer cannot approve an enrollment, cannot see other students' rosters",
               "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "serial",
-                      "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                        "line": 19,
-                        "column": 15
-                      }
-                    }
-                  ],
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
@@ -355,50 +274,32 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6506,
+                      "duration": 8376,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T14:26:47.239Z",
-                      "annotations": [
-                        {
-                          "type": "serial",
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                            "line": 19,
-                            "column": 15
-                          }
-                        }
-                      ],
+                      "startTime": "2026-10-18T06:31:20.598Z",
+                      "annotations": [],
                       "attachments": []
                     }
                   ],
                   "status": "expected"
                 }
               ],
-              "id": "2151fdb9a22d53b6edf9-d613e8cbe9bcb7848446",
-              "file": "phase5-orders.spec.ts",
-              "line": 325,
+              "id": "9b036fa3520f9b30d6b4-30ae8ca26aee9eb3d7da",
+              "file": "phase6-classes.spec.ts",
+              "line": 305,
               "column": 7
             },
             {
-              "title": "6. State Machine Validation: Invalid status jumps are rejected with HTTP 400",
+              "title": "6. Admin cancelling a class notifies enrolled students",
               "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "serial",
-                      "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                        "line": 19,
-                        "column": 15
-                      }
-                    }
-                  ],
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
@@ -407,50 +308,32 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 20818,
+                      "duration": 7066,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T14:26:53.798Z",
-                      "annotations": [
-                        {
-                          "type": "serial",
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                            "line": 19,
-                            "column": 15
-                          }
-                        }
-                      ],
+                      "startTime": "2026-10-18T06:31:29.048Z",
+                      "annotations": [],
                       "attachments": []
                     }
                   ],
                   "status": "expected"
                 }
               ],
-              "id": "2151fdb9a22d53b6edf9-3561e105b6e16efc5fdc",
-              "file": "phase5-orders.spec.ts",
-              "line": 367,
+              "id": "9b036fa3520f9b30d6b4-6474838d9c60ebd1a273",
+              "file": "phase6-classes.spec.ts",
+              "line": 372,
               "column": 7
             },
             {
-              "title": "7. Storage Validation: Wrong file format (.exe) and oversized file (>5 MB) are rejected",
+              "title": "7. Attendance saved and visible to admin",
               "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "serial",
-                      "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                        "line": 19,
-                        "column": 15
-                      }
-                    }
-                  ],
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
@@ -459,50 +342,32 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3541,
+                      "duration": 7128,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T14:27:14.651Z",
-                      "annotations": [
-                        {
-                          "type": "serial",
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                            "line": 19,
-                            "column": 15
-                          }
-                        }
-                      ],
+                      "startTime": "2026-10-18T06:31:36.178Z",
+                      "annotations": [],
                       "attachments": []
                     }
                   ],
                   "status": "expected"
                 }
               ],
-              "id": "2151fdb9a22d53b6edf9-a61ebf28968557a7e983",
-              "file": "phase5-orders.spec.ts",
-              "line": 441,
+              "id": "9b036fa3520f9b30d6b4-1a8b6ede451f01a2bbc4",
+              "file": "phase6-classes.spec.ts",
+              "line": 439,
               "column": 7
             },
             {
-              "title": "8. Admin can create an order on behalf of a customer and it appears in customer portal",
+              "title": "8. Customer Registration UI, cancellation before approval, and Join Button state",
               "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "serial",
-                      "location": {
-                        "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                        "line": 19,
-                        "column": 15
-                      }
-                    }
-                  ],
+                  "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
@@ -511,31 +376,22 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7303,
+                      "duration": 22960,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-17T14:27:18.258Z",
-                      "annotations": [
-                        {
-                          "type": "serial",
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\phase5-orders.spec.ts",
-                            "line": 19,
-                            "column": 15
-                          }
-                        }
-                      ],
+                      "startTime": "2026-10-18T06:31:43.380Z",
+                      "annotations": [],
                       "attachments": []
                     }
                   ],
                   "status": "expected"
                 }
               ],
-              "id": "2151fdb9a22d53b6edf9-898eec4bb42244fda516",
-              "file": "phase5-orders.spec.ts",
-              "line": 479,
+              "id": "9b036fa3520f9b30d6b4-85eb7ddfd47b0a4cdc24",
+              "file": "phase6-classes.spec.ts",
+              "line": 521,
               "column": 7
             }
           ]
@@ -545,8 +401,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-17T14:25:44.502Z",
-    "duration": 107091.905,
+    "startTime": "2026-10-18T06:30:45.878Z",
+    "duration": 81031.611,
     "expected": 8,
     "skipped": 0,
     "unexpected": 0,

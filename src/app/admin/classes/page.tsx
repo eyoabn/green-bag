@@ -11,103 +11,354 @@ import {
   Trash2,
   ExternalLink,
   X,
-  PlayCircle,
   Clock,
   Sparkles,
   CheckCircle2,
-  XCircle,
-  ShieldCheck,
-  Receipt,
+  AlertCircle,
+  Download,
+  Edit,
   Eye,
-  Lock,
-  Radio
+  CheckSquare,
+  Square,
+  Ban
 } from "lucide-react";
-import { DataStore, StoredClassSession, StoredRegistration } from "@/utils/dataStore";
+
+interface ClassSession {
+  id: string;
+  type: "in_person" | "live";
+  title: string;
+  description: string;
+  location: string;
+  starts_at: string;
+  ends_at: string;
+  capacity: number;
+  price: number;
+  status: "scheduled" | "live" | "ended" | "cancelled";
+  livekit_room_name?: string;
+  teacher_id?: string;
+  teacher?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
+  enrolledCount: number;
+  spotsLeft: number;
+  isFull: boolean;
+}
+
+interface TeacherOption {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
+interface StudentEnrollment {
+  id: string;
+  student_id: string;
+  status: string;
+  payment_proof_path?: string;
+  attended: boolean;
+  created_at: string;
+  profiles?: {
+    id: string;
+    full_name: string;
+    email: string;
+    phone: string;
+  };
+}
 
 export default function AdminClassesPage() {
-  const [sessions, setSessions] = useState<StoredClassSession[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  
-  // Student Roster & QR Verification Modal
-  const [selectedRosterSession, setSelectedRosterSession] = useState<StoredClassSession | null>(null);
-  const [inspectingQrUrl, setInspectingQrUrl] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<ClassSession[]>([]);
+  const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // New session form state
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState<"in_person" | "live">("live");
-  const [instructor, setInstructor] = useState("Factory Lead Craftsman (Admin)");
-  const [date, setDate] = useState("Nov 05, 2026");
-  const [time, setTime] = useState("2:00 PM - 4:00 PM");
-  const [price, setPrice] = useState(350);
-  const [capacity, setCapacity] = useState(30);
-  const [location, setLocation] = useState("LiveKit Interactive Video Room");
-  const [description, setDescription] = useState("");
+  // Modal States
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState<ClassSession | null>(null);
+  const [rosterModalOpen, setRosterModalOpen] = useState(false);
+  const [selectedSessionForRoster, setSelectedSessionForRoster] = useState<ClassSession | null>(null);
+  const [rosterEnrollments, setRosterEnrollments] = useState<StudentEnrollment[]>([]);
+  const [rosterLoading, setRosterLoading] = useState(false);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    title: "",
+    type: "live" as "in_person" | "live",
+    teacher_id: "",
+    starts_at: "",
+    ends_at: "",
+    price: 350,
+    capacity: 25,
+    location: "Addis Ababa Studio (Bole Subcity)",
+    description: "",
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    loadSessions();
-    window.addEventListener("arenguade_datastore_change", loadSessions);
-    return () => window.removeEventListener("arenguade_datastore_change", loadSessions);
+    loadClasses();
+    loadTeachers();
   }, []);
 
-  const loadSessions = () => {
-    setSessions(DataStore.getClasses());
+  const loadClasses = async () => {
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/classes?status=all");
+      const data = await res.json();
+      if (res.ok && data.classes) {
+        setSessions(data.classes);
+      } else {
+        throw new Error(data.error || "Failed to load class sessions");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to load workshops");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTeachers = async () => {
+    try {
+      const res = await fetch("/api/admin/users?role=teacher&pageSize=100");
+      const data = await res.json();
+      if (res.ok && data.users) {
+        setTeachers(data.users);
+      }
+    } catch (err) {
+      console.warn("Failed to load teacher list:", err);
+    }
+  };
+
+  const openCreateModal = () => {
+    // Default dates in ISO format with UTC+3 awareness
+    const now = new Date();
+    now.setDate(now.getDate() + 3);
+    now.setHours(14, 0, 0, 0); // 2:00 PM
+    const startStr = now.toISOString().slice(0, 16);
+    const end = new Date(now.getTime() + 2 * 60 * 60 * 1000); // +2 hours
+    const endStr = end.toISOString().slice(0, 16);
+
+    setFormData({
+      title: "",
+      type: "live",
+      teacher_id: teachers[0]?.id || "",
+      starts_at: startStr,
+      ends_at: endStr,
+      price: 350,
+      capacity: 25,
+      location: "Addis Ababa Studio (Bole Subcity)",
+      description: "",
+    });
+    setCreateModalOpen(true);
   };
 
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMsg(null);
 
     try {
-      await DataStore.addClass({
-        title,
-        type,
-        instructor,
-        date,
-        time,
-        location: type === "live" ? "LiveKit Interactive Video Room" : (location || "Addis Ababa Studio (Bole Subcity)"),
-        price: Number(price),
-        capacity: Number(capacity),
-        livekitRoom: type === "live" ? `session_${Date.now()}` : undefined,
-        description: description || `Professional craft masterclass led by ${instructor}. Full hands-on instruction and certificates.`,
-        materialsIncluded: type === "live" 
-          ? ["Live WebRTC interactive stream with host controls", "Downloadable CAD dieline outlines", "Permanent session replay recording", "Digital Certificate"]
-          : ["100% Ethiopian Virgin Kraft sheets", "Adhesives & bone folders", "Twisted cords & eyelets", "Take-home portfolio"]
+      const res = await fetch("/api/classes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: formData.title,
+          type: formData.type,
+          teacher_id: formData.teacher_id || undefined,
+          starts_at: new Date(formData.starts_at).toISOString(),
+          ends_at: formData.ends_at ? new Date(formData.ends_at).toISOString() : undefined,
+          location: formData.type === "in_person" ? formData.location : "LiveKit Interactive Video Room",
+          price: Number(formData.price),
+          capacity: Number(formData.capacity),
+          description: formData.description,
+        }),
       });
 
-      setModalOpen(false);
-      setTitle("");
-      setDescription("");
-      loadSessions();
-    } catch (err) {
-      console.error("Failed to add session:", err);
-      alert("Failed to schedule class.");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to schedule class session");
+
+      setCreateModalOpen(false);
+      setSuccessMsg(`Class "${formData.title}" scheduled successfully!`);
+      setTimeout(() => setSuccessMsg(null), 4000);
+      loadClasses();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to schedule class");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to remove this workshop from the public curriculum?")) {
-      await DataStore.deleteClass(id);
-      loadSessions();
+  const openEditModal = (session: ClassSession) => {
+    setEditingSession(session);
+    setFormData({
+      title: session.title,
+      type: session.type,
+      teacher_id: session.teacher_id || session.teacher?.id || "",
+      starts_at: session.starts_at ? new Date(session.starts_at).toISOString().slice(0, 16) : "",
+      ends_at: session.ends_at ? new Date(session.ends_at).toISOString().slice(0, 16) : "",
+      price: Number(session.price),
+      capacity: session.capacity,
+      location: session.location || "",
+      description: session.description || "",
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSession) return;
+
+    setIsSubmitting(true);
+    setErrorMsg(null);
+
+    try {
+      const res = await fetch(`/api/classes/${editingSession.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: formData.title,
+          teacher_id: formData.teacher_id || null,
+          starts_at: new Date(formData.starts_at).toISOString(),
+          ends_at: formData.ends_at ? new Date(formData.ends_at).toISOString() : undefined,
+          location: formData.location,
+          price: Number(formData.price),
+          capacity: Number(formData.capacity),
+          description: formData.description,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update class session");
+
+      setEditModalOpen(false);
+      setEditingSession(null);
+      setSuccessMsg(`Class updated successfully!`);
+      setTimeout(() => setSuccessMsg(null), 4000);
+      loadClasses();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to update class");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleApproveRegistration = (regId: string) => {
-    DataStore.updateRegistrationStatus(regId, "approved");
-    loadSessions();
+  const handleCancelSession = async (session: ClassSession) => {
+    if (!confirm(`Cancel "${session.title}"? This will notify all enrolled students.`)) return;
+
+    try {
+      const res = await fetch(`/api/classes/${session.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "cancelled" }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to cancel class session");
+
+      setSuccessMsg(`Session cancelled. Enrolled students have been notified.`);
+      setTimeout(() => setSuccessMsg(null), 4000);
+      loadClasses();
+    } catch (err: any) {
+      alert(err.message || "Failed to cancel session");
+    }
   };
 
-  const handleRejectRegistration = (regId: string) => {
-    DataStore.updateRegistrationStatus(regId, "rejected");
-    loadSessions();
+  const openRosterModal = async (session: ClassSession) => {
+    setSelectedSessionForRoster(session);
+    setRosterModalOpen(true);
+    setRosterLoading(true);
+
+    try {
+      const res = await fetch(`/api/classes/${session.id}`);
+      const data = await res.json();
+      if (res.ok && data.session?.enrollments) {
+        setRosterEnrollments(data.session.enrollments);
+      } else {
+        setRosterEnrollments([]);
+      }
+    } catch (err) {
+      console.error("Failed to load roster:", err);
+      setRosterEnrollments([]);
+    } finally {
+      setRosterLoading(false);
+    }
   };
 
-  // Get registrations for currently selected roster session
-  const currentRosterStudents = selectedRosterSession 
-    ? DataStore.getRegistrationsBySessionId(selectedRosterSession.id)
-    : [];
+  const handleToggleAttendance = async (enrollmentId: string, currentVal: boolean) => {
+    try {
+      const res = await fetch("/api/enrollments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enrollmentId,
+          action: "attendance",
+          attended: !currentVal,
+        }),
+      });
+
+      if (res.ok) {
+        setRosterEnrollments(prev =>
+          prev.map(e => e.id === enrollmentId ? { ...e, attended: !currentVal } : e)
+        );
+      } else {
+        const d = await res.json();
+        alert(d.error || "Failed to update attendance");
+      }
+    } catch (err: any) {
+      alert("Error updating attendance: " + err.message);
+    }
+  };
+
+  const exportRosterCsv = () => {
+    if (!selectedSessionForRoster || rosterEnrollments.length === 0) {
+      alert("No enrollments to export.");
+      return;
+    }
+
+    const headers = ["Student Name", "Email", "Phone", "Status", "Attended", "Enrolled Date"];
+    const rows = rosterEnrollments.map(e => [
+      `"${e.profiles?.full_name || "Unknown"}"`,
+      `"${e.profiles?.email || ""}"`,
+      `"${e.profiles?.phone || ""}"`,
+      `"${e.status}"`,
+      `"${e.attended ? "Yes" : "No"}"`,
+      `"${new Date(e.created_at).toLocaleDateString()}"`,
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `roster_${selectedSessionForRoster.title.replace(/\s+/g, "_")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const formatSchedule = (startsAt?: string, endsAt?: string) => {
+    if (!startsAt) return "TBD";
+    try {
+      const s = new Date(startsAt);
+      const dateStr = s.toLocaleDateString("en-US", {
+        timeZone: "Africa/Addis_Ababa",
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      });
+      const timeStr = s.toLocaleTimeString("en-US", {
+        timeZone: "Africa/Addis_Ababa",
+        hour: "numeric",
+        minute: "2-digit"
+      });
+      return `${dateStr} at ${timeStr} (EAT)`;
+    } catch {
+      return startsAt;
+    }
+  };
 
   return (
     <div className="flex flex-col max-w-6xl mx-auto space-y-8">
@@ -116,13 +367,13 @@ export default function AdminClassesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">
-            Arenguade Craft Academy • Teacher & Operations Command
+            Arenguade Craft Academy • Operations Command
           </span>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
-            Workshops & Live Classrooms
+            Workshops & Class Sessions
           </h1>
           <p className="text-xs text-stone-500 mt-1">
-            The Admin is the Instructor. Verify student payment QR codes, manage enrolled rosters, and broadcast live WebRTC classes.
+            Schedule studio classes in Addis Ababa or LiveKit streaming masterclasses. Assign verified instructors and manage student rosters.
           </p>
         </div>
 
@@ -136,7 +387,7 @@ export default function AdminClassesPage() {
             <ExternalLink size={13} />
           </Link>
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={openCreateModal}
             className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-5 py-3 rounded-full transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
           >
             <Plus size={16} />
@@ -145,383 +396,536 @@ export default function AdminClassesPage() {
         </div>
       </div>
 
+      {successMsg && (
+        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-medium">
+          <CheckCircle2 size={16} className="text-emerald-600" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+
+      {errorMsg && (
+        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+          <AlertCircle size={16} className="text-red-600" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       {/* Class Sessions List */}
       <div className="space-y-6">
-        {sessions.map((session) => {
-          const sessionRegistrations = DataStore.getRegistrationsBySessionId(session.id);
-          const verifiedStudents = sessionRegistrations.filter((r) => r.status === "approved").length;
-          const pendingStudents = sessionRegistrations.filter((r) => r.status === "pending_verification").length;
-
-          return (
-            <div
-              key={session.id}
-              className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
-            >
-              <div className="space-y-2 flex-1">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
-                      session.type === "live"
-                        ? "bg-[#1E3B2E]/10 text-[#1E3B2E]"
-                        : "bg-[#8C4B31]/10 text-[#8C4B31]"
-                    }`}
-                  >
-                    {session.type === "live" ? "LiveKit WebRTC Classroom" : "In-Person Studio"}
-                  </span>
-                  <span className="text-xs text-stone-500 font-medium">
-                    Instructor: <strong className="text-stone-800">{session.instructor}</strong>
-                  </span>
-                  {pendingStudents > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold animate-pulse">
-                      {pendingStudents} QR Verifications Pending
-                    </span>
-                  )}
-                </div>
-
-                <h3 className="font-serif text-2xl font-bold text-stone-900">
-                  {session.title}
-                </h3>
-
-                <div className="flex flex-wrap gap-3 text-xs text-stone-600">
-                  <span className="flex items-center gap-1.5 bg-[#FAF7F2] px-3 py-1 rounded-lg border border-stone-200">
-                    <Calendar size={13} className="text-[#8C4B31]" /> {session.date} • {session.time}
-                  </span>
-                  <span className="flex items-center gap-1.5 bg-[#FAF7F2] px-3 py-1 rounded-lg border border-stone-200">
-                    {session.type === "live" ? <Video size={13} className="text-[#1E3B2E]" /> : <MapPin size={13} className="text-[#8C4B31]" />}
-                    {session.location}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:items-end gap-3 shrink-0 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-stone-100">
-                <div className="text-right">
-                  <span className="font-serif text-2xl font-bold text-[#8C4B31]">
-                    {session.price} ETB
-                  </span>
-                  <p className="text-xs text-stone-500 mt-0.5">
-                    <strong>{verifiedStudents} Verified</strong> ({sessionRegistrations.length} Total Registered / {session.capacity} Max)
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* View Roster & QR Verification Button */}
-                  <button
-                    onClick={() => setSelectedRosterSession(session)}
-                    className="px-4 py-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Users size={14} />
-                    <span>Enrolled Students ({sessionRegistrations.length})</span>
-                  </button>
-
-                  {/* Teach Live Broadcast Button (For live sessions) */}
-                  {session.type === "live" && (
-                    <Link
-                      href={`/dashboard/sessions/${session.id}`}
-                      className="px-4 py-2 rounded-full bg-[#1E3B2E] text-white text-xs font-bold hover:bg-[#8C4B31] transition-colors flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Radio size={14} className="text-red-400 animate-pulse" />
-                      <span>Teach Live Class (Broadcaster)</span>
-                    </Link>
-                  )}
-
-                  <button
-                    onClick={() => handleDelete(session.id)}
-                    className="p-2 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                    title="Delete workshop"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {sessions.length === 0 && (
-          <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center text-stone-500">
-            <Users size={36} className="mx-auto text-stone-400 mb-2" />
-            <h4 className="font-serif text-lg font-bold text-stone-800">No Workshops Scheduled Yet</h4>
-            <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto mb-4">
-              Schedule your first workshop or virtual LiveKit classroom session to accept student enrollments.
-            </p>
+        {loading ? (
+          <div className="p-12 text-center bg-white rounded-3xl border border-stone-200">
+            <Sparkles size={28} className="animate-spin text-[#8C4B31] mx-auto mb-3" />
+            <p className="text-xs font-bold text-stone-600">Loading scheduled workshops...</p>
           </div>
+        ) : sessions.length === 0 ? (
+          <div className="p-12 text-center bg-white rounded-3xl border border-stone-200">
+            <Calendar size={36} className="text-stone-400 mx-auto mb-3" />
+            <h3 className="font-serif text-lg font-bold text-stone-800">No workshop sessions yet</h3>
+            <p className="text-xs text-stone-500 mt-1">Click &quot;Schedule New Workshop&quot; to create your first studio or live session.</p>
+          </div>
+        ) : (
+          sessions.map((session) => {
+            const isLive = session.type === "live";
+            const isCancelled = session.status === "cancelled";
+            const teacherName = session.teacher?.full_name || "Factory Lead Instructor";
+
+            return (
+              <div 
+                key={session.id}
+                className={`bg-white rounded-3xl p-6 border transition-all shadow-xs ${
+                  isCancelled ? "border-stone-200 opacity-60 bg-stone-50" : "border-stone-200 hover:border-stone-300"
+                }`}
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  
+                  {/* Left Column: Info */}
+                  <div className="space-y-2 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.8 rounded-full ${
+                        isLive ? "bg-[#1E3B2E]/10 text-[#1E3B2E]" : "bg-[#8C4B31]/10 text-[#8C4B31]"
+                      }`}>
+                        {isLive ? <Video size={12} /> : <MapPin size={12} />}
+                        <span>{isLive ? "LiveKit Virtual Masterclass" : "In-Person Addis Studio"}</span>
+                      </span>
+
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                        isCancelled 
+                          ? "bg-red-100 text-red-700" 
+                          : session.status === "live" 
+                          ? "bg-emerald-100 text-emerald-800 animate-pulse" 
+                          : "bg-stone-100 text-stone-600"
+                      }`}>
+                        {session.status}
+                      </span>
+                    </div>
+
+                    <h2 className="font-serif text-xl font-bold text-stone-900">
+                      {session.title}
+                    </h2>
+
+                    <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-stone-500">
+                      <span className="flex items-center gap-1">
+                        <Clock size={13} className="text-stone-400" />
+                        <span>{formatSchedule(session.starts_at, session.ends_at)}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users size={13} className="text-stone-400" />
+                        <span>Teacher: <strong className="text-stone-800">{teacherName}</strong></span>
+                      </span>
+                      <span>
+                        Location: <strong className="text-stone-800">{session.location}</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Middle Column: Metrics */}
+                  <div className="flex items-center gap-4 bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-stone-400 block">Registration</span>
+                      <span className="font-bold text-sm text-stone-900">{session.price} ETB</span>
+                    </div>
+                    <div className="w-px h-8 bg-stone-200" />
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-stone-400 block">Enrolled Seats</span>
+                      <span className="font-bold text-sm text-stone-900">
+                        {session.enrolledCount} / {session.capacity}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openRosterModal(session)}
+                      className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Eye size={13} />
+                      <span>Roster ({session.enrolledCount})</span>
+                    </button>
+
+                    {!isCancelled && (
+                      <>
+                        <button
+                          onClick={() => openEditModal(session)}
+                          className="p-2 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-full transition-colors cursor-pointer"
+                          title="Edit Session Details"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleCancelSession(session)}
+                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors cursor-pointer"
+                          title="Cancel Session & Notify Students"
+                        >
+                          <Ban size={16} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
 
-      {/* STUDENT ROSTER & PAYMENT QR VERIFICATION MODAL */}
-      {selectedRosterSession && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 border border-stone-200 shadow-2xl relative my-8">
-            <button
-              onClick={() => setSelectedRosterSession(null)}
-              className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-800 cursor-pointer"
-            >
-              <X size={20} />
-            </button>
-
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C4B31]">
-              Student Roster & Verification
-            </span>
-            <h3 className="font-serif text-2xl font-bold text-stone-900 mt-1">
-              {selectedRosterSession.title}
-            </h3>
-            <p className="text-xs text-stone-500 mb-6">
-              Verify uploaded CBE / Telebirr payment slips and QR codes before granting classroom or studio admission.
-            </p>
-
-            {/* Students List */}
-            <div className="space-y-4 max-h-96 overflow-y-auto pr-1 text-xs">
-              {currentRosterStudents.map((student) => (
-                <div 
-                  key={student.id}
-                  className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-stone-900 text-sm">{student.studentName}</span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        student.status === "approved" 
-                          ? "bg-emerald-100 text-emerald-800"
-                          : student.status === "rejected"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-amber-100 text-amber-800"
-                      }`}>
-                        {student.status === "approved" ? "Verified & Access Granted" : student.status === "rejected" ? "Rejected" : "Pending QR Check"}
-                      </span>
-                    </div>
-                    <p className="text-stone-500 text-xs font-mono">
-                      Phone: <strong>{student.studentPhone}</strong> • Registered: {student.timestamp}
-                    </p>
-                    <p className="text-[#8C4B31] font-serif font-bold text-xs">
-                      Tuition Plan: {student.priceEtb} ETB
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* View Uploaded QR Code / Receipt Slip */}
-                    {student.receiptUrl ? (
-                      <button
-                        onClick={() => setInspectingQrUrl(student.receiptUrl || null)}
-                        className="px-3 py-2 rounded-xl bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                        title="Inspect uploaded payment slip/QR code"
-                      >
-                        <Eye size={13} />
-                        <span>Inspect QR Slip</span>
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-stone-400 italic">No QR uploaded</span>
-                    )}
-
-                    {/* Action: Approve */}
-                    {student.status !== "approved" && (
-                      <button
-                        onClick={() => handleApproveRegistration(student.id)}
-                        className="px-3.5 py-2 rounded-xl bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold text-xs transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                      >
-                        <CheckCircle2 size={14} />
-                        <span>Approve & Grant Access</span>
-                      </button>
-                    )}
-
-                    {/* Action: Reject */}
-                    {student.status !== "rejected" && (
-                      <button
-                        onClick={() => handleRejectRegistration(student.id)}
-                        className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-colors cursor-pointer"
-                        title="Reject enrollment"
-                      >
-                        <XCircle size={15} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {currentRosterStudents.length === 0 && (
-                <div className="p-8 text-center text-stone-400">
-                  <p className="text-xs">No students have enrolled for this session yet.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QR CODE INSPECTION LIGHTBOX MODAL */}
-      {inspectingQrUrl && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 max-w-lg w-full text-white relative animate-in fade-in zoom-in-95">
-            <button
-              onClick={() => setInspectingQrUrl(null)}
-              className="absolute top-4 right-4 p-2 rounded-full text-stone-400 hover:text-white bg-stone-800 cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#E0B382] block mb-2">
-              Payment Verification Lightbox
-            </span>
-            <h4 className="font-serif text-lg font-bold mb-4">
-              Student Uploaded Payment QR Code / Deposit Slip
-            </h4>
-
-            <div className="rounded-2xl overflow-hidden border border-stone-700 bg-black flex items-center justify-center p-2 mb-4 max-h-96">
-              <img 
-                src={inspectingQrUrl} 
-                alt="Student Payment QR" 
-                className="max-h-80 w-auto object-contain rounded-xl"
-              />
-            </div>
-
-            <p className="text-xs text-stone-400 text-center">
-              Verify CBE Birr or Telebirr merchant transaction ID against official bank records before approving admission.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Schedule Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 border border-stone-200 shadow-2xl relative my-8">
-            <button
-              onClick={() => setModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-800 cursor-pointer"
-            >
-              <X size={20} />
-            </button>
-
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C4B31]">
-              Academy Curriculum
-            </span>
-            <h3 className="font-serif text-2xl font-bold text-stone-900 mt-1 mb-4">
-              Schedule New Workshop
-            </h3>
-
-            <form onSubmit={handleCreateSession} className="space-y-4 text-xs">
+      {/* CREATE MODAL */}
+      {createModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-stone-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-6">
               <div>
-                <label className="font-bold text-stone-700 block mb-1">Workshop Title</label>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">Academy Operations</span>
+                <h3 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Schedule Workshop</h3>
+              </div>
+              <button 
+                onClick={() => setCreateModalOpen(false)}
+                className="p-2 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSession} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Session Title *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Masterclass in Heavy Kraft Handle Attachment"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
+                  placeholder="e.g. Masterclass in Heavy Gauge Kraft Folding"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-stone-700 block mb-1">Session Type</label>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Workshop Type *</label>
                   <select
-                    value={type}
-                    onChange={(e) => {
-                      const t = e.target.value as "in_person" | "live";
-                      setType(t);
-                      if (t === "live") setLocation("LiveKit Interactive Video Room");
-                      else setLocation("Addis Ababa Studio (Bole Subcity)");
-                    }}
-                    className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
                   >
-                    <option value="live">LiveKit Virtual Online</option>
-                    <option value="in_person">In-Person Studio (Addis)</option>
+                    <option value="live">LiveKit Virtual Masterclass</option>
+                    <option value="in_person">In-Person Studio (Addis Ababa)</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="font-bold text-stone-700 block mb-1">Lead Instructor (Admin)</label>
-                  <input
-                    type="text"
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Assigned Teacher *</label>
+                  <select
                     required
-                    value={instructor}
-                    onChange={(e) => setInstructor(e.target.value)}
-                    className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
-                  />
+                    value={formData.teacher_id}
+                    onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                  >
+                    <option value="">Select a verified instructor...</option>
+                    {teachers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.full_name} ({t.email})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {formData.type === "in_person" && (
                 <div>
-                  <label className="font-bold text-stone-700 block mb-1">Calendar Date</label>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Studio Location *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Nov 12, 2026"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-stone-700 block mb-1">Session Hours</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 2:00 PM - 5:00 PM"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-stone-700 block mb-1">Tuition Fee (ETB)</label>
-                  <input
-                    type="number"
-                    required
-                    value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
-                    className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-stone-700 block mb-1">Max Seat Capacity</label>
-                  <input
-                    type="number"
-                    required
-                    value={capacity}
-                    onChange={(e) => setCapacity(Number(e.target.value))}
-                    className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {type === "in_person" && (
-                <div>
-                  <label className="font-bold text-stone-700 block mb-1">Physical Location</label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. Addis Ababa Studio (Bole Subcity)"
-                    className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
+                    placeholder="e.g. Addis Ababa Studio, Bole Subcity"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
                   />
                 </div>
               )}
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">
+                    Starts At (Addis Ababa Local Time) *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={formData.starts_at}
+                    onChange={(e) => setFormData({ ...formData, starts_at: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">
+                    Ends At (Addis Ababa Local Time)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.ends_at}
+                    onChange={(e) => setFormData({ ...formData, ends_at: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Capacity (Max Seats) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={formData.capacity}
+                    onChange={(e) => setFormData({ ...formData, capacity: Number(e.target.value) })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Price (ETB) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="font-bold text-stone-700 block mb-1">Curriculum Highlights</label>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Curriculum & Description</label>
                 <textarea
-                  rows={2}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Techniques covered, paper grades, practical takeaways..."
-                  className="w-full p-3 bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none"
+                  rows={3}
+                  placeholder="Outline syllabus, materials provided, and take-home certifications..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
                 />
               </div>
 
-              <div className="pt-2">
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => setCreateModalOpen(false)}
+                  className="px-5 py-2.5 rounded-full text-xs font-bold text-stone-600 hover:bg-stone-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold tracking-wider uppercase transition-all shadow-md cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-full text-xs font-bold bg-[#1E3B2E] hover:bg-[#8C4B31] text-white transition-all shadow-sm cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmitting ? "Publishing Workshop..." : "Publish to Academy Schedule"}
+                  {isSubmitting ? "Scheduling..." : "Create Workshop Session"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL */}
+      {editModalOpen && editingSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-stone-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-6">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">Academy Operations</span>
+                <h3 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">Edit Workshop Session</h3>
+              </div>
+              <button 
+                onClick={() => setEditModalOpen(false)}
+                className="p-2 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateSession} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Session Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Assigned Teacher *</label>
+                <select
+                  required
+                  value={formData.teacher_id}
+                  onChange={(e) => setFormData({ ...formData, teacher_id: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                >
+                  <option value="">Select a verified instructor...</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.full_name} ({t.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Location</label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">
+                    Starts At (Addis Ababa Local Time) *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={formData.starts_at}
+                    onChange={(e) => setFormData({ ...formData, starts_at: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">
+                    Ends At (Addis Ababa Local Time)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.ends_at}
+                    onChange={(e) => setFormData({ ...formData, ends_at: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Capacity *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={formData.capacity}
+                    onChange={(e) => setFormData({ ...formData, capacity: Number(e.target.value) })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Price (ETB) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Curriculum & Description</label>
+                <textarea
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-[#1E3B2E]"
+                />
+              </div>
+
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(false)}
+                  className="px-5 py-2.5 rounded-full text-xs font-bold text-stone-600 hover:bg-stone-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 rounded-full text-xs font-bold bg-[#1E3B2E] hover:bg-[#8C4B31] text-white transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ROSTER MODAL */}
+      {rosterModalOpen && selectedSessionForRoster && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-stone-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-6">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">Student Enrollment Roster</span>
+                <h3 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">
+                  {selectedSessionForRoster.title}
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Capacity: {selectedSessionForRoster.capacity} • Enrolled: {rosterEnrollments.length}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={exportRosterCsv}
+                  className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Export Roster as CSV"
+                >
+                  <Download size={14} />
+                  <span>CSV Export</span>
+                </button>
+                <button 
+                  onClick={() => setRosterModalOpen(false)}
+                  className="p-2 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {rosterLoading ? (
+              <div className="p-8 text-center">
+                <Sparkles size={24} className="animate-spin text-[#8C4B31] mx-auto mb-2" />
+                <p className="text-xs text-stone-500">Loading student roster...</p>
+              </div>
+            ) : rosterEnrollments.length === 0 ? (
+              <div className="p-8 text-center bg-stone-50 rounded-2xl border border-stone-100">
+                <Users size={32} className="text-stone-400 mx-auto mb-2" />
+                <p className="text-xs font-bold text-stone-700">No students enrolled yet</p>
+                <p className="text-[11px] text-stone-500 mt-0.5">Approved registrations will appear in this checklist.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-stone-200 text-stone-500 font-bold uppercase text-[10px]">
+                        <th className="py-2.5 px-3">Student</th>
+                        <th className="py-2.5 px-3">Contact</th>
+                        <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3 text-center">Attended</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100 text-stone-700">
+                      {rosterEnrollments.map((enr) => (
+                        <tr key={enr.id} className="hover:bg-stone-50">
+                          <td className="py-3 px-3 font-semibold text-stone-900">
+                            {enr.profiles?.full_name || "Enrolled Student"}
+                          </td>
+                          <td className="py-3 px-3 text-stone-500">
+                            <div>{enr.profiles?.email}</div>
+                            <div className="text-[10px]">{enr.profiles?.phone}</div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              enr.status === "approved"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : enr.status === "pending_verification"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-stone-100 text-stone-600"
+                            }`}>
+                              {enr.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <button
+                              onClick={() => handleToggleAttendance(enr.id, enr.attended)}
+                              className="p-1.5 rounded-lg hover:bg-stone-200 transition-colors cursor-pointer text-stone-700"
+                              title={enr.attended ? "Mark as Not Attended" : "Mark as Attended"}
+                            >
+                              {enr.attended ? (
+                                <CheckSquare size={18} className="text-emerald-600" />
+                              ) : (
+                                <Square size={18} className="text-stone-400" />
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

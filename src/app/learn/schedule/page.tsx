@@ -123,7 +123,7 @@ export default function SchedulePage() {
       // 3. Fetch Classes from API
       try {
         setLoading(true);
-        const res = await fetch("/api/classes");
+        const res = await fetch("/api/classes?upcoming=true");
         const resData = await res.json();
         if (res.ok && resData.classes) {
           setSessionsList(resData.classes);
@@ -233,7 +233,7 @@ export default function SchedulePage() {
       setBookingSuccess(true);
 
       // Refresh list to update spotsLeft
-      const refreshRes = await fetch("/api/classes");
+      const refreshRes = await fetch("/api/classes?upcoming=true");
       const refreshData = await refreshRes.json();
       if (refreshRes.ok && refreshData.classes) {
         setSessionsList(refreshData.classes);

@@ -37,8 +37,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
   const navItems = [
-    { href: "/dashboard?tab=orders", tabId: "orders", label: "My Orders & Receipts", icon: ShoppingBag },
-    { href: "/dashboard?tab=classes", tabId: "classes", label: "My Academy Workshops", icon: BookOpen },
+    { href: "/dashboard/orders", tabId: "orders", label: "My Orders & Receipts", icon: ShoppingBag },
+    { href: "/dashboard/classes", tabId: "classes", label: "My Academy Workshops", icon: BookOpen },
     { href: "/dashboard?tab=designs", tabId: "designs", label: "Custom 3D Designs", icon: Sparkles },
   ];
 
@@ -115,7 +115,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         {/* Navigation Items */}
         <nav className="flex-1 px-4 py-4 space-y-1.5 text-xs">
           {navItems.map((item) => {
-            const isActive = pathname === "/dashboard" && currentTab === item.tabId;
+            const isActive = pathname === item.href || (pathname === "/dashboard" && currentTab === item.tabId);
             const Icon = item.icon;
             return (
               <Link 

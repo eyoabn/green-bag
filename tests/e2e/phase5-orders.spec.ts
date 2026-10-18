@@ -219,7 +219,11 @@ test.describe.serial("Phase 5: Ordering and Payments", () => {
     expect(checkJson.order.status).toBe("rejected");
     expect(checkJson.order.rejection_reason).toContain("missing transaction reference number");
 
-    // Customer re-uploads new proof
+    // Customer logs back in and re-uploads new proof
+    await request.post("/api/auth/login", {
+      data: { email: SEED_USERS.customer1.email, password: SEED_USERS.customer1.password },
+    });
+
     const reuploadRes = await request.patch("/api/orders", {
       data: {
         orderId,

@@ -420,125 +420,222 @@ export default function AdminOrdersPage() {
             <p className="font-serif text-base font-bold text-stone-700">No orders matching criteria</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-stone-200 bg-stone-50/70 text-stone-500 uppercase tracking-wider text-[10px] font-bold">
-                  <th className="py-3.5 px-6">Order Reference</th>
-                  <th className="py-3.5 px-4">Client</th>
-                  <th className="py-3.5 px-4">Total Amount</th>
-                  <th className="py-3.5 px-4">Status & Next Action</th>
-                  <th className="py-3.5 px-4">Date</th>
-                  <th className="py-3.5 px-6 text-right">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {filteredOrders.map((o) => {
-                  const isUpdating = updatingStatusId === o.id;
+          <div>
+            {/* Mobile Stacked Cards (< 768px) */}
+            <div className="md:hidden divide-y divide-stone-100">
+              {filteredOrders.map((o) => {
+                const isUpdating = updatingStatusId === o.id;
+                return (
+                  <div key={o.id} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono font-bold text-stone-900 bg-stone-100 px-2 py-0.5 rounded text-xs">
+                        {o.order_number}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        o.status === "completed" ? "bg-emerald-100 text-emerald-800" :
+                        o.status === "ready" ? "bg-indigo-100 text-indigo-800" :
+                        o.status === "in_production" ? "bg-purple-100 text-purple-800" :
+                        o.status === "approved" ? "bg-blue-100 text-blue-800" :
+                        o.status === "rejected" || o.status === "cancelled" ? "bg-red-100 text-red-800" :
+                        "bg-amber-100 text-amber-800"
+                      }`}>
+                        {o.status.replace("_", " ")}
+                      </span>
+                    </div>
 
-                  return (
-                    <tr key={o.id} className="hover:bg-stone-50/60 transition-colors">
-                      <td className="py-4 px-6">
-                        <span className="font-mono font-bold text-stone-900 bg-stone-100 px-2.5 py-1 rounded-md text-[11px]">
-                          {o.order_number}
+                    <div className="flex items-baseline justify-between text-xs">
+                      <div>
+                        <p className="font-bold text-stone-900">{o.profiles?.full_name || "Customer"}</p>
+                        <p className="text-[11px] text-stone-500 font-mono">{o.phone}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-[#8C4B31] text-sm block">
+                          {formatPrice(o.total_price)}
                         </span>
-                      </td>
+                        <span className="text-[10px] text-stone-400">
+                          {new Date(o.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
 
-                      <td className="py-4 px-4">
-                        <div>
-                          <p className="font-bold text-stone-900 text-xs">
-                            {o.profiles?.full_name || "Customer"}
-                          </p>
-                          <p className="text-[10px] text-stone-500 font-mono mt-0.5">
-                            {o.phone}
-                          </p>
-                        </div>
-                      </td>
+                    {/* Action Bar (Max 2 visible actions) */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-stone-100">
+                      <button
+                        onClick={() => openOrderDetail(o)}
+                        className="flex-1 btn-secondary py-2.5 text-xs font-semibold text-center min-h-[44px] cursor-pointer"
+                      >
+                        Inspect
+                      </button>
 
-                      <td className="py-4 px-4 font-mono font-bold text-stone-900">
-                        {formatPrice(o.total_price)}
-                      </td>
-
-                      {/* Status & Valid Transition Buttons */}
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            o.status === "completed" ? "bg-emerald-100 text-emerald-800" :
-                            o.status === "ready" ? "bg-indigo-100 text-indigo-800" :
-                            o.status === "in_production" ? "bg-purple-100 text-purple-800" :
-                            o.status === "approved" ? "bg-blue-100 text-blue-800" :
-                            o.status === "rejected" || o.status === "cancelled" ? "bg-red-100 text-red-800" :
-                            "bg-amber-100 text-amber-800"
-                          }`}>
-                            {o.status.replace("_", " ")}
-                          </span>
-
-                          {/* Valid Next Transition Controls */}
-                          {o.status === "approved" && (
-                            <button
-                              disabled={isUpdating}
-                              onClick={() => handleStatusChange(o.id, "in_production")}
-                              className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
-                              title="Start printing & production"
-                            >
-                              <Package size={11} />
-                              <span>Start Production</span>
-                            </button>
-                          )}
-
-                          {o.status === "in_production" && (
-                            <button
-                              disabled={isUpdating}
-                              onClick={() => handleStatusChange(o.id, "ready")}
-                              className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
-                              title="Mark ready for delivery dispatch"
-                            >
-                              <Truck size={11} />
-                              <span>Mark Ready</span>
-                            </button>
-                          )}
-
-                          {o.status === "ready" && (
-                            <button
-                              disabled={isUpdating}
-                              onClick={() => handleStatusChange(o.id, "completed")}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
-                              title="Confirm delivery dispatch completed"
-                            >
-                              <Check size={11} />
-                              <span>Complete</span>
-                            </button>
-                          )}
-
-                          {o.status === "pending_verification" && (
-                            <Link
-                              href={`/admin/payments`}
-                              className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition-all flex items-center gap-1"
-                            >
-                              <span>Verify</span>
-                              <ArrowRight size={11} />
-                            </Link>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4 text-stone-400 text-[11px]">
-                        {new Date(o.created_at).toLocaleDateString()}
-                      </td>
-
-                      <td className="py-4 px-6 text-right">
+                      {o.status === "approved" && (
                         <button
-                          onClick={() => openOrderDetail(o)}
-                          className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
+                          disabled={isUpdating}
+                          onClick={() => handleStatusChange(o.id, "in_production")}
+                          className="flex-1 btn-primary py-2.5 text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] cursor-pointer"
                         >
-                          Inspect
+                          <Package size={14} />
+                          <span>Start Production</span>
                         </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      )}
+
+                      {o.status === "in_production" && (
+                        <button
+                          disabled={isUpdating}
+                          onClick={() => handleStatusChange(o.id, "ready")}
+                          className="flex-1 btn-primary py-2.5 text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] cursor-pointer"
+                        >
+                          <Truck size={14} />
+                          <span>Mark Ready</span>
+                        </button>
+                      )}
+
+                      {o.status === "ready" && (
+                        <button
+                          disabled={isUpdating}
+                          onClick={() => handleStatusChange(o.id, "completed")}
+                          className="flex-1 btn-primary py-2.5 text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] cursor-pointer"
+                        >
+                          <Check size={14} />
+                          <span>Complete</span>
+                        </button>
+                      )}
+
+                      {o.status === "pending_verification" && (
+                        <Link
+                          href="/admin/payments"
+                          className="flex-1 btn-primary py-2.5 text-xs font-bold flex items-center justify-center gap-1 min-h-[44px]"
+                        >
+                          <span>Verify</span>
+                          <ArrowRight size={14} />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-stone-200 bg-stone-50/70 text-stone-500 uppercase tracking-wider text-[10px] font-bold">
+                    <th className="py-3.5 px-6">Order Reference</th>
+                    <th className="py-3.5 px-4">Client</th>
+                    <th className="py-3.5 px-4">Total Amount</th>
+                    <th className="py-3.5 px-4">Status & Next Action</th>
+                    <th className="py-3.5 px-4">Date</th>
+                    <th className="py-3.5 px-6 text-right">Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {filteredOrders.map((o) => {
+                    const isUpdating = updatingStatusId === o.id;
+
+                    return (
+                      <tr key={o.id} className="hover:bg-stone-50/60 transition-colors">
+                        <td className="py-4 px-6">
+                          <span className="font-mono font-bold text-stone-900 bg-stone-100 px-2.5 py-1 rounded-md text-[11px]">
+                            {o.order_number}
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-4">
+                          <div>
+                            <p className="font-bold text-stone-900 text-xs">
+                              {o.profiles?.full_name || "Customer"}
+                            </p>
+                            <p className="text-[10px] text-stone-500 font-mono mt-0.5">
+                              {o.phone}
+                            </p>
+                          </div>
+                        </td>
+
+                        <td className="py-4 px-4 font-mono font-bold text-stone-900">
+                          {formatPrice(o.total_price)}
+                        </td>
+
+                        {/* Status & Valid Transition Buttons */}
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              o.status === "completed" ? "bg-emerald-100 text-emerald-800" :
+                              o.status === "ready" ? "bg-indigo-100 text-indigo-800" :
+                              o.status === "in_production" ? "bg-purple-100 text-purple-800" :
+                              o.status === "approved" ? "bg-blue-100 text-blue-800" :
+                              o.status === "rejected" || o.status === "cancelled" ? "bg-red-100 text-red-800" :
+                              "bg-amber-100 text-amber-800"
+                            }`}>
+                              {o.status.replace("_", " ")}
+                            </span>
+
+                            {/* Valid Next Transition Controls */}
+                            {o.status === "approved" && (
+                              <button
+                                disabled={isUpdating}
+                                onClick={() => handleStatusChange(o.id, "in_production")}
+                                className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                                title="Start printing & production"
+                              >
+                                <Package size={11} />
+                                <span>Start Production</span>
+                              </button>
+                            )}
+
+                            {o.status === "in_production" && (
+                              <button
+                                disabled={isUpdating}
+                                onClick={() => handleStatusChange(o.id, "ready")}
+                                className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                                title="Mark ready for delivery dispatch"
+                              >
+                                <Truck size={11} />
+                                <span>Mark Ready</span>
+                              </button>
+                            )}
+
+                            {o.status === "ready" && (
+                              <button
+                                disabled={isUpdating}
+                                onClick={() => handleStatusChange(o.id, "completed")}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                                title="Confirm delivery dispatch completed"
+                              >
+                                <Check size={11} />
+                                <span>Complete</span>
+                              </button>
+                            )}
+
+                            {o.status === "pending_verification" && (
+                              <Link
+                                href={`/admin/payments`}
+                                className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition-all flex items-center gap-1"
+                              >
+                                <span>Verify</span>
+                                <ArrowRight size={11} />
+                              </Link>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-4 px-4 text-stone-400 text-[11px]">
+                          {new Date(o.created_at).toLocaleDateString()}
+                        </td>
+
+                        <td className="py-4 px-6 text-right">
+                          <button
+                            onClick={() => openOrderDetail(o)}
+                            className="px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            Inspect
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

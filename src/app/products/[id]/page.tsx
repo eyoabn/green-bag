@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { uploadFileSafely } from "@/utils/fileUpload";
+import { StickyBottomBar } from "@/components/StickyBottomBar";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, isValidUUID, AppUser } from "@/utils/auth";
@@ -566,33 +567,50 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                       <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">2</span>
                       Contact & Delivery Details
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                      <input 
-                        type="text" 
-                        placeholder="Full Name / Store Name"
-                        required
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        className="p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
-                      />
-                      <input 
-                        type="tel" 
-                        placeholder="Phone (e.g. 0911234567)"
-                        required
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        className="p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
-                      />
-                    </div>
-                    <div>
-                      <input 
-                        type="text" 
-                        placeholder="Delivery Address (e.g. Bole Medhanialem, Addis Ababa)"
-                        required
-                        value={deliveryAddress}
-                        onChange={(e) => setDeliveryAddress(e.target.value)}
-                        className="w-full p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
-                      />
+                    <div className="space-y-3 mb-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-stone-700 block mb-1">
+                          Full Name or Business Name
+                        </label>
+                        <input 
+                          type="text" 
+                          autoComplete="name"
+                          placeholder="Your Name"
+                          required
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-stone-700 block mb-1">
+                          Phone Number (for SMS confirmation)
+                        </label>
+                        <input 
+                          type="tel" 
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder="e.g. 0911234567"
+                          required
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-stone-700 block mb-1">
+                          Delivery Address in Ethiopia
+                        </label>
+                        <input 
+                          type="text" 
+                          autoComplete="street-address"
+                          placeholder="e.g. Bole Medhanialem, Addis Ababa"
+                          required
+                          value={deliveryAddress}
+                          onChange={(e) => setDeliveryAddress(e.target.value)}
+                          className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -704,7 +722,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                       {isSubmitting ? (
                         <>
                           <Sparkles size={16} className="animate-spin" />
-                          <span>Processing Request...</span>
+                          <span>Placing Order...</span>
                         </>
                       ) : (
                         <>
@@ -737,6 +755,26 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
 
+        {/* Mobile Sticky Action Bar */}
+        {!orderConfirmed && product.is_available !== false && (
+          <StickyBottomBar>
+            <div>
+              <span className="text-[10px] text-stone-500 block uppercase font-bold">Estimated</span>
+              <span className="text-base font-bold text-[#8C4B31]">Total: {totalPrice} ETB</span>
+            </div>
+            <button
+              onClick={() => {
+                const formEl = document.querySelector("form");
+                if (formEl) {
+                  formEl.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className="btn-primary touch-target text-xs px-6"
+            >
+              Order Now
+            </button>
+          </StickyBottomBar>
+        )}
       </div>
     </div>
   );

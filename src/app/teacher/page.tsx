@@ -19,6 +19,7 @@ import {
   LogOut
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 interface TeacherSession {
   id: string;
@@ -153,7 +154,7 @@ export default function TeacherDashboardPage() {
   const totalStudents = sessions.reduce((acc, s) => acc + s.confirmedCount, 0);
 
   return (
-    <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
+    <div className="flex flex-col min-h-screen pt-24 pb-28 md:pb-20 bg-[#F9F6F0]">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full">
         
         {/* Header Section */}
@@ -333,6 +334,8 @@ export default function TeacherDashboardPage() {
         </div>
 
       </div>
+
+      <MobileBottomNav role="teacher" />
     </div>
   );
 }

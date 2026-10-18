@@ -114,12 +114,23 @@ export async function GET() {
       });
 
     // 5. Upcoming Sessions
-    const { data: upcomingSessionsList, count: upcomingSessionsCount } = await supabase
+    const { data: upcomingRaw, count: upcomingSessionsCount } = await supabase
       .from("class_sessions")
-      .select("id, title, type, starts_at, ends_at, status, capacity, teacher_name", { count: "exact" })
+      .select("id, title, type, starts_at, ends_at, status, capacity, teacher:teacher_id(full_name)", { count: "exact" })
       .in("status", ["scheduled", "live"])
       .order("starts_at", { ascending: true })
       .limit(5);
+
+    const upcomingSessionsList = (upcomingRaw || []).map((s: any) => ({
+      id: s.id,
+      title: s.title,
+      type: s.type,
+      starts_at: s.starts_at,
+      ends_at: s.ends_at,
+      status: s.status,
+      capacity: s.capacity,
+      teacher_name: s.teacher?.full_name || "Guild Artisan",
+    }));
 
     // 6. New Designs
     const { count: newDesignsCount } = await supabase

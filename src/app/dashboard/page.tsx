@@ -300,8 +300,87 @@ function CustomerDashboardContent() {
           </div>
         </div>
 
+        {/* What Needs My Attention Now (Principle 5) */}
+        {!loading && (
+          (() => {
+            const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "pending_payment" || (o.status === "rejected"));
+            const pendingQuotes = designs.filter((d) => d.status === "quoted");
+            const readyClasses = enrollments.filter((e) => (e.status === "verified" || e.status === "approved") && e.class_sessions?.type === "live");
+
+            const hasAttentionItems = pendingOrders.length > 0 || pendingQuotes.length > 0 || readyClasses.length > 0;
+            if (!hasAttentionItems) return null;
+
+            return (
+              <div className="mb-8 p-5 sm:p-6 rounded-3xl bg-amber-50/80 border border-amber-200/90 shadow-xs space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                    Needs Your Attention Now
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {pendingOrders.map((o) => (
+                    <div key={o.id} className="bg-white p-4 rounded-2xl border border-amber-200/60 flex items-center justify-between gap-3">
+                      <div>
+                        <span className="font-mono text-xs font-bold text-stone-900">Order {o.order_number}</span>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                          {o.status === "rejected" ? "Receipt was rejected. Please re-upload." : "Awaiting bank transfer receipt."}
+                        </p>
+                      </div>
+                      <Link
+                        href={`/dashboard/orders/${o.id}`}
+                        className="btn-primary py-2.5 px-4 text-xs font-bold shrink-0 flex items-center gap-1"
+                      >
+                        <span>Upload Proof</span>
+                        <ArrowRight size={13} />
+                      </Link>
+                    </div>
+                  ))}
+
+                  {pendingQuotes.map((d) => (
+                    <div key={d.id} className="bg-white p-4 rounded-2xl border border-amber-200/60 flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-bold text-stone-900">Custom Packaging Quote</span>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                          Quoted at <strong className="text-[#8C4B31]">{d.quoted_price} ETB</strong>. Ready for review.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab("designs")}
+                        className="btn-primary py-2.5 px-4 text-xs font-bold shrink-0 flex items-center gap-1"
+                      >
+                        <span>Review Quote</span>
+                        <ArrowRight size={13} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {readyClasses.map((c) => (
+                    <div key={c.id} className="bg-white p-4 rounded-2xl border border-emerald-200 flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-bold text-stone-900">{c.class_sessions?.title}</span>
+                        <p className="text-[11px] text-emerald-700 mt-0.5">
+                          Verified admission. Virtual LiveKit room ready.
+                        </p>
+                      </div>
+                      <Link
+                        href={`/learn/live/${c.class_sessions?.id}`}
+                        className="btn-primary py-2.5 px-4 text-xs font-bold shrink-0 flex items-center gap-1"
+                      >
+                        <Video size={13} />
+                        <span>Join Live</span>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()
+        )}
+
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 border-b border-stone-200">
+        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 border-b border-stone-200 no-scrollbar">
           {[
             { id: "orders", label: `Retail Orders (${orders.length})`, icon: ShoppingBag },
             { id: "classes", label: `Craft Workshops (${enrollments.length})`, icon: BookOpen },
@@ -314,9 +393,9 @@ function CustomerDashboardContent() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`px-5 py-3 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+                className={`px-5 py-3 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 min-h-[44px] cursor-pointer ${
                   isActive
-                    ? "bg-[#1E3B2E] text-white shadow-sm"
+                    ? "bg-[#1E3B2E] text-white shadow-xs"
                     : "bg-white text-stone-700 hover:bg-stone-100 border border-stone-200"
                 }`}
               >

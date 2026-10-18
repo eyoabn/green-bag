@@ -2,24 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { requireRole } from "@/utils/roles";
 
-// Helper to notify all enrolled students when a class is cancelled
-async function notifyEnrolledStudentsOfCancellation(supabase: any, sessionId: string, classTitle: string, startsAt?: string) {
-  try {
-    const { data: enrolledStudents } = await supabase
-      .from("enrollments")
-      .select("student_id")
-      .eq("session_id", sessionId)
-      .neq("status", "cancelled");
+import { pool } from "@/utils/db";
 
-    if (enrolledStudents && enrolledStudents.length > 0) {
+// Helper to notify all enrolled students when a class is cancelled
+async function notifyEnrolledStudentsOfCancellation(sessionId: string, classTitle: string, startsAt?: string) {
+  try {
+    const res = await pool.query(
+      `SELECT student_id FROM public.enrollments WHERE session_id = $1 AND status != 'cancelled'`,
+      [sessionId]
+    );
+
+    if (res.rows && res.rows.length > 0) {
       const formattedDate = startsAt ? new Date(startsAt).toLocaleString("en-US", { timeZone: "Africa/Addis_Ababa" }) : "the scheduled time";
-      const notifications = enrolledStudents.map((e: any) => ({
-        user_id: e.student_id,
-        title: `Class Cancelled: ${classTitle}`,
-        body: `The class session "${classTitle}" scheduled for ${formattedDate} (Addis Ababa Time) has been cancelled by the administration.`,
-        link: "/dashboard/classes",
-      }));
-      await supabase.from("notifications").insert(notifications);
+      for (const row of res.rows) {
+        await pool.query(
+          `INSERT INTO public.notifications (user_id, title, body, link)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            row.student_id,
+            `Class Cancelled: ${classTitle}`,
+            `The class session "${classTitle}" scheduled for ${formattedDate} (Addis Ababa Time) has been cancelled by the administration.`,
+            "/dashboard/classes"
+          ]
+        );
+      }
     }
   } catch (err) {
     console.error("Failed to notify enrolled students of cancellation:", err);
@@ -170,7 +176,7 @@ export async function PATCH(
 
     // If cancelled, notify all enrolled students
     if (updates.status === "cancelled") {
-      await notifyEnrolledStudentsOfCancellation(supabase, id, updated.title, updated.starts_at);
+      await notifyEnrolledStudentsOfCancellation(id, updated.title, updated.starts_at);
     }
 
     await supabase.from("audit_log").insert({

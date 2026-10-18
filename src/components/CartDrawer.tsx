@@ -153,20 +153,20 @@ export default function CartDrawer() {
                       <div className="flex items-center border border-stone-200 rounded-full bg-stone-50 overflow-hidden">
                         <button
                           onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                          className="w-6 h-6 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors cursor-pointer"
                           aria-label="Decrease quantity"
                         >
-                          <Minus size={11} />
+                          <Minus size={13} />
                         </button>
                         <span className="w-8 text-center text-xs font-bold text-stone-800">
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                          className="w-6 h-6 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors cursor-pointer"
                           aria-label="Increase quantity"
                         >
-                          <Plus size={11} />
+                          <Plus size={13} />
                         </button>
                       </div>
 
@@ -175,7 +175,7 @@ export default function CartDrawer() {
                         <div className="text-xs font-bold text-[#1E3B2E]">
                           {formatPrice(item.price * item.quantity)}
                         </div>
-                        <div className="text-[9px] text-stone-400">
+                        <div className="text-[10px] text-stone-400">
                           {formatPrice(item.price)} each
                         </div>
                       </div>
@@ -188,22 +188,22 @@ export default function CartDrawer() {
 
           {/* Footer with Checkout Actions */}
           {items.length > 0 && (
-            <div className="p-6 border-t border-stone-200/80 bg-white space-y-4">
+            <div className="p-5 sm:p-6 border-t border-stone-200 bg-white space-y-4 pb-safe">
               {/* Delivery and Guarantee Badges */}
-              <div className="flex items-center justify-between text-[11px] text-stone-500 px-1">
+              <div className="flex items-center justify-between text-xs text-stone-500 px-1">
                 <span className="flex items-center gap-1.5">
-                  <Truck size={13} className="text-[#8C4B31]" />
-                  Addis Delivery Included
+                  <Truck size={14} className="text-[#8C4B31]" />
+                  Delivery Included
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <ShieldCheck size={13} className="text-emerald-600" />
-                  Direct Bank Settlement
+                  <ShieldCheck size={14} className="text-emerald-600" />
+                  Bank Settlement
                 </span>
               </div>
 
               {/* Subtotal */}
               <div className="flex items-baseline justify-between pt-2 border-t border-stone-100">
-                <span className="text-xs font-medium text-stone-600">Subtotal (ETB computed)</span>
+                <span className="text-xs font-medium text-stone-600">Total</span>
                 <span className="font-serif text-xl font-bold text-stone-900">
                   {formatPrice(subtotal)}
                 </span>
@@ -216,22 +216,22 @@ export default function CartDrawer() {
                     setIsCartOpen(false);
                     router.push("/checkout");
                   }}
-                  className="w-full py-3.5 rounded-full bg-[#1E3B2E] text-white font-bold text-xs hover:bg-[#8C4B31] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer group"
+                  className="w-full btn-primary py-3.5 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>Proceed to Settlement & Checkout</span>
-                  <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+                  <span>Go to Checkout</span>
+                  <ArrowRight size={15} />
                 </button>
 
                 <div className="flex items-center justify-between pt-1">
                   <button
                     onClick={clearCart}
-                    className="text-[11px] text-stone-400 hover:text-red-500 transition-colors"
+                    className="text-xs text-stone-400 hover:text-red-500 transition-colors py-2"
                   >
                     Clear Cart
                   </button>
                   <button
                     onClick={() => setIsCartOpen(false)}
-                    className="text-[11px] text-stone-500 hover:text-stone-800 font-medium"
+                    className="text-xs text-stone-500 hover:text-stone-800 font-medium py-2"
                   >
                     Continue Browsing
                   </button>

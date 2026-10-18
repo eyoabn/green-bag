@@ -51,8 +51,8 @@ export default function Footer() {
       .catch(() => {});
   }, []);
 
-  // Hide on admin and dashboard internal pages
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/dashboard")) {
+  // Hide on admin, teacher, and dashboard internal pages
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/dashboard") || pathname?.startsWith("/teacher")) {
     return null;
   }
 

@@ -26,6 +26,7 @@ import {
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import { createClient } from "@/utils/supabase/client";
 import NotificationBell from "@/components/NotificationBell";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -310,9 +311,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main className="flex-1 p-6 sm:p-8">
+        <main className="flex-1 p-4 sm:p-8 pb-24 md:pb-8">
           {children}
         </main>
+
+        {/* Mobile Primary Bottom Tab Navigation */}
+        <MobileBottomNav role="admin" />
       </div>
     </div>
   );

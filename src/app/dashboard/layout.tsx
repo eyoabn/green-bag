@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { User, ShoppingBag, BookOpen, LogOut, Menu, X, ArrowLeft, Sparkles, Layers, ShieldCheck, ArrowRight, Bell } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -182,9 +183,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main Content Stage */}
-      <main className="flex-1 md:ml-64 p-6 sm:p-8">
+      <main className="flex-1 md:ml-64 p-4 sm:p-8 pb-24 md:pb-8">
         {children}
       </main>
+
+      {/* Mobile Primary Bottom Tab Navigation */}
+      <MobileBottomNav role={user?.role} />
     </div>
   );
 }

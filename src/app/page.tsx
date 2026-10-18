@@ -1,44 +1,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useCurrency } from "@/components/CurrencyContext";
-import WorksPortfolioSection from "@/components/WorksPortfolioSection";
 import { createClient } from "@/utils/supabase/client";
 import { 
   ShoppingBag, 
   BookOpen, 
   ArrowRight, 
-  Sparkles, 
-  Leaf, 
-  ShieldCheck, 
-  Users, 
-  TrendingUp, 
   CheckCircle2, 
   Video, 
-  Calculator,
-  Download,
+  Clock, 
+  MapPin, 
+  Phone, 
+  Mail, 
+  CreditCard,
+  Building2,
   Calendar,
-  ExternalLink,
-  ChevronRight,
-  Clock,
-  Layers,
-  Award
+  Sparkles
 } from "lucide-react";
 
-// Dynamically import ThreeBag with zero SSR to prevent hydration issues
+// Dynamically import 3D Bag with zero SSR to prevent hydration issues
 const ThreeBagScene = dynamic(() => import("@/components/ThreeBag"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full min-h-[520px] flex flex-col items-center justify-center text-stone-400 bg-stone-100/60 rounded-3xl animate-pulse">
-      <div className="w-20 h-24 border-2 border-dashed border-stone-300 rounded-lg flex items-center justify-center mb-4">
-        <Sparkles size={28} className="text-[#8C4B31] animate-spin" />
+    <div className="w-full h-full min-h-[360px] flex flex-col items-center justify-center text-stone-400 bg-stone-100 rounded-2xl animate-pulse">
+      <div className="w-12 h-14 border-2 border-dashed border-stone-300 rounded-lg flex items-center justify-center mb-3">
+        <Sparkles size={20} className="text-[#8C4B31]" />
       </div>
-      <p className="font-serif text-base font-semibold text-stone-600">Initializing 3D Studio Canvas...</p>
-      <p className="text-xs text-stone-400 mt-1">100% Offline Procedural Three.js Model</p>
+      <p className="text-xs font-semibold text-stone-600">Loading 3D bag...</p>
     </div>
   ),
 });
@@ -46,30 +38,11 @@ const ThreeBagScene = dynamic(() => import("@/components/ThreeBag"), {
 export default function Home() {
   const { formatPrice } = useCurrency();
   
-  // Interactive ESG & Volume Calculator State
-  const [bagVolume, setBagVolume] = useState<number>(15000);
-  const [selectedBagType, setSelectedBagType] = useState<"standard" | "coffee" | "luxury">("standard");
+  // Adaptive 3D rendering: only render on desktop/tablet without data saver or reduced motion
+  const [canRender3D, setCanRender3D] = useState(false);
 
-  // Calculate ESG & Pricing
-  const plasticAvoidedKg = Math.round(bagVolume * 0.045);
-  const co2AvoidedKg = Math.round(bagVolume * 0.082);
-  const unitPrice = selectedBagType === "standard" 
-    ? (bagVolume > 20000 ? 12.5 : 14.0) 
-    : selectedBagType === "coffee" 
-    ? (bagVolume > 20000 ? 16.0 : 18.5) 
-    : (bagVolume > 20000 ? 21.0 : 24.0);
-  const totalEstimateEtb = Math.round(bagVolume * unitPrice);
-
-  // Real Database Stats
-  const [stats, setStats] = useState({
-    bagsManufactured: 0,
-    tonsDiverted: 0,
-    artisans: 0,
-  });
-
-  // Dynamic Featured Products, Workshops, and Company Info
+  // Dynamic Content States
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
-  const [totalProductCount, setTotalProductCount] = useState<number>(0);
   const [workshops, setWorkshops] = useState<any[]>([]);
   const [companySettings, setCompanySettings] = useState<{
     company_name: string;
@@ -77,621 +50,311 @@ export default function Home() {
     contact_phone: string;
   }>({
     company_name: "Ethiopia Arenguade Paper Product PLC",
-    contact_email: "invest@arenguade.et",
+    contact_email: "orders@arenguade.et",
     contact_phone: "+251 911 223 344",
   });
-  const [productsLoading, setProductsLoading] = useState<boolean>(true);
-  const [workshopsLoading, setWorkshopsLoading] = useState<boolean>(true);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [workshopsLoading, setWorkshopsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchStats() {
-      const supabase = createClient();
-      try {
-        // Fetch total quantity of fulfilled orders
-        const { data: orders } = await supabase.from('orders').select('quantity').eq('status', 'fulfilled');
-        let totalBags = 0;
-        if (orders) {
-          totalBags = orders.reduce((acc, order) => acc + (order.quantity || 0), 0);
-        }
-        
-        // Fetch custom designs in production or shipped
-        const { data: designs } = await supabase.from('designs').select('note').in('status', ['in_production', 'shipped']);
-        if (designs) {
-          designs.forEach(d => {
-            try {
-              const note = JSON.parse(d.note || "{}");
-              if (note.quantity) totalBags += Number(note.quantity);
-            } catch (e) {}
-          });
-        }
-        
-        // Fetch artisans (profiles with role student or admin as a proxy)
-        const { count: artisanCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-
-        // Calculate real tons (assume 1 bag = 50 grams = 0.05kg)
-        const tons = (totalBags * 0.05) / 1000;
-
-        setStats({
-          bagsManufactured: totalBags,
-          tonsDiverted: Number(tons.toFixed(2)),
-          artisans: artisanCount || 10,
-        });
-      } catch (e) {
-        console.error("Error fetching stats:", e);
-      }
+    // 1. Device check for 3D hero
+    const isMobile = window.innerWidth < 768;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isSaveData = (navigator as any).connection?.saveData === true;
+    if (!isMobile && !prefersReducedMotion && !isSaveData) {
+      setCanRender3D(true);
     }
 
-    async function fetchFeatured() {
+    // 2. Fetch Featured Products from DB
+    async function loadData() {
       try {
         setProductsLoading(true);
-        const res = await fetch("/api/products?featured=true&pageSize=3");
+        const res = await fetch("/api/products?featured=true&pageSize=6");
         const json = await res.json();
         if (json.products && json.products.length > 0) {
           setFeaturedProducts(json.products);
-          setTotalProductCount(json.pagination?.total || json.products.length);
         } else {
-          // Fallback to top available products if none specifically flagged as featured
-          const fallbackRes = await fetch("/api/products?pageSize=3");
+          const fallbackRes = await fetch("/api/products?pageSize=6");
           const fallbackJson = await fallbackRes.json();
-          if (fallbackJson.products) {
-            setFeaturedProducts(fallbackJson.products);
-            setTotalProductCount(fallbackJson.pagination?.total || fallbackJson.products.length);
-          }
+          if (fallbackJson.products) setFeaturedProducts(fallbackJson.products);
         }
-      } catch (err) {
-        console.error("Error loading featured products:", err);
+      } catch (e) {
+        console.error("Products fetch error:", e);
       } finally {
         setProductsLoading(false);
       }
-    }
 
-    async function fetchWorkshops() {
+      // 3. Fetch Workshops from DB
       try {
         setWorkshopsLoading(true);
-        const res = await fetch("/api/classes?status=scheduled");
+        const res = await fetch("/api/classes?upcoming=true&pageSize=2");
         const json = await res.json();
-        if (json.sessions && json.sessions.length > 0) {
-          setWorkshops(json.sessions.slice(0, 2));
-        }
-      } catch (err) {
-        console.error("Error loading workshops:", err);
+        if (json.classes) setWorkshops(json.classes);
+      } catch (e) {
+        console.error("Workshops fetch error:", e);
       } finally {
         setWorkshopsLoading(false);
       }
-    }
 
-    async function fetchCompanySettings() {
+      // 4. Fetch Company Settings
       try {
-        const res = await fetch("/api/settings");
-        const json = await res.json();
-        if (json.settings) {
-          setCompanySettings({
-            company_name: json.settings.company_name || "Ethiopia Arenguade Paper Product PLC",
-            contact_email: json.settings.contact_email || "invest@arenguade.et",
-            contact_phone: json.settings.contact_phone || "+251 911 223 344",
-          });
+        const supabase = createClient();
+        const { data } = await supabase.from("site_settings").select("key, value");
+        if (data && data.length > 0) {
+          const cfg: any = {};
+          data.forEach((row) => (cfg[row.key] = row.value));
+          setCompanySettings((prev) => ({
+            company_name: cfg.company_name || prev.company_name,
+            contact_email: cfg.contact_email || prev.contact_email,
+            contact_phone: cfg.contact_phone || prev.contact_phone,
+          }));
         }
-      } catch (err) {
-        console.error("Error loading company settings:", err);
+      } catch (e) {
+        console.warn("Settings fetch fallback:", e);
       }
     }
 
-    fetchStats();
-    fetchFeatured();
-    fetchWorkshops();
-    fetchCompanySettings();
+    loadData();
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen pt-20">
+    <div className="flex flex-col min-h-screen pt-16 sm:pt-20">
       
       {/* 1. HERO SECTION */}
-      <section className="relative w-full min-h-[92vh] flex items-center justify-center pt-8 pb-16 overflow-hidden">
-        
-        {/* Ambient Craft Glow Background */}
-        <div className="absolute top-12 right-0 w-[550px] h-[550px] bg-[#D7A977]/20 rounded-full blur-3xl -z-10 pointer-events-none premium-glow" />
-        <div className="absolute bottom-10 left-10 w-[450px] h-[450px] bg-[#2C4A3B]/10 rounded-full blur-3xl -z-10 pointer-events-none premium-glow" />
-        
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <section className="relative w-full py-12 md:py-20 border-b border-stone-200 bg-[#F9F6F0]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
             
-            {/* Left Column: Editorial & Value Proposition */}
-            <motion.div 
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="lg:col-span-6 flex flex-col gap-6"
-            >
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-200/70 border border-stone-300/60 w-fit">
-                <span className="w-2 h-2 rounded-full bg-[#8C4B31] animate-pulse" />
+            {/* Left: Value Proposition */}
+            <div className="md:col-span-7 flex flex-col gap-5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-200/70 border border-stone-300 w-fit">
+                <span className="w-2 h-2 rounded-full bg-[#1E3B2E]" />
                 <span className="text-[11px] font-bold tracking-wider text-stone-700 uppercase">
-                  Ethiopia&apos;s Eco-Packaging Pioneer
+                  Addis Ababa • Eco-Packaging
                 </span>
               </div>
 
-              {/* Main Headline */}
-              <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.08] text-stone-900 tracking-tight">
-                Crafted from <br />
-                the Earth. <br />
-                <span className="italic font-normal text-[#8C4B31]">Engineered</span> for <br />
-                Tomorrow.
+              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] text-stone-900 tracking-tight">
+                Artisanal Kraft Packaging & Craft Academy
               </h1>
 
-              {/* Sub-paragraph */}
-              <p className="text-stone-600 text-lg sm:text-xl max-w-xl leading-relaxed font-normal">
-                Replacing single-use plastic with 100% biodegradable artisanal kraft packaging. 
-                Supplying premier Ethiopian coffee roasters, luxury boutiques, and teaching the art of paper making through our interactive academy.
+              <p className="text-stone-600 text-base sm:text-lg max-w-xl leading-relaxed">
+                100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. 
+                Learn the trade in our Addis Ababa workshops or join live online masterclasses.
               </p>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              {/* One primary action, one secondary */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <Link 
                   href="/products" 
-                  className="flex items-center gap-2 bg-[#1E3B2E] text-white px-8 py-4 rounded-full text-sm font-semibold hover:bg-[#8C4B31] transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5 group"
+                  className="btn-primary touch-target text-center"
                 >
                   <ShoppingBag size={18} />
-                  <span>Explore 2026 Catalog</span>
-                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  <span>Browse Packaging Catalog</span>
+                  <ArrowRight size={16} />
                 </Link>
 
                 <Link 
-                  href="/learn" 
-                  className="flex items-center gap-2 bg-white/90 text-stone-800 border border-stone-300/80 px-7 py-4 rounded-full text-sm font-semibold hover:bg-stone-50 hover:border-stone-400 transition-all shadow-sm"
+                  href="/learn/schedule" 
+                  className="btn-secondary touch-target text-center"
                 >
                   <BookOpen size={18} className="text-[#8C4B31]" />
-                  <span>Craft Academy</span>
+                  <span>Join a Workshop</span>
                 </Link>
               </div>
 
-              {/* Investor Trust Indicators */}
-              <div className="pt-6 border-t border-stone-300/60 grid grid-cols-3 gap-4">
-                <div>
-                  <p className="font-serif text-2xl font-bold text-stone-900">100%</p>
-                  <p className="text-xs text-stone-500 font-medium">Biodegradable</p>
-                </div>
-                <div>
-                  <p className="font-serif text-2xl font-bold text-[#8C4B31]">CBE / Telebirr</p>
-                  <p className="text-xs text-stone-500 font-medium">Instant Verified</p>
-                </div>
-                <div>
-                  <p className="font-serif text-2xl font-bold text-[#1E3B2E]">LiveKit</p>
-                  <p className="text-xs text-stone-500 font-medium">Global Classes</p>
-                </div>
+              {/* Trust Badges */}
+              <div className="pt-4 mt-2 border-t border-stone-200 flex flex-wrap items-center gap-4 text-xs font-semibold text-stone-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 size={16} className="text-[#1E3B2E]" /> 100% Recyclable Kraft
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 size={16} className="text-[#1E3B2E]" /> CBE, Telebirr & Awash
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 size={16} className="text-[#1E3B2E]" /> Live WebRTC Video
+                </span>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Right Column: Interactive 3D Paper Bag Showcase */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.9, delay: 0.15 }}
-              className="lg:col-span-6 relative hover-lift"
-            >
-              <div className="relative h-[580px] sm:h-[640px] w-full rounded-3xl premium-glass flex items-center justify-center overflow-hidden border border-white/40 shadow-2xl shadow-[#1E3B2E]/10">
-                
-                {/* 3D Scene Component */}
-                <ThreeBagScene />
-
-                {/* Live 3D Interaction Hint Badge */}
-                <div className="absolute bottom-5 right-5 z-20 bg-white/85 backdrop-blur-md px-4 py-2 rounded-full border border-stone-200 shadow-sm flex items-center gap-2.5 pointer-events-none">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8C4B31] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#8C4B31]"></span>
-                  </span>
-                  <span className="text-[11px] font-bold tracking-wider uppercase text-stone-700">
-                    360° Interactive Studio
-                  </span>
-                </div>
+            {/* Right: 3D Studio Bag (Desktop) or Fast Optimized Static Image (Mobile) */}
+            <div className="md:col-span-5">
+              <div className="relative aspect-square w-full rounded-2xl bg-white border border-stone-200 shadow-sm flex items-center justify-center overflow-hidden">
+                {canRender3D ? (
+                  <>
+                    <ThreeBagScene />
+                    <div className="absolute bottom-3 right-3 bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold text-stone-600 border border-stone-200 shadow-xs pointer-events-none">
+                      360° Interactive Bag
+                    </div>
+                  </>
+                ) : (
+                  <div className="relative w-full h-full">
+                    <Image
+                      src="/images/photo_3_2026-09-05_00-36-02.jpg"
+                      alt="Ethiopia Arenguade Luxury Paper Bag"
+                      fill
+                      priority
+                      sizes="(max-width: 768px) 100vw, 500px"
+                      className="object-cover"
+                    />
+                    <div className="absolute bottom-3 left-3 bg-stone-900/80 backdrop-blur-xs text-white px-3 py-1 rounded-full text-[10px] font-medium">
+                      Bespoke Ethiopian Kraft
+                    </div>
+                  </div>
+                )}
               </div>
-            </motion.div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* 2. INVESTOR SCALE & ESG METRICS BAR */}
-      <section className="bg-[#1E3B2E] text-white py-14 border-y border-stone-800">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-y md:divide-y-0 md:divide-x divide-emerald-800/60">
-            
-            <div className="flex flex-col items-center text-center px-4 pt-4 md:pt-0">
-              <TrendingUp className="text-[#E0B382] mb-2" size={28} />
-              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">{stats.bagsManufactured.toLocaleString()}</h3>
-              <p className="text-xs sm:text-sm text-emerald-200 mt-1 font-medium">Bags Manufactured & Delivered</p>
-            </div>
-
-            <div className="flex flex-col items-center text-center px-4 pt-4 md:pt-0">
-              <Leaf className="text-[#E0B382] mb-2" size={28} />
-              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">{stats.tonsDiverted.toLocaleString()} Tons</h3>
-              <p className="text-xs sm:text-sm text-emerald-200 mt-1 font-medium">Single-Use Plastics Diverted</p>
-            </div>
-
-            <div className="flex flex-col items-center text-center px-4 pt-4 md:pt-0">
-              <Users className="text-[#E0B382] mb-2" size={28} />
-              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">{stats.artisans}</h3>
-              <p className="text-xs sm:text-sm text-emerald-200 mt-1 font-medium">Registered Platform Users</p>
-            </div>
-
-            <div className="flex flex-col items-center text-center px-4 pt-4 md:pt-0">
-              <Award className="text-[#E0B382] mb-2" size={28} />
-              <h3 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">90 Days</h3>
-              <p className="text-xs sm:text-sm text-emerald-200 mt-1 font-medium">100% Soil Biodegradation</p>
             </div>
 
           </div>
         </div>
       </section>
 
-      {/* 3. FEATURED PRODUCTS & PACKAGING SUITE */}
-      <section className="py-24 bg-[#F9F6F0]">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
-          
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+      {/* 2. SIGNATURE PRODUCTS */}
+      <section className="py-16 bg-[#F9F6F0]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest text-[#8C4B31] uppercase mb-2">
-                <Sparkles size={14} />
-                Bespoke Ethiopian Packaging
-              </div>
-              <h2 className="font-serif text-4xl sm:text-5xl font-bold text-stone-900 tracking-tight">
-                Our Signature Collections
+              <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase">
+                Featured Collections
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
+                Standard & Custom Packaging
               </h2>
-              <p className="text-stone-600 text-base sm:text-lg mt-3 max-w-xl">
-                Manufactured with heavy Ethiopian virgin kraft, food-safe vegetable inks, and reinforced handles.
-              </p>
             </div>
 
             <Link 
               href="/products" 
-              className="inline-flex items-center gap-2 text-[#1E3B2E] font-bold text-sm hover:text-[#8C4B31] transition-colors group self-start md:self-auto"
+              className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
             >
-              <span>View All {totalProductCount > 0 ? `${totalProductCount} ` : ""}Products</span>
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              <span>View All Products</span>
+              <ArrowRight size={14} />
             </Link>
           </div>
 
-          {/* Product Cards Grid dynamically loaded from database */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {productsLoading ? (
               Array.from({ length: 3 }).map((_, idx) => (
-                <div key={idx} className="bg-white rounded-3xl p-6 border border-stone-200 animate-pulse h-96 flex flex-col justify-between">
-                  <div>
-                    <div className="h-64 rounded-2xl bg-stone-200 mb-4" />
-                    <div className="h-4 bg-stone-200 rounded w-2/3 mb-2" />
-                    <div className="h-3 bg-stone-200 rounded w-full" />
-                  </div>
-                  <div className="pt-6 border-t border-stone-100 flex justify-between">
-                    <div className="h-6 bg-stone-200 rounded w-20" />
-                    <div className="h-8 bg-stone-200 rounded w-24" />
-                  </div>
+                <div key={idx} className="app-card animate-pulse h-80 flex flex-col justify-between">
+                  <div className="h-44 bg-stone-100 rounded-xl mb-4" />
+                  <div className="h-4 bg-stone-100 rounded w-2/3 mb-2" />
+                  <div className="h-3 bg-stone-100 rounded w-full" />
                 </div>
               ))
             ) : featuredProducts.length > 0 ? (
               featuredProducts.map((product) => {
-                const img = (product.images && product.images[0]) || (product.image_urls && product.image_urls[0]) || "/images/photo_6_2026-09-05_00-36-03.jpg";
-                const specsText = product.specs 
-                  ? (typeof product.specs === "object" ? Object.values(product.specs).filter((v: any) => typeof v === 'string').slice(0, 2).join(" • ") : String(product.specs))
-                  : "Virgin Kraft • Eco-Friendly";
-
+                const img = (product.images && product.images[0]) || "/images/photo_6_2026-09-05_00-36-03.jpg";
                 return (
-                  <div 
-                    key={product.id}
-                    className="group bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-                  >
+                  <div key={product.id} className="app-card flex flex-col justify-between hover:border-stone-400 transition-colors">
                     <div>
-                      <div className="h-64 rounded-2xl bg-stone-100 relative overflow-hidden mb-6 group-hover:scale-[1.02] transition-transform duration-300">
+                      <div className="relative h-48 w-full rounded-xl overflow-hidden mb-4 bg-stone-100">
                         <Image 
-                          src={img}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
+                          src={img} 
+                          alt={product.name} 
+                          fill 
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover" 
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
-                        <span className="absolute top-3 left-3 bg-[#1E3B2E] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
-                          {product.category || "Eco Packaging"}
-                        </span>
-                        <span className="absolute bottom-3 left-3 text-white text-xs font-semibold drop-shadow-sm">
-                          {product.stock_quantity ? `${product.stock_quantity.toLocaleString()} in stock` : "Available Now"}
+                        <span className="absolute top-2.5 left-2.5 bg-[#1E3B2E] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                          {product.category || "Kraft"}
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide truncate max-w-[180px]">
-                          {specsText}
-                        </span>
-                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                          Food Safe
-                        </span>
-                      </div>
-                      <h3 className="font-serif text-2xl font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors line-clamp-1">
+                      <h3 className="font-serif text-lg font-bold text-stone-900 line-clamp-1">
                         {product.name}
                       </h3>
-                      <p className="text-stone-600 text-sm mt-2 leading-relaxed line-clamp-3">
-                        {product.description || "Artisanal biodegradable packaging designed and manufactured in Addis Ababa."}
+                      <p className="text-xs text-stone-600 mt-1 line-clamp-2">
+                        {product.description || "Artisanal biodegradable packaging manufactured in Addis Ababa."}
                       </p>
                     </div>
 
-                    <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
+                    <div className="pt-4 mt-4 border-t border-stone-100 flex items-center justify-between">
                       <div>
-                        <span className="text-xs text-stone-500 block">Unit price</span>
-                        <span className="text-xl font-bold text-[#8C4B31]">{formatPrice(product.price)}</span>
+                        <span className="text-[10px] text-stone-400 block uppercase">Price</span>
+                        <span className="text-base font-bold text-[#8C4B31]">{formatPrice(product.price)}</span>
                       </div>
                       <Link 
-                        href={`/products/${product.id}`} 
-                        className="px-5 py-2.5 rounded-full bg-stone-100 hover:bg-[#1E3B2E] hover:text-white text-stone-800 text-xs font-bold transition-all"
+                        href={`/products/${product.id}`}
+                        className="btn-primary touch-target text-xs py-2 px-4"
                       >
-                        Order Flow
+                        Order Now
                       </Link>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="col-span-3 text-center py-12 text-stone-500 bg-stone-50 rounded-3xl border border-stone-200">
-                <p>New featured collections arriving soon. Check back shortly!</p>
+              <div className="col-span-full text-center py-12 text-stone-500 app-card">
+                Products catalog updating. Please check back shortly.
               </div>
             )}
-
           </div>
-
         </div>
       </section>
 
-      {/* 3.5 RECENT WORKS & CLIENT PROJECTS SHOWCASE (NICE VIEW LIGHTBOX) */}
-      <WorksPortfolioSection limit={6} showViewAllButton={true} />
-
-      {/* 4. DUAL-REVENUE ENGINE BREAKDOWN (FOR INVESTORS & CLIENTS) */}
-      <section className="py-24 bg-white border-y border-stone-200">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
-          
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase">
-              The Arenguade Business Architecture
-            </span>
-            <h2 className="font-serif text-4xl sm:text-5xl font-bold text-stone-900 mt-2 tracking-tight">
-              A High-Margin Dual-Engine Model
-            </h2>
-            <p className="text-stone-600 text-lg mt-4">
-              We combine scalable manufacturing cash flows with recurring vocational academy tuition fees, creating an unshakeable commercial foundation.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            
-            {/* Engine 1: Manufacturing */}
-            <div className="bg-[#FAF7F2] rounded-3xl p-8 sm:p-10 border border-stone-300/80 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[#8C4B31]/5 rounded-full blur-2xl pointer-events-none" />
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#8C4B31] text-white flex items-center justify-center font-serif font-black text-xl mb-6 shadow-sm">
-                  1
-                </div>
-                <span className="text-xs font-bold tracking-wider text-[#8C4B31] uppercase">Engine 01 • B2B & Wholesale</span>
-                <h3 className="font-serif text-3xl font-bold text-stone-900 mt-1 mb-4">
-                  Industrial Packaging Manufacturing
-                </h3>
-                <p className="text-stone-600 text-base leading-relaxed mb-6">
-                  High-capacity semi-automated manufacturing facility in Addis Ababa producing up to 250,000 bags monthly. Long-term supply agreements with Ethiopian specialty coffee exporters, pharmacy chains, and supermarket brands.
-                </p>
-
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center gap-3 text-sm text-stone-700">
-                    <CheckCircle2 size={18} className="text-[#1E3B2E] shrink-0" />
-                    <span>Custom branded screen printing & hot foil stamping</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-stone-700">
-                    <CheckCircle2 size={18} className="text-[#1E3B2E] shrink-0" />
-                    <span>High gross margins (42%+) with local raw material sourcing</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-stone-700">
-                    <CheckCircle2 size={18} className="text-[#1E3B2E] shrink-0" />
-                    <span>Verified bank transfers via CBE & Telebirr</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-8 mt-8 border-t border-stone-200/80 flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-stone-500">Production Capacity</span>
-                  <p className="font-serif text-xl font-bold text-stone-900">250,000 Units / Mo</p>
-                </div>
-                <Link 
-                  href="/design-submission" 
-                  className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-semibold px-6 py-3 rounded-full transition-colors flex items-center gap-1.5"
-                >
-                  <span>Submit Custom Specs</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            </div>
-
-            {/* Engine 2: Craft Academy */}
-            <div className="bg-[#FAF7F2] rounded-3xl p-8 sm:p-10 border border-stone-300/80 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[#1E3B2E]/5 rounded-full blur-2xl pointer-events-none" />
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#1E3B2E] text-white flex items-center justify-center font-serif font-black text-xl mb-6 shadow-sm">
-                  2
-                </div>
-                <span className="text-xs font-bold tracking-wider text-[#1E3B2E] uppercase">Engine 02 • Education & Tech</span>
-                <h3 className="font-serif text-3xl font-bold text-stone-900 mt-1 mb-4">
-                  Arenguade Craft Academy
-                </h3>
-                <p className="text-stone-600 text-base leading-relaxed mb-6">
-                  Vocational mastery classes teaching youth, artisans, and entrepreneurs the technical trade of paper folding, handle installation, and box making. Delivered in-studio in Addis Ababa and globally via LiveKit interactive video streaming.
-                </p>
-
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center gap-3 text-sm text-stone-700">
-                    <CheckCircle2 size={18} className="text-[#8C4B31] shrink-0" />
-                    <span>In-person Addis Ababa workshops ({formatPrice(500)} - {formatPrice(1000)} / student)</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-stone-700">
-                    <CheckCircle2 size={18} className="text-[#8C4B31] shrink-0" />
-                    <span>Live online WebRTC video sessions powered by LiveKit SDK</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-stone-700">
-                    <CheckCircle2 size={18} className="text-[#8C4B31] shrink-0" />
-                    <span>Job placement pipeline directly into our manufacturing guild</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-8 mt-8 border-t border-stone-200/80 flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-stone-500">Next Live Session</span>
-                  <p className="font-serif text-xl font-bold text-stone-900">Virtual Origami Folds</p>
-                </div>
-                <Link 
-                  href="/learn/schedule" 
-                  className="bg-[#8C4B31] hover:bg-[#1E3B2E] text-white text-xs font-semibold px-6 py-3 rounded-full transition-colors flex items-center gap-1.5"
-                >
-                  <Video size={14} />
-                  <span>Book Class Seat</span>
-                </Link>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* 5. INTERACTIVE B2B & ESG CALCULATOR (INVESTOR DELIGHT) */}
-      <section className="py-24 bg-[#FAF7F2]">
-        <div className="max-w-5xl mx-auto px-6 sm:px-8">
-          
-          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-stone-300 shadow-xl">
-            
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-2xl bg-[#8C4B31]/10 text-[#8C4B31]">
-                <Calculator size={24} />
-              </div>
-              <div>
-                <span className="text-xs font-bold tracking-wider text-[#8C4B31] uppercase">Commercial & Impact Estimator</span>
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-                  Calculate Your B2B Volume & Environmental ROI
-                </h3>
-              </div>
-            </div>
-
-            <p className="text-stone-600 text-sm sm:text-base mb-8">
-              Adjust the monthly packaging volume below to see your wholesale cost alongside immediate ESG plastic-avoidance metrics.
-            </p>
-
-            {/* Controls */}
-            <div className="space-y-6 mb-10">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-stone-700">
-                    Monthly Order Volume (Bags)
-                  </label>
-                  <span className="font-mono text-lg font-bold text-[#1E3B2E]">
-                    {bagVolume.toLocaleString()} bags
-                  </span>
-                </div>
-                <input 
-                  type="range" 
-                  min="2000" 
-                  max="100000" 
-                  step="1000" 
-                  value={bagVolume} 
-                  onChange={(e) => setBagVolume(Number(e.target.value))}
-                  className="w-full accent-[#8C4B31] cursor-pointer h-2 bg-stone-200 rounded-lg"
-                />
-                <div className="flex justify-between text-[11px] text-stone-400 mt-1">
-                  <span>2,000 (Small Boutique)</span>
-                  <span>50,000 (Retail Chain)</span>
-                  <span>100,000 (Exporter)</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-2">
-                  Packaging Specification
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { id: "standard", label: "Standard Kraft (180 GSM)" },
-                    { id: "coffee", label: "Degassing Coffee Pouch" },
-                    { id: "luxury", label: "Luxury Cotton Shopper" }
-                  ].map((type) => (
-                    <button
-                      key={type.id}
-                      onClick={() => setSelectedBagType(type.id as any)}
-                      className={`p-3 rounded-xl text-xs font-bold transition-all border ${
-                        selectedBagType === type.id 
-                          ? "bg-[#1E3B2E] text-white border-[#1E3B2E] shadow-sm" 
-                          : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
-                      }`}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Results Display */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 bg-[#FAF7F2] rounded-2xl border border-stone-200/80 mb-8">
-              <div className="text-center sm:text-left">
-                <span className="text-xs text-stone-500 font-medium">Plastic Waste Avoided</span>
-                <p className="font-serif text-2xl font-bold text-[#1E3B2E] mt-1">{plasticAvoidedKg.toLocaleString()} kg</p>
-                <span className="text-[11px] text-emerald-700">Zero microplastics</span>
-              </div>
-              <div className="text-center sm:text-left border-y sm:border-y-0 sm:border-x border-stone-200 py-3 sm:py-0 sm:px-6">
-                <span className="text-xs text-stone-500 font-medium">Carbon Footprint Saved</span>
-                <p className="font-serif text-2xl font-bold text-[#8C4B31] mt-1">{co2AvoidedKg.toLocaleString()} kg</p>
-                <span className="text-[11px] text-amber-700">CO2 equivalent offset</span>
-              </div>
-              <div className="text-center sm:text-left sm:pl-2">
-                <span className="text-xs text-stone-500 font-medium">Estimated Wholesale Rate</span>
-                <p className="font-serif text-2xl font-bold text-stone-900 mt-1">{formatPrice(unitPrice)} / unit</p>
-                <span className="text-[11px] text-stone-500">Est. Total: {formatPrice(totalEstimateEtb)}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <span className="text-xs text-stone-500">
-                Bulk tier discount applied for orders exceeding 20,000 units.
-              </span>
-              <Link 
-                href="/design-submission" 
-                className="w-full sm:w-auto bg-[#1E3B2E] hover:bg-[#8C4B31] text-white px-8 py-3.5 rounded-full text-xs font-bold tracking-wide transition-all shadow-md text-center"
-              >
-                Lock In Wholesale Pricing
-              </Link>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* 6. UPCOMING LIVE WORKSHOP TICKER */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
-          
-          <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-12 gap-4">
+      {/* 3. HOW LEARNING WORKS (ACADEMY & WORKSHOPS) */}
+      <section className="py-16 bg-white border-y border-stone-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
             <div>
               <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase">
-                Interactive Learning Guild
+                Arenguade Craft Academy
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
-                Upcoming Craft Workshops
+                How Learning Works
               </h2>
             </div>
+
             <Link 
               href="/learn/schedule" 
-              className="text-xs font-bold text-[#1E3B2E] hover:underline flex items-center gap-1"
+              className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
             >
-              Full Calendar & Booking Flow <ChevronRight size={14} />
+              <span>Full Schedule & Booking</span>
+              <ArrowRight size={14} />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 2 Formats: In-Person vs Live Online */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div className="app-card border-stone-200">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8C4B31]/10 text-[#8C4B31] text-xs font-bold mb-3">
+                <MapPin size={13} />
+                <span>In-Person Addis Ababa Studio</span>
+              </div>
+              <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Hands-On Apprenticeship</h3>
+              <p className="text-xs text-stone-600 leading-relaxed mb-4">
+                Work alongside master artisans inside our plant in Bole Sub-City. Learn paper cutting, scoring, bottom reinforcement, cord handle attachment, and box die-making. All materials included.
+              </p>
+              <Link href="/learn/schedule" className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1">
+                View Studio Dates <ArrowRight size={13} />
+              </Link>
+            </div>
+
+            <div className="app-card border-stone-200">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold mb-3">
+                <Video size={13} />
+                <span>LiveKit Interactive Online</span>
+              </div>
+              <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Real-Time Global Masterclasses</h3>
+              <p className="text-xs text-stone-600 leading-relaxed mb-4">
+                Interactive video classrooms powered by low-latency LiveKit WebRTC. Ask questions in real time, unmute to speak with the teacher, and receive digital certification upon completion.
+              </p>
+              <Link href="/learn/schedule" className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1">
+                View Live Streams <ArrowRight size={13} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Upcoming Class Sessions */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+              Upcoming Classes Ready for Registration
+            </h4>
+
             {workshopsLoading ? (
-              Array.from({ length: 2 }).map((_, idx) => (
-                <div key={idx} className="p-6 rounded-2xl bg-[#FAF7F2] border border-stone-200 animate-pulse h-40" />
-              ))
+              <div className="space-y-3">
+                <div className="app-card animate-pulse h-24" />
+                <div className="app-card animate-pulse h-24" />
+              </div>
             ) : workshops.length > 0 ? (
               workshops.map((session) => {
                 const isLive = session.type === "live";
@@ -700,32 +363,27 @@ export default function Home() {
                   : "Upcoming";
 
                 return (
-                  <div 
-                    key={session.id}
-                    className="p-6 rounded-2xl bg-[#FAF7F2] border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-[#8C4B31]/50 transition-colors"
-                  >
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`${isLive ? "bg-[#1E3B2E]" : "bg-[#8C4B31]"} text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1`}>
-                          {isLive ? <><Video size={11} /> LiveKit Online</> : "In-Person Studio"}
+                  <div key={session.id} className="app-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          isLive ? "bg-[#1E3B2E] text-white" : "bg-[#8C4B31] text-white"
+                        }`}>
+                          {isLive ? "LiveKit Online" : "In-Person Studio"}
                         </span>
-                        <span className="text-xs font-semibold text-stone-500 flex items-center gap-1">
-                          <Clock size={12} /> {session.capacity ? `${session.spotsLeft ?? session.capacity} spots left` : "Hands-on"}
+                        <span className="text-[11px] text-stone-500 flex items-center gap-1 font-medium">
+                          <Calendar size={12} /> {dateStr}
                         </span>
                       </div>
-                      <h4 className="font-serif text-xl font-bold text-stone-900">
-                        {session.title}
-                      </h4>
-                      <p className="text-xs text-stone-600">
-                        {session.location || (isLive ? "Join from anywhere • High-def streaming" : "Addis Ababa Studio")} • {dateStr}
-                      </p>
+                      <h4 className="font-serif text-base font-bold text-stone-900">{session.title}</h4>
+                      <p className="text-xs text-stone-500 mt-0.5">{session.location || "Addis Ababa"}</p>
                     </div>
 
-                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0">
-                      <span className="font-serif text-lg font-bold text-[#8C4B31]">{formatPrice(session.price || 0)}</span>
+                    <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0">
+                      <span className="font-bold text-[#8C4B31] text-sm">{formatPrice(session.price || 0)}</span>
                       <Link 
-                        href="/learn/schedule" 
-                        className="bg-[#1E3B2E] text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors"
+                        href="/learn/schedule"
+                        className="btn-primary touch-target text-xs py-2 px-5"
                       >
                         Register
                       </Link>
@@ -734,45 +392,60 @@ export default function Home() {
                 );
               })
             ) : (
-              <div className="col-span-2 text-center py-8 text-stone-500 bg-[#FAF7F2] rounded-2xl border border-stone-200">
-                <p>New workshop schedules will be announced soon.</p>
+              <div className="app-card text-center py-6 text-xs text-stone-500">
+                New sessions will be announced soon.
               </div>
             )}
           </div>
-
         </div>
       </section>
 
-      {/* 7. INVESTOR CALLOUT BANNER */}
-      <section className="bg-stone-900 text-stone-200 py-16 border-t border-stone-800">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
-          <div className="bg-gradient-to-r from-stone-950 via-[#1B2720] to-stone-950 p-8 sm:p-12 rounded-3xl border border-stone-800 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
-            <div className="max-w-xl">
-              <span className="text-[11px] font-bold tracking-widest text-[#E0B382] uppercase">
-                Investor Relations & B2B Partnerships
-              </span>
-              <h3 className="font-serif text-3xl sm:text-4xl font-bold text-white mt-1">
-                Partner with the Future of East African Packaging
-              </h3>
-              <p className="text-sm text-stone-400 mt-3 leading-relaxed">
-                Arenguade is raising growth capital to expand automated roll-fed production and scale our vocational academies across regional capitals. Request confidential financials and investor memorandum.
-              </p>
-            </div>
+      {/* 4. CONTACT & FACTORY SETTLEMENT */}
+      <section className="py-14 bg-[#F9F6F0]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          <div className="app-card bg-stone-900 text-stone-200 p-6 sm:p-10 border-stone-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+              <div>
+                <span className="text-xs font-bold text-[#D7A977] uppercase tracking-wider">
+                  Contact & Factory Inquiries
+                </span>
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">
+                  {companySettings.company_name}
+                </h3>
+                <p className="text-xs sm:text-sm text-stone-400 mt-2 leading-relaxed">
+                  Plant & Showroom: Bole Sub-City, Kebele 03, Addis Ababa, Ethiopia. 
+                  Wholesale orders, bespoke branded packaging, and academy partnerships.
+                </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-              <a 
-                href={`mailto:${companySettings.contact_email}?subject=Investor%20Pitch%20Deck%20Request`}
-                className="w-full sm:w-auto bg-[#8C4B31] hover:bg-[#A3593B] text-white text-xs font-bold px-7 py-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg"
-              >
-                <Download size={15} />
-                <span>Request Investor Deck</span>
-              </a>
-              <Link 
-                href="/design-submission" 
-                className="w-full sm:w-auto bg-stone-800 hover:bg-stone-700 text-white text-xs font-bold px-6 py-4 rounded-full transition-all text-center border border-stone-700"
-              >
-                B2B Custom Inquiry
-              </Link>
+                <div className="flex flex-col gap-2 mt-5 text-xs text-stone-300">
+                  <span className="inline-flex items-center gap-2">
+                    <Phone size={14} className="text-[#D7A977]" /> {companySettings.contact_phone}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Mail size={14} className="text-[#D7A977]" /> {companySettings.contact_email}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Building2 size={14} className="text-[#D7A977]" /> Settlement Banks: CBE, Telebirr, Awash
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row gap-3 md:justify-end">
+                <Link 
+                  href="/products" 
+                  className="btn-primary bg-[#8C4B31] hover:bg-[#A3593B] touch-target text-center text-xs"
+                >
+                  <ShoppingBag size={15} />
+                  <span>Order Packaging</span>
+                </Link>
+                <Link 
+                  href="/design-submission" 
+                  className="btn-secondary bg-stone-800 text-white border-stone-700 hover:bg-stone-700 touch-target text-center text-xs"
+                >
+                  <Sparkles size={15} />
+                  <span>Custom Design Studio</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

@@ -287,83 +287,134 @@ export default function AdminAuditPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-stone-200/80 bg-stone-50/50 text-stone-500 font-mono text-[11px] uppercase tracking-wider">
-                  <th className="py-3 px-4">Timestamp</th>
-                  <th className="py-3 px-4">Actor</th>
-                  <th className="py-3 px-4">Action</th>
-                  <th className="py-3 px-4">Entity</th>
-                  <th className="py-3 px-4">Entity ID</th>
-                  <th className="py-3 px-4 text-right">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100 font-sans">
-                {logs.map((log) => (
-                  <tr 
-                    key={log.id} 
-                    data-testid="audit-table-row"
-                    className="hover:bg-amber-50/40 transition-colors"
-                  >
-                    <td className="py-3.5 px-4 text-stone-500 font-mono text-[11px] whitespace-nowrap">
-                      {new Date(log.created_at).toLocaleString([], {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })}
-                    </td>
-
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-bold text-[10px] shrink-0">
-                          {log.actor_name?.charAt(0) || "U"}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-stone-900 truncate max-w-[140px]">
-                            {log.actor_name || "System"}
-                          </span>
-                          <span className="text-[10px] text-stone-400 font-mono truncate max-w-[140px]">
-                            {log.actor_email || log.actor_id.slice(0, 8)}
-                          </span>
-                        </div>
-                        {log.actor_role && (
-                          <span className="px-1.5 py-0.2 rounded bg-stone-100 text-stone-600 text-[9px] font-bold uppercase">
-                            {log.actor_role}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getActionBadgeColor(log.action)}`}>
-                        {log.action}
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4 font-semibold text-stone-800 capitalize whitespace-nowrap">
-                      {log.entity}
-                    </td>
-
-                    <td className="py-3.5 px-4 font-mono text-[11px] text-stone-500 whitespace-nowrap truncate max-w-[120px]" title={log.entity_id}>
-                      {log.entity_id || "—"}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => setInspectItem(log)}
-                        className="px-3 py-1 rounded-xl bg-stone-100 hover:bg-[#1E3B2E] hover:text-white text-stone-700 text-[11px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <Eye size={12} />
-                        <span>Inspect</span>
-                      </button>
-                    </td>
+          <div>
+            {/* Desktop Table (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-stone-200/80 bg-stone-50/50 text-stone-500 font-mono text-[11px] uppercase tracking-wider">
+                    <th className="py-3 px-4">Timestamp</th>
+                    <th className="py-3 px-4">Actor</th>
+                    <th className="py-3 px-4">Action</th>
+                    <th className="py-3 px-4">Entity</th>
+                    <th className="py-3 px-4">Entity ID</th>
+                    <th className="py-3 px-4 text-right">Details</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-stone-100 font-sans">
+                  {logs.map((log) => (
+                    <tr 
+                      key={log.id} 
+                      data-testid="audit-table-row"
+                      className="hover:bg-amber-50/40 transition-colors"
+                    >
+                      <td className="py-3.5 px-4 text-stone-500 font-mono text-[11px] whitespace-nowrap">
+                        {new Date(log.created_at).toLocaleString([], {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-bold text-[10px] shrink-0">
+                            {log.actor_name?.charAt(0) || "U"}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-stone-900 truncate max-w-[140px]">
+                              {log.actor_name || "System"}
+                            </span>
+                            <span className="text-[10px] text-stone-400 font-mono truncate max-w-[140px]">
+                              {log.actor_email || log.actor_id.slice(0, 8)}
+                            </span>
+                          </div>
+                          {log.actor_role && (
+                            <span className="px-1.5 py-0.2 rounded bg-stone-100 text-stone-600 text-[9px] font-bold uppercase">
+                              {log.actor_role}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getActionBadgeColor(log.action)}`}>
+                          {log.action}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 font-semibold text-stone-800 capitalize whitespace-nowrap">
+                        {log.entity}
+                      </td>
+
+                      <td className="py-3.5 px-4 font-mono text-[11px] text-stone-500 whitespace-nowrap truncate max-w-[120px]" title={log.entity_id}>
+                        {log.entity_id || "—"}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => setInspectItem(log)}
+                          className="px-3 py-1 rounded-xl bg-stone-100 hover:bg-[#1E3B2E] hover:text-white text-stone-700 text-[11px] font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye size={12} />
+                          <span>Inspect</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Stacked Cards (< 768px) */}
+            <div className="md:hidden divide-y divide-stone-100">
+              {logs.map((log) => (
+                <div 
+                  key={log.id} 
+                  data-testid="audit-mobile-card"
+                  className="p-4 space-y-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getActionBadgeColor(log.action)}`}>
+                      {log.action}
+                    </span>
+                    <span className="text-stone-400 font-mono text-[11px]">
+                      {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-bold text-[10px] shrink-0">
+                        {log.actor_name?.charAt(0) || "U"}
+                      </div>
+                      <span className="font-bold text-stone-900">{log.actor_name || "System"}</span>
+                      {log.actor_role && (
+                        <span className="px-1.5 py-0.2 rounded bg-stone-100 text-stone-600 text-[9px] font-bold uppercase">
+                          {log.actor_role}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-semibold text-stone-700 capitalize">{log.entity}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-stone-100">
+                    <span className="font-mono text-[10px] text-stone-400 truncate max-w-[180px]">
+                      {log.entity_id || "—"}
+                    </span>
+                    <button
+                      onClick={() => setInspectItem(log)}
+                      className="btn-secondary py-1.5 px-3 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer min-h-[36px]"
+                    >
+                      <Eye size={13} />
+                      <span>Inspect</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

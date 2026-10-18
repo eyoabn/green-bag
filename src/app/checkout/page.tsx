@@ -22,6 +22,7 @@ import {
   Clock,
   ArrowRight
 } from "lucide-react";
+import StickyBottomBar from "@/components/StickyBottomBar";
 
 interface BankAccount {
   id: string;
@@ -317,20 +318,20 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
                     <input
                       type="file"
                       accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
                       onChange={(e) => setProofFile(e.target.files ? e.target.files[0] : null)}
-                      className="text-xs text-stone-600 file:mr-3 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] file:cursor-pointer w-full"
+                      className="text-xs text-stone-600 file:mr-3 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] file:cursor-pointer w-full bg-stone-50 p-2 rounded-2xl border border-stone-200"
                     />
 
                     <button
                       type="submit"
                       disabled={!proofFile || isUploadingProof}
-                      className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#8C4B31] text-white text-xs font-bold hover:bg-[#6e3925] disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0 cursor-pointer shadow-xs"
+                      className="w-full sm:w-auto btn-primary py-3 px-6 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer"
                     >
-                      {isUploadingProof ? "Uploading..." : "Submit Receipt"}
+                      {isUploadingProof ? "Uploading..." : "Upload Receipt"}
                     </button>
                   </div>
                 </div>
@@ -339,24 +340,24 @@ export default function CheckoutPage() {
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-3">
                 <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
                 <span>
-                  Receipt uploaded! Your order status has transitioned to <strong>Under Verification</strong>.
+                  Receipt uploaded! Your order is now <strong>Under Verification</strong>.
                 </span>
               </div>
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-stone-200">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-stone-200">
               <Link
                 href={`/dashboard/orders/${createdOrder.id}`}
-                className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#1E3B2E] text-white text-xs font-bold hover:bg-[#8C4B31] transition-colors text-center shadow-xs flex items-center justify-center gap-2"
+                className="w-full sm:w-auto btn-primary py-3.5 px-6 text-xs font-bold flex items-center justify-center gap-2 text-center"
               >
-                <span>View Order Status & Timeline</span>
+                <span>View Order Details</span>
                 <ArrowRight size={14} />
               </Link>
 
               <Link
                 href="/dashboard/orders"
-                className="text-xs text-stone-500 hover:text-stone-900 font-medium"
+                className="w-full sm:w-auto btn-secondary py-3.5 px-6 text-xs font-semibold text-center"
               >
                 Go to My Orders
               </Link>
@@ -443,12 +444,13 @@ export default function CheckoutPage() {
                 <input
                   type="text"
                   required
+                  autoComplete="street-address"
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   placeholder="e.g. Bole Subcity, Atlas Area, House #402, Addis Ababa"
-                  className="w-full bg-[#FAF7F2] border border-stone-300 rounded-2xl px-4 py-3 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 transition-all"
+                  className="form-input text-xs"
                 />
-                <span className="text-[10px] text-stone-400 mt-1 block">
+                <span className="text-[11px] text-stone-400 mt-1 block">
                   Addis Ababa industrial zone & commercial dispatch directly from our plant.
                 </span>
               </div>
@@ -461,10 +463,12 @@ export default function CheckoutPage() {
                   <input
                     type="tel"
                     required
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+251 911 000 000"
-                    className="w-full bg-[#FAF7F2] border border-stone-300 rounded-2xl px-4 py-3 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 transition-all font-mono"
+                    className="form-input text-xs font-mono"
                   />
                 </div>
 
@@ -477,7 +481,7 @@ export default function CheckoutPage() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="e.g. Delivery before 3 PM"
-                    className="w-full bg-[#FAF7F2] border border-stone-300 rounded-2xl px-4 py-3 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 transition-all"
+                    className="form-input text-xs"
                   />
                 </div>
               </div>
@@ -506,7 +510,7 @@ export default function CheckoutPage() {
                       <div
                         key={b.id}
                         onClick={() => setSelectedBankId(b.id)}
-                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-[56px] ${
                           isSelected
                             ? "border-[#1E3B2E] bg-[#1E3B2E]/5"
                             : "border-stone-200 hover:border-stone-300 bg-white"
@@ -518,7 +522,7 @@ export default function CheckoutPage() {
                             name="bankAccount"
                             checked={isSelected}
                             onChange={() => setSelectedBankId(b.id)}
-                            className="mt-1 text-[#1E3B2E] focus:ring-[#1E3B2E]"
+                            className="mt-1 w-4 h-4 text-[#1E3B2E] focus:ring-[#1E3B2E] cursor-pointer"
                           />
                           <div>
                             <span className="font-bold text-xs text-stone-900 block">{b.bank_name}</span>
@@ -532,7 +536,7 @@ export default function CheckoutPage() {
                         </div>
 
                         <div className="flex items-center gap-2 self-end sm:self-auto pl-6 sm:pl-0">
-                          <span className="font-mono text-xs font-bold text-stone-800 bg-white px-3 py-1 rounded-lg border border-stone-200">
+                          <span className="font-mono text-xs font-bold text-stone-800 bg-white px-3 py-1.5 rounded-lg border border-stone-200">
                             {b.account_number}
                           </span>
                           <button
@@ -541,10 +545,10 @@ export default function CheckoutPage() {
                               e.stopPropagation();
                               copyToClipboard(b.account_number);
                             }}
-                            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100"
+                            className="p-2 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer"
                             title="Copy Account Number"
                           >
-                            <Copy size={13} />
+                            <Copy size={14} />
                           </button>
                         </div>
                       </div>
@@ -614,22 +618,46 @@ export default function CheckoutPage() {
                 </span>
               </div>
 
-              {/* Place Order CTA Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting || items.length === 0}
-                className="w-full py-4 rounded-full bg-[#1E3B2E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#8C4B31] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer group"
-              >
-                {isSubmitting ? (
-                  <span>Generating Reference & Creating Order...</span>
-                ) : (
-                  <>
-                    <span>Place Order & Generate Reference</span>
-                    <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
+              {/* Place Order CTA Button (Desktop) */}
+              <div className="hidden md:block">
+                <button
+                  type="submit"
+                  disabled={isSubmitting || items.length === 0}
+                  className="w-full btn-primary py-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <span>Creating Order...</span>
+                  ) : (
+                    <>
+                      <span>Place Order • {formatPrice(subtotal)}</span>
+                      <ArrowRight size={15} />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Sticky Mobile Bar for Thumb Zone Action */}
+          <div className="md:hidden">
+            <StickyBottomBar>
+              <div className="flex items-center justify-between gap-3 w-full">
+                <div>
+                  <span className="text-[11px] text-stone-500 block">Total Due</span>
+                  <span className="font-serif text-base font-bold text-[#8C4B31] block leading-tight">
+                    {formatPrice(subtotal)}
+                  </span>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || items.length === 0}
+                  className="btn-primary py-3 px-6 text-xs font-bold flex items-center gap-2 cursor-pointer flex-1 justify-center"
+                >
+                  {isSubmitting ? "Creating Order..." : "Place Order"}
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </StickyBottomBar>
           </div>
         </form>
       </div>

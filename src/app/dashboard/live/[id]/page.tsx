@@ -29,7 +29,8 @@ import {
   useRoomContext,
   useConnectionState,
   VideoTrack,
-  RoomAudioRenderer
+  RoomAudioRenderer,
+  StartAudio
 } from "@livekit/components-react";
 import { Track, RoomEvent, Participant, DisconnectReason, ConnectionState } from "livekit-client";
 
@@ -173,8 +174,13 @@ function StudentClassroomInner({
   const handleToggleMic = async () => {
     if (!canSpeak || !room.localParticipant) return;
     const nextMic = !micActive;
-    await room.localParticipant.setMicrophoneEnabled(nextMic);
-    setMicActive(nextMic);
+    try {
+      await room.localParticipant.setMicrophoneEnabled(nextMic);
+      setMicActive(nextMic);
+    } catch (err: any) {
+      console.error("Microphone error:", err);
+      alert("Unable to access microphone: " + (err.message || "Please ensure your browser has microphone permission enabled."));
+    }
   };
 
   // Toggle Camera (only enabled if host granted speaking permission)
@@ -223,6 +229,7 @@ function StudentClassroomInner({
     <div className="flex flex-col h-screen bg-[#141517] text-stone-100 overflow-hidden">
       {/* Audio Renderer for remote participants */}
       <RoomAudioRenderer />
+      <StartAudio label="Click to allow classroom audio playback" />
 
       {/* Reconnecting Banner */}
       {connectionState === ConnectionState.Reconnecting && (

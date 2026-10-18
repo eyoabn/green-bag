@@ -28,7 +28,9 @@ import {
   useParticipants, 
   useRoomContext,
   VideoTrack,
-  AudioTrack
+  AudioTrack,
+  RoomAudioRenderer,
+  StartAudio
 } from "@livekit/components-react";
 import { Track, RoomEvent, Participant, RemoteParticipant } from "livekit-client";
 
@@ -499,7 +501,17 @@ function HostClassroomInner({ sessionId, sessionTitle }: { sessionId: string; se
                           {p.name ? p.name.charAt(0).toUpperCase() : "S"}
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-stone-200">{p.name || p.identity}</p>
+                          <p className="text-xs font-semibold text-stone-200 flex items-center gap-1.5">
+                            <span>{p.name || p.identity}</span>
+                            {p.isSpeaking && (
+                              <span className="inline-flex items-center gap-0.5 text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.2 rounded-full font-bold animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Speaking
+                              </span>
+                            )}
+                            {p.isMicrophoneEnabled && !p.isSpeaking && (
+                              <span className="text-[9px] text-emerald-400 font-mono">Mic Ready</span>
+                            )}
+                          </p>
                           <p className="text-[10px] text-stone-500 font-mono">{p.identity.substring(0, 8)}</p>
                         </div>
                       </div>
@@ -736,6 +748,8 @@ export default function TeacherLiveRoomPage({ params }: { params: Promise<{ id: 
       video={true}
       audio={true}
     >
+      <RoomAudioRenderer />
+      <StartAudio label="Click to allow student audio playback" />
       <HostClassroomInner sessionId={sessionId} sessionTitle={sessionTitle} />
     </LiveKitRoom>
   );

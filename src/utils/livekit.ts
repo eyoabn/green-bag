@@ -1,4 +1,4 @@
-import { RoomServiceClient, AccessToken } from "livekit-server-sdk";
+import { RoomServiceClient, AccessToken, TrackSource } from "livekit-server-sdk";
 
 export function getLiveKitConfig() {
   const apiKey =
@@ -109,14 +109,18 @@ export async function updateParticipantPermissions(
   }
 ): Promise<any> {
   const client = getRoomServiceClient();
+  const canPub = Boolean(permissions.canPublish);
   return await client.updateParticipant(
     roomName,
     identity,
     undefined, // metadata
     {
-      canPublish: permissions.canPublish ?? false,
+      canPublish: canPub,
       canSubscribe: permissions.canSubscribe ?? true,
       canPublishData: permissions.canPublishData ?? true,
+      canPublishSources: canPub
+        ? [TrackSource.MICROPHONE, TrackSource.CAMERA, TrackSource.SCREEN_SHARE]
+        : [],
       hidden: false,
       recorder: false,
     }

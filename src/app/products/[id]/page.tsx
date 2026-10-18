@@ -19,6 +19,7 @@ import {
   Eye
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { uploadFileSafely } from "@/utils/fileUpload";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, isValidUUID, AppUser } from "@/utils/auth";
@@ -227,20 +228,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }
       }
 
-      // 3. Upload receipt screenshot using /api/upload
-      const formData = new FormData();
-      formData.append("file", uploadedFile);
-      formData.append("bucket", "payment-proofs");
-
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok || !uploadData.filePath) {
-        throw new Error(uploadData.error || "Failed to upload payment receipt screenshot.");
-      }
+      // 3. Upload receipt screenshot using safe upload with auto-compression
+      const uploadResult = await uploadFileSafely(uploadedFile, "payment-proofs");
 
       // 4. Place real order in PostgreSQL
       const orderRes = await fetch("/api/orders", {
@@ -252,11 +241,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           deliveryAddress: deliveryAddress.trim(),
           phone: customerPhone.trim(),
           notes: notes.trim() || undefined,
-          paymentProofPath: uploadData.filePath,
+          paymentProofPath: uploadResult.filePath,
         }),
       });
 
-      const orderData = await orderRes.json();
+      const orderText = await orderRes.text();
+      let orderData: any = {};
+      try {
+        orderData = JSON.parse(orderText);
+      } catch {
+        throw new Error(orderText || `Server returned error (${orderRes.status})`);
+      }
+
       if (!orderRes.ok || !orderData.order) {
         throw new Error(orderData.error || "Failed to record order.");
       }

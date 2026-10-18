@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useCurrency } from "@/components/CurrencyContext";
 import { getCurrentUser, AppUser } from "@/utils/auth";
+import { uploadFileSafely } from "@/utils/fileUpload";
 import { 
   ShoppingBag, 
   ArrowLeft, 
@@ -175,20 +176,8 @@ export default function CheckoutPage() {
 
     setIsUploadingProof(true);
     try {
-      // Step A: Upload to private bucket
-      const formData = new FormData();
-      formData.append("file", proofFile);
-      formData.append("bucket", "payment-proofs");
-
-      const upRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const upJson = await upRes.json();
-      if (!upRes.ok || !upJson.filePath) {
-        throw new Error(upJson.error || "Failed to upload receipt file.");
-      }
+      // Step A: Upload to private bucket safely with auto compression
+      const uploadResult = await uploadFileSafely(proofFile, "payment-proofs");
 
       // Step B: Update order to pending_verification
       const patchRes = await fetch("/api/orders", {
@@ -197,11 +186,18 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           orderId: createdOrder.id,
           action: "upload_proof",
-          paymentProofPath: upJson.filePath,
+          paymentProofPath: uploadResult.filePath,
         }),
       });
 
-      const patchJson = await patchRes.json();
+      const patchText = await patchRes.text();
+      let patchJson: any = {};
+      try {
+        patchJson = JSON.parse(patchText);
+      } catch {
+        throw new Error(patchText || `Server returned error (${patchRes.status})`);
+      }
+
       if (!patchRes.ok) {
         throw new Error(patchJson.error || "Failed to link receipt to order.");
       }

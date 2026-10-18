@@ -20,6 +20,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { uploadFileSafely } from "@/utils/fileUpload";
 
 interface ClassSessionItem {
   id: string;
@@ -197,21 +198,8 @@ export default function SchedulePage() {
 
       // 1. Upload receipt to storage bucket 'payment-proofs' if provided
       if (receiptFile) {
-        const formData = new FormData();
-        formData.append("file", receiptFile);
-        formData.append("bucket", "payment-proofs");
-
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok || !uploadData.filePath) {
-          throw new Error(uploadData.error || "Failed to upload payment receipt screenshot.");
-        }
-
-        paymentProofPath = uploadData.filePath;
+        const uploadResult = await uploadFileSafely(receiptFile, "payment-proofs");
+        paymentProofPath = uploadResult.filePath;
       }
 
       // 2. Call atomic capacity enrollment API (POST /api/enrollments)
@@ -224,7 +212,14 @@ export default function SchedulePage() {
         }),
       });
 
-      const enrollData = await enrollRes.json();
+      const enrollText = await enrollRes.text();
+      let enrollData: any = {};
+      try {
+        enrollData = JSON.parse(enrollText);
+      } catch {
+        throw new Error(enrollText || `Server responded with status ${enrollRes.status}`);
+      }
+
       if (!enrollRes.ok) {
         throw new Error(enrollData.error || "Failed to register for workshop.");
       }

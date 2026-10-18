@@ -19,6 +19,7 @@ import {
   Radio,
   User
 } from "lucide-react";
+import { uploadFileSafely } from "@/utils/fileUpload";
 
 interface EnrollmentItem {
   id: string;
@@ -114,19 +115,7 @@ export default function MyClassesPage() {
 
     setIsSubmittingProof(true);
     try {
-      const formData = new FormData();
-      formData.append("file", reuploadFile);
-      formData.append("bucket", "payment-proofs");
-
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok || !uploadData.filePath) {
-        throw new Error(uploadData.error || "Failed to upload payment receipt.");
-      }
+      const uploadResult = await uploadFileSafely(reuploadFile, "payment-proofs");
 
       const patchRes = await fetch("/api/enrollments", {
         method: "PATCH",
@@ -134,11 +123,18 @@ export default function MyClassesPage() {
         body: JSON.stringify({
           enrollmentId,
           action: "upload_proof",
-          paymentProofPath: uploadData.filePath,
+          paymentProofPath: uploadResult.filePath,
         }),
       });
 
-      const patchData = await patchRes.json();
+      const patchText = await patchRes.text();
+      let patchData: any = {};
+      try {
+        patchData = JSON.parse(patchText);
+      } catch {
+        throw new Error(patchText || `Server returned error (${patchRes.status})`);
+      }
+
       if (!patchRes.ok) throw new Error(patchData.error || "Failed to submit new payment receipt.");
 
       setStatusMessage("Receipt re-uploaded successfully! Status returned to Pending Verification.");

@@ -22,6 +22,7 @@ import {
   X
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { uploadFileSafely } from "@/utils/fileUpload";
 
 interface OrderItem {
   id: string;
@@ -160,21 +161,10 @@ function CustomerDashboardContent() {
     setProfileNotice(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("bucket", "avatars");
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to upload avatar.");
+      const uploadResult = await uploadFileSafely(file, "avatars");
+      if (uploadResult.url) {
+        setAvatarUrl(uploadResult.url);
       }
-
-      setAvatarUrl(data.url);
       setProfileNotice("Avatar uploaded! Save profile to finalize.");
     } catch (err: any) {
       alert(err.message || "Failed to upload avatar.");

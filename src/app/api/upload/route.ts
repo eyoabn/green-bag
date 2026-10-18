@@ -3,6 +3,9 @@ import { requireUser, requireRole } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit } from "@/utils/rateLimit";
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/jpg",

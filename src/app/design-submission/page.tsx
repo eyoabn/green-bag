@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { uploadFileSafely } from "@/utils/fileUpload";
 import { 
   PenTool, 
   Upload, 
@@ -266,20 +267,8 @@ export default function DesignSubmissionPage() {
           return;
         }
 
-        const formData = new FormData();
-        formData.append("file", dielineFile);
-        formData.append("bucket", "designs");
-
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok || !uploadData.filePath) {
-          throw new Error(uploadData.error || "Failed to upload dieline artwork.");
-        }
-        finalFilePath = uploadData.filePath;
+        const uploadResult = await uploadFileSafely(dielineFile, "designs");
+        finalFilePath = uploadResult.filePath;
       }
 
       const notePayload = JSON.stringify({

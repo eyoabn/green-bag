@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { uploadFileSafely } from "@/utils/fileUpload";
 import { 
   ArrowLeft, 
   Clock, 
@@ -96,20 +97,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     setUploadError("");
 
     try {
-      // 1. Upload proof to private bucket
-      const formData = new FormData();
-      formData.append("file", fileToUpload);
-      formData.append("bucket", "payment-proofs");
-
-      const upRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const upJson = await upRes.json();
-
-      if (!upRes.ok || !upJson.filePath) {
-        throw new Error(upJson.error || "Failed to upload payment proof");
-      }
+      // 1. Upload proof to private bucket safely
+      const uploadResult = await uploadFileSafely(fileToUpload, "payment-proofs");
 
       // 2. Patch order with path
       const patchRes = await fetch("/api/orders", {
@@ -118,10 +107,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         body: JSON.stringify({
           orderId,
           action: "upload_proof",
-          paymentProofPath: upJson.filePath,
+          paymentProofPath: uploadResult.filePath,
         }),
       });
-      const patchJson = await patchRes.json();
+      const patchText = await patchRes.text();
+      let patchJson: any = {};
+      try {
+        patchJson = JSON.parse(patchText);
+      } catch {
+        throw new Error(patchText || `Server returned error (${patchRes.status})`);
+      }
 
       if (!patchRes.ok) {
         throw new Error(patchJson.error || "Failed to submit verification request");

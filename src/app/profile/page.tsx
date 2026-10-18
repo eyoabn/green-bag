@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { User, Camera, ArrowLeft, CheckCircle2, AlertCircle, ShieldCheck, ArrowRight } from "lucide-react";
+import { uploadFileSafely } from "@/utils/fileUpload";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -55,21 +56,10 @@ export default function ProfilePage() {
     setSuccessMessage("");
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("bucket", "avatars");
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to upload avatar image.");
+      const uploadResult = await uploadFileSafely(file, "avatars");
+      if (uploadResult.url) {
+        setAvatarUrl(uploadResult.url);
       }
-
-      setAvatarUrl(data.url);
       setSuccessMessage("Avatar uploaded! Save profile to finalize changes.");
     } catch (err: any) {
       setErrorMessage(err?.message || "Avatar upload failed.");

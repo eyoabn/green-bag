@@ -19,6 +19,7 @@ import {
   ArrowRight,
   Filter
 } from "lucide-react";
+import { uploadFileSafely } from "@/utils/fileUpload";
 
 interface Product {
   id: string;
@@ -198,20 +199,9 @@ export default function AdminProductsPage() {
           continue;
         }
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("bucket", "product-images");
-
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const resJson = await res.json();
-        if (res.ok && resJson?.url) {
-          setUploadedImages((prev) => [...prev, resJson.url]);
-        } else {
-          alert(resJson?.error || `Upload failed for ${file.name}`);
+        const uploadResult = await uploadFileSafely(file, "product-images");
+        if (uploadResult.url) {
+          setUploadedImages((prev) => [...prev, uploadResult.url!]);
         }
       }
     } catch (err: any) {

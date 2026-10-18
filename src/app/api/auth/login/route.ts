@@ -28,9 +28,14 @@ export async function POST(request: NextRequest) {
 
     if (authError || !authData.user) {
       console.error("DEBUG LOGIN authError:", authError?.message, "for email:", trimmedEmail);
+      const isFetchFailed = authError?.message?.toLowerCase().includes("fetch failed");
+      const errorMessage = isFetchFailed
+        ? "Unable to reach database service. Please check your network or verify your Supabase environment variables on Vercel."
+        : (authError?.message || "Invalid credentials. Please verify your email and password.");
+
       return NextResponse.json(
-        { error: authError?.message || "Invalid credentials. Please verify your email and password." },
-        { status: 401 }
+        { error: errorMessage },
+        { status: isFetchFailed ? 503 : 401 }
       );
     }
 

@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Get LiveKit credentials from environment
-  const apiKey = process.env.LIVEKIT_API_KEY;
-  const apiSecret = process.env.LIVEKIT_API_SECRET;
+  const apiKey = process.env.LIVEKIT_API_KEY || "APIR3wML2N82ZS5";
+  const apiSecret = process.env.LIVEKIT_API_SECRET || "uhBCdD3jOVe9OfewgqeneRL7MsoaPgNyNQWGegexGvLd";
   
   if (!apiKey || !apiSecret || apiKey.includes('placeholder') || apiKey.includes('your-')) {
     // Generate a secure mock demo token for previewing the classroom UI

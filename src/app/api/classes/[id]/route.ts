@@ -227,7 +227,7 @@ export async function DELETE(
         .eq("id", id);
 
       // Notify all enrolled students
-      await notifyEnrolledStudentsOfCancellation(supabase, id, session.title, session.starts_at);
+      await notifyEnrolledStudentsOfCancellation(id, session.title, session.starts_at);
 
       await supabase.from("audit_log").insert({
         actor_id: admin.id,

@@ -662,6 +662,66 @@ export default function AdminOrdersPage() {
               </button>
             </div>
 
+            {selectedOrder.status === "approved" && (
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Recommended Next Action</span>
+                  <p className="font-bold text-stone-900 text-xs mt-0.5">Start Manufacturing Run</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    await handleStatusChange(selectedOrder.id, "in_production");
+                    setSelectedOrder((prev) => prev ? { ...prev, status: "in_production" } : null);
+                  }}
+                  disabled={updatingStatusId === selectedOrder.id}
+                  className="btn-primary py-2 px-4 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>Start Production</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            )}
+
+            {selectedOrder.status === "in_production" && (
+              <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <span className="text-[10px] font-bold text-indigo-800 uppercase tracking-wider block">Recommended Next Action</span>
+                  <p className="font-bold text-stone-900 text-xs mt-0.5">Packaging Ready for Dispatch</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    await handleStatusChange(selectedOrder.id, "ready");
+                    setSelectedOrder((prev) => prev ? { ...prev, status: "ready" } : null);
+                  }}
+                  disabled={updatingStatusId === selectedOrder.id}
+                  className="btn-primary py-2 px-4 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>Mark Ready</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            )}
+
+            {selectedOrder.status === "ready" && (
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Recommended Next Action</span>
+                  <p className="font-bold text-stone-900 text-xs mt-0.5">Complete Delivery</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    await handleStatusChange(selectedOrder.id, "completed");
+                    setSelectedOrder((prev) => prev ? { ...prev, status: "completed" } : null);
+                  }}
+                  disabled={updatingStatusId === selectedOrder.id}
+                  className="btn-primary py-2 px-4 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>Mark Completed</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            )}
+
             <div className="space-y-4">
               {/* Customer & Shipping */}
               <div className="grid grid-cols-2 gap-4 bg-[#FAF7F2] p-4 rounded-2xl border border-stone-200/60">

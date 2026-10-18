@@ -290,23 +290,15 @@ export default function TeacherDashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 shrink-0">
-                  <Link
-                    href={`/teacher/classes/${session.id}`}
-                    className="px-5 py-2.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-colors flex items-center gap-1.5"
-                  >
-                    <Users size={14} />
-                    <span>View Roster & Attendance ({session.confirmedCount})</span>
-                  </Link>
-
-                  {session.type === "live" && (
+                <div className="flex items-center gap-3 shrink-0">
+                  {session.type === "live" ? (
                     <button
                       onClick={() => handleStartLiveSession(session)}
                       disabled={startingSessionId === session.id}
-                      className={`px-6 py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${
+                      className={`btn-primary px-6 py-2.5 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                         session.status === "live"
-                          ? "bg-red-600 hover:bg-red-700 text-white animate-pulse"
-                          : "bg-[#1E3B2E] hover:bg-[#8C4B31] text-white"
+                          ? "bg-red-600 hover:bg-red-700 text-white"
+                          : ""
                       }`}
                     >
                       {startingSessionId === session.id ? (
@@ -317,7 +309,7 @@ export default function TeacherDashboardPage() {
                       ) : session.status === "live" ? (
                         <>
                           <Play size={14} />
-                          <span>Enter Live Studio</span>
+                          <span>Open Live Class</span>
                         </>
                       ) : (
                         <>
@@ -326,6 +318,14 @@ export default function TeacherDashboardPage() {
                         </>
                       )}
                     </button>
+                  ) : (
+                    <Link
+                      href={`/teacher/classes/${session.id}`}
+                      className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-1.5"
+                    >
+                      <Users size={14} />
+                      <span>Take Attendance</span>
+                    </Link>
                   )}
                 </div>
               </div>

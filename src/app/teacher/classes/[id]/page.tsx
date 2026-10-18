@@ -246,80 +246,164 @@ export default function ClassRosterPage({ params }: { params: Promise<{ id: stri
               No students enrolled in this session yet.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-3.5 px-6">Attendance</th>
-                    <th className="py-3.5 px-4">Student Name</th>
-                    <th className="py-3.5 px-4">Contact Details</th>
-                    <th className="py-3.5 px-4">Payment Status</th>
-                    <th className="py-3.5 px-4">Proof</th>
-                    <th className="py-3.5 px-6 text-right">Enrolled At</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {enrollments.map((enr) => (
-                    <tr key={enr.id} className="hover:bg-stone-50/60 transition-colors">
-                      <td className="py-4 px-6">
-                        <button
-                          onClick={() => toggleAttendance(enr)}
-                          disabled={updatingId === enr.id}
-                          className="flex items-center gap-2 text-stone-800 hover:text-[#1E3B2E] font-semibold transition-colors cursor-pointer"
-                        >
-                          {enr.attended ? (
-                            <CheckSquare size={18} className="text-emerald-700" />
-                          ) : (
-                            <Square size={18} className="text-stone-400" />
-                          )}
-                          <span className={enr.attended ? "text-emerald-800 font-bold" : "text-stone-600"}>
-                            {enr.attended ? "Present" : "Absent"}
-                          </span>
-                        </button>
-                      </td>
-
-                      <td className="py-4 px-4 font-bold text-stone-900">
+            <div>
+              {/* Mobile Attendance Cards (< 768px) */}
+              <div className="md:hidden divide-y divide-stone-100">
+                {enrollments.map((enr) => (
+                  <div key={enr.id} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-stone-900 text-sm">
                         {enr.student?.full_name || "Enrolled Student"}
-                      </td>
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        enr.status === "approved" || enr.status === "confirmed" || enr.status === "attended"
+                          ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                          : enr.status === "pending_verification" || enr.status === "pending"
+                          ? "bg-amber-50 text-amber-800 border border-amber-200"
+                          : "bg-red-50 text-red-800 border border-red-200"
+                      }`}>
+                        {enr.status}
+                      </span>
+                    </div>
 
-                      <td className="py-4 px-4 text-stone-600 space-y-0.5">
-                        <p>{enr.student?.email || "—"}</p>
-                        <p className="font-mono text-[11px] text-stone-500">{enr.student?.phone || "—"}</p>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          enr.status === "approved" || enr.status === "confirmed" || enr.status === "attended"
-                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                            : enr.status === "pending_verification" || enr.status === "pending"
-                            ? "bg-amber-50 text-amber-800 border border-amber-200"
-                            : "bg-red-50 text-red-800 border border-red-200"
-                        }`}>
-                          {enr.status}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        {enr.payment_proof_path ? (
-                          <button
-                            onClick={() => viewProof(enr.payment_proof_path)}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#8C4B31] hover:underline"
+                    <div className="flex items-center justify-between text-xs text-stone-600">
+                      <div>
+                        {enr.student?.phone ? (
+                          <a
+                            href={`tel:${enr.student.phone}`}
+                            className="font-mono text-[#1E3B2E] font-bold hover:underline flex items-center gap-1"
                           >
-                            <Eye size={12} />
-                            <span>View Slip</span>
-                          </button>
+                            <span>{enr.student.phone}</span>
+                          </a>
                         ) : (
-                          <span className="text-stone-400 text-[11px]">—</span>
+                          <span className="text-stone-400">No phone provided</span>
                         )}
-                      </td>
+                        <p className="text-[11px] text-stone-500 mt-0.5">{enr.student?.email || ""}</p>
+                      </div>
 
-                      <td className="py-4 px-6 text-right text-stone-500 font-mono text-[11px]">
-                        {new Date(enr.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </td>
+                      {enr.payment_proof_path && (
+                        <button
+                          onClick={() => viewProof(enr.payment_proof_path)}
+                          className="text-[11px] font-bold text-[#8C4B31] hover:underline"
+                        >
+                          View Receipt
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Touch-friendly attendance button */}
+                    <div className="pt-1">
+                      <button
+                        onClick={() => toggleAttendance(enr)}
+                        disabled={updatingId === enr.id}
+                        className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer ${
+                          enr.attended
+                            ? "bg-emerald-700 text-white"
+                            : "bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200"
+                        }`}
+                      >
+                        {enr.attended ? (
+                          <>
+                            <CheckSquare size={16} />
+                            <span>Marked Present</span>
+                          </>
+                        ) : (
+                          <>
+                            <Square size={16} />
+                            <span>Mark Attendance (Absent)</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table (>= 768px) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold uppercase tracking-wider text-[10px]">
+                      <th className="py-3.5 px-6">Attendance</th>
+                      <th className="py-3.5 px-4">Student Name</th>
+                      <th className="py-3.5 px-4">Contact Details</th>
+                      <th className="py-3.5 px-4">Payment Status</th>
+                      <th className="py-3.5 px-4">Proof</th>
+                      <th className="py-3.5 px-6 text-right">Enrolled At</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {enrollments.map((enr) => (
+                      <tr key={enr.id} className="hover:bg-stone-50/60 transition-colors">
+                        <td className="py-4 px-6">
+                          <button
+                            onClick={() => toggleAttendance(enr)}
+                            disabled={updatingId === enr.id}
+                            className="flex items-center gap-2 text-stone-800 hover:text-[#1E3B2E] font-semibold transition-colors cursor-pointer min-h-[44px]"
+                          >
+                            {enr.attended ? (
+                              <CheckSquare size={18} className="text-emerald-700" />
+                            ) : (
+                              <Square size={18} className="text-stone-400" />
+                            )}
+                            <span className={enr.attended ? "text-emerald-800 font-bold" : "text-stone-600"}>
+                              {enr.attended ? "Present" : "Absent"}
+                            </span>
+                          </button>
+                        </td>
+
+                        <td className="py-4 px-4 font-bold text-stone-900">
+                          {enr.student?.full_name || "Enrolled Student"}
+                        </td>
+
+                        <td className="py-4 px-4 text-stone-600 space-y-0.5">
+                          <p>{enr.student?.email || "—"}</p>
+                          {enr.student?.phone ? (
+                            <a
+                              href={`tel:${enr.student.phone}`}
+                              className="font-mono text-[11px] text-[#1E3B2E] font-bold hover:underline"
+                            >
+                              {enr.student.phone}
+                            </a>
+                          ) : (
+                            <span className="font-mono text-[11px] text-stone-400">—</span>
+                          )}
+                        </td>
+
+                        <td className="py-4 px-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            enr.status === "approved" || enr.status === "confirmed" || enr.status === "attended"
+                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : enr.status === "pending_verification" || enr.status === "pending"
+                              ? "bg-amber-50 text-amber-800 border border-amber-200"
+                              : "bg-red-50 text-red-800 border border-red-200"
+                          }`}>
+                            {enr.status}
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-4">
+                          {enr.payment_proof_path ? (
+                            <button
+                              onClick={() => viewProof(enr.payment_proof_path)}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#8C4B31] hover:underline cursor-pointer min-h-[44px]"
+                            >
+                              <Eye size={12} />
+                              <span>View Slip</span>
+                            </button>
+                          ) : (
+                            <span className="text-stone-400 text-[11px]">—</span>
+                          )}
+                        </td>
+
+                        <td className="py-4 px-6 text-right text-stone-500 font-mono text-[11px]">
+                          {new Date(enr.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

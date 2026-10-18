@@ -221,7 +221,7 @@ export default function NotificationsPage() {
         </div>
 
         <span className="text-[11px] text-stone-400 font-mono">
-          Auto-synced with Supabase Realtime
+          Live real-time sync active
         </span>
       </div>
 

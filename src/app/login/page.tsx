@@ -239,7 +239,7 @@ function LoginFormContent() {
           <div className="text-center text-xs text-stone-500">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-[#8C4B31] font-bold hover:underline">
-              Create customer, student or admin account
+              Create buyer or student account
             </Link>
           </div>
 

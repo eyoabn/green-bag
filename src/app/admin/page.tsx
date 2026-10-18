@@ -154,7 +154,7 @@ export default function AdminDashboardPage() {
             Manufacturing & Academy Operations
           </h1>
           <p className="text-xs text-stone-500 mt-1">
-            Real-time verified Supabase PostgreSQL metrics, payment queues, and audit log.
+            Real-time verified platform metrics, payment queues, and audit log.
           </p>
         </div>
 

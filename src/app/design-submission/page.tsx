@@ -28,7 +28,10 @@ import {
   Building2,
   Phone,
   Mail,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Play,
+  Pause,
+  Trash2
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -71,6 +74,7 @@ export default function DesignSubmissionPage() {
   const [emblemType, setEmblemType] = useState<"coffee" | "crown" | "leaf" | "star" | "none" | "custom">("coffee");
   const [customLogoUrl, setCustomLogoUrl] = useState<string | null>(null);
   const [customLogoName, setCustomLogoName] = useState<string | null>(null);
+  const [autoSpin, setAutoSpin] = useState<boolean>(true);
 
   // Structural Dimensions State
   const [bagWidth, setBagWidth] = useState(26);
@@ -107,14 +111,26 @@ export default function DesignSubmissionPage() {
     });
   }, []);
 
-  // Handle Logo Upload for the Visual Customizer
+  // Handle Logo Upload for the Visual Customizer via FileReader Data URL
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setCustomLogoUrl(URL.createObjectURL(file));
-      setCustomLogoName(file.name);
-      setEmblemType("custom");
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setCustomLogoUrl(event.target.result as string);
+          setCustomLogoName(file.name);
+          setEmblemType("custom");
+        }
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveCustomLogo = () => {
+    setCustomLogoUrl(null);
+    setCustomLogoName(null);
+    setEmblemType("coffee");
   };
 
   // Color Swatches for Bag Body
@@ -442,15 +458,29 @@ export default function DesignSubmissionPage() {
                     
                     <div className="absolute top-4 left-4 flex items-center gap-2">
                       <span className="bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-stone-800 shadow-sm">
-                        Live 2D Bag Mockup
+                        Interactive 3D Studio Bag
                       </span>
                       <span className="bg-[#1E3B2E]/90 text-white px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
                         {bagWidth} × {bagHeight} + {bagGusset} cm
                       </span>
                     </div>
 
-                    {/* Quick Preset Buttons */}
+                    {/* Quick Preset Buttons & Spin Toggle */}
                     <div className="absolute top-4 right-4 flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setAutoSpin(!autoSpin)}
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm border transition-all flex items-center gap-1 cursor-pointer ${
+                          autoSpin 
+                            ? "bg-white/85 hover:bg-white text-stone-700 border-stone-200" 
+                            : "bg-[#1E3B2E] text-white border-[#1E3B2E]"
+                        }`}
+                        title={autoSpin ? "Pause 3D auto-spin" : "Resume 3D auto-spin"}
+                      >
+                        {autoSpin ? <Pause size={11} className="text-[#8C4B31]" /> : <Play size={11} className="text-white fill-white" />}
+                        <span>{autoSpin ? "Pause Spin" : "Resume Spin"}</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => applyPreset("coffee")}
@@ -491,7 +521,9 @@ export default function DesignSubmissionPage() {
                           fontFamily: fontFamily,
                           emblemType: emblemType,
                           customLogoUrl: customLogoUrl,
-                          handleType: handleType
+                          handleType: handleType,
+                          autoRotate: autoSpin,
+                          onToggleAutoRotate: () => setAutoSpin(!autoSpin)
                         }}
                       />
                     </div>
@@ -620,28 +652,70 @@ export default function DesignSubmissionPage() {
                       </div>
 
                       {/* Upload Your Own Custom Logo */}
-                      <label className="border-2 border-dashed border-stone-300 hover:border-[#8C4B31] bg-[#FAF7F2] hover:bg-white rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all">
-                        <input 
-                          type="file" 
-                          accept="image/png,image/svg+xml,image/jpeg" 
-                          className="hidden" 
-                          onChange={handleLogoUpload} 
-                        />
-                        <div className="flex items-center gap-3">
-                          <Upload size={20} className="text-[#8C4B31]" />
-                          <div>
-                            <span className="text-xs font-bold text-stone-900 block">
-                              {customLogoName ? `Custom Logo: ${customLogoName}` : "Upload Your Own Brand Logo PNG"}
-                            </span>
-                            <span className="text-[10px] text-stone-500">
-                              Transparent PNG or SVG looks best on kraft
-                            </span>
+                      {customLogoUrl ? (
+                        <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-white border border-stone-200 flex items-center justify-center p-1 overflow-hidden shadow-sm">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={customLogoUrl} alt="Uploaded Brand Logo" className="w-full h-full object-contain" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-stone-900">{customLogoName || "Custom Brand Logo"}</span>
+                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                  Active on 3D Bag
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-stone-500 block">
+                                Rendered in true original colors on the 3D bag
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <label className="text-[11px] font-bold text-stone-700 hover:text-stone-950 bg-white border border-stone-200 px-3 py-1.5 rounded-full shadow-sm cursor-pointer">
+                              <input 
+                                type="file" 
+                                accept="image/png,image/svg+xml,image/jpeg" 
+                                className="hidden" 
+                                onChange={handleLogoUpload} 
+                              />
+                              Replace
+                            </label>
+                            <button
+                              type="button"
+                              onClick={handleRemoveCustomLogo}
+                              className="p-1.5 rounded-full hover:bg-red-100 text-red-600 transition-colors cursor-pointer"
+                              title="Remove custom logo"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         </div>
-                        <span className="text-[11px] font-bold text-[#8C4B31] bg-white border border-stone-200 px-3 py-1.5 rounded-full shadow-sm">
-                          Browse File
-                        </span>
-                      </label>
+                      ) : (
+                        <label className="border-2 border-dashed border-stone-300 hover:border-[#8C4B31] bg-[#FAF7F2] hover:bg-white rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all">
+                          <input 
+                            type="file" 
+                            accept="image/png,image/svg+xml,image/jpeg" 
+                            className="hidden" 
+                            onChange={handleLogoUpload} 
+                          />
+                          <div className="flex items-center gap-3">
+                            <Upload size={20} className="text-[#8C4B31]" />
+                            <div>
+                              <span className="text-xs font-bold text-stone-900 block">
+                                Upload Your Own Brand Logo PNG
+                              </span>
+                              <span className="text-[10px] text-stone-500">
+                                Transparent PNG or SVG renders in full original colors on the 3D bag
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[11px] font-bold text-[#8C4B31] bg-white border border-stone-200 px-3 py-1.5 rounded-full shadow-sm">
+                            Browse File
+                          </span>
+                        </label>
+                      )}
                     </div>
 
                     {/* Control 3: Bag Color & Handles */}

@@ -341,7 +341,7 @@ function CustomerDashboardContent() {
         {loading ? (
           <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center">
             <Sparkles size={28} className="animate-spin text-[#1E3B2E] mx-auto mb-3" />
-            <p className="text-xs font-semibold text-stone-700">Loading your account data securely from Supabase...</p>
+            <p className="text-xs font-semibold text-stone-700">Loading your account workspace...</p>
           </div>
         ) : (
           <div>

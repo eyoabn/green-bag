@@ -3,13 +3,14 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Sparkles, CheckCircle2, AlertCircle, ShieldCheck } from "lucide-react";
+import { ArrowRight, Sparkles, CheckCircle2, AlertCircle, ShieldCheck, ShoppingBag, BookOpen } from "lucide-react";
 import { setLocalUser, AppUser } from "@/utils/auth";
 
 function SignupFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams?.get("returnTo") || null;
+  const [accountType, setAccountType] = useState<"buyer" | "student">("buyer");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -111,6 +112,46 @@ function SignupFormContent() {
         )}
         
         <form onSubmit={handleSignup} className="flex flex-col gap-3.5 text-xs">
+          {/* Account Type Selection: Buyer vs Student */}
+          <div>
+            <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+              I Am Registering As
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setAccountType("buyer")}
+                className={`py-2.5 px-3 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                  accountType === "buyer"
+                    ? "border-[#1E3B2E] bg-[#1E3B2E] text-white shadow-sm"
+                    : "border-stone-200 bg-[#FAF7F2] text-stone-700 hover:bg-stone-100"
+                }`}
+              >
+                <ShoppingBag size={16} className={accountType === "buyer" ? "text-white" : "text-[#1E3B2E]"} />
+                <div>
+                  <p className="font-bold text-[11px] leading-tight">Packaging Buyer</p>
+                  <p className={`text-[9px] ${accountType === "buyer" ? "text-white/80" : "text-stone-400"}`}>Order Bags & Dielines</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAccountType("student")}
+                className={`py-2.5 px-3 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                  accountType === "student"
+                    ? "border-[#8C4B31] bg-[#8C4B31] text-white shadow-sm"
+                    : "border-stone-200 bg-[#FAF7F2] text-stone-700 hover:bg-stone-100"
+                }`}
+              >
+                <BookOpen size={16} className={accountType === "student" ? "text-white" : "text-[#8C4B31]"} />
+                <div>
+                  <p className="font-bold text-[11px] leading-tight">Academy Student</p>
+                  <p className={`text-[9px] ${accountType === "student" ? "text-white/80" : "text-stone-400"}`}>Attend Workshops</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
               Full Name / Business Name

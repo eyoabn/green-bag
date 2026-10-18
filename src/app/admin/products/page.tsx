@@ -337,7 +337,7 @@ export default function AdminProductsPage() {
             Manufactured Products
           </h1>
           <p className="text-xs text-stone-500 mt-1">
-            Realtime database inventory. Upload multi-image galleries to Supabase storage, feature items on the landing page, and manage availability.
+            Realtime database inventory. Upload multi-image galleries to cloud storage, feature items on the landing page, and manage availability.
           </p>
         </div>
 

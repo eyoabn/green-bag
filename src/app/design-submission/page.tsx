@@ -33,7 +33,6 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/utils/auth";
-import { DataStore } from "@/utils/dataStore";
 import dynamic from "next/dynamic";
 
 const DynamicThreeBagScene = dynamic(() => import("@/components/DynamicThreeBag"), {

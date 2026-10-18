@@ -52,11 +52,11 @@ export default function LearnPage() {
             </Link>
 
             <Link
-              href="/dashboard/sessions/2"
+              href="/learn/schedule"
               className="inline-flex items-center gap-2 bg-white text-stone-800 border border-stone-300 px-6 py-4 rounded-full font-bold text-xs tracking-wide transition-all hover:bg-stone-50"
             >
               <PlayCircle size={16} className="text-[#8C4B31]" />
-              <span>Preview LiveKit Stream</span>
+              <span>Explore Live Masterclasses</span>
             </Link>
           </div>
         </div>

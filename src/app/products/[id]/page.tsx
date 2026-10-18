@@ -19,11 +19,20 @@ import {
   Eye
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { DataStore, StoredBankAccount } from "@/utils/dataStore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, isValidUUID, AppUser } from "@/utils/auth";
 import { useCart } from "@/context/CartContext";
+
+export interface BankAccount {
+  id: string;
+  name: string;
+  accountNumber: string;
+  accountHolder: string;
+  accountName?: string;
+  type?: string;
+  isActive: boolean;
+}
 
 export interface ProductDetail {
   id: string;
@@ -83,15 +92,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [orderRef, setOrderRef] = useState<string>("");
   const [createdOrderId, setCreatedOrderId] = useState<string>("");
 
-  const [banks, setBanks] = useState<StoredBankAccount[]>(DataStore.getActiveBanks());
-  const [selectedBank, setSelectedBank] = useState<StoredBankAccount>(DataStore.getActiveBanks()[0] || {
-    id: "cbe",
-    name: "Commercial Bank of Ethiopia (CBE)",
-    accountNumber: "1000123456789",
-    accountHolder: "Ethiopia Arenguade Paper Product PLC",
-    type: "bank",
-    isActive: true
-  });
+  const [banks, setBanks] = useState<BankAccount[]>([]);
+  const [selectedBank, setSelectedBank] = useState<BankAccount | null>(null);
 
   useEffect(() => {
     async function loadProductAndBanks() {
@@ -101,7 +103,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       try {
         const { data: dbBanks } = await supabase.from("bank_accounts").select("*").eq("is_active", true);
         if (dbBanks && dbBanks.length > 0) {
-          const mappedBanks: StoredBankAccount[] = (dbBanks as Array<{
+          const mappedBanks: BankAccount[] = (dbBanks as Array<{
             id: string;
             bank_name: string;
             account_number: string;
@@ -246,7 +248,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: [{ productId: targetProductId, quantity }],
-          bankAccountId: selectedBank.id,
+          bankAccountId: selectedBank?.id || banks[0]?.id || "",
           deliveryAddress: deliveryAddress.trim(),
           phone: customerPhone.trim(),
           notes: notes.trim() || undefined,
@@ -320,7 +322,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="flex justify-between">
                 <span className="text-stone-500">Payment Channel:</span>
-                <span className="font-semibold text-stone-900">{selectedBank.name}</span>
+                <span className="font-semibold text-stone-900">{selectedBank ? selectedBank.name : "Verified Settlement Channel"}</span>
               </div>
             </div>
 
@@ -606,47 +608,57 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     </h4>
 
                     {/* Bank Tabs */}
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      {banks.map((bank) => (
-                        <button
-                          key={bank.id}
-                          type="button"
-                          onClick={() => setSelectedBank(bank)}
-                          className={`p-2 rounded-xl text-[11px] font-bold border text-center transition-all ${
-                            selectedBank.id === bank.id
-                              ? "border-[#1E3B2E] bg-[#1E3B2E] text-white shadow-sm"
-                              : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
-                          }`}
-                        >
-                          {bank.name.split(" ")[0].toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Active Bank Card with Copy Action */}
-                    <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-stone-300/80 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
-                          {selectedBank.name}
-                        </span>
-                        <p className="font-mono text-base font-bold text-stone-900 mt-0.5 tracking-wider">
-                          {selectedBank.accountNumber}
-                        </p>
-                        <p className="text-[11px] text-stone-600 mt-0.5">
-                          A/C Name: {selectedBank.accountHolder}
-                        </p>
+                    {banks.length === 0 ? (
+                      <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-stone-500 text-xs text-center">
+                        Loading active settlement accounts...
                       </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          {banks.map((bank) => (
+                            <button
+                              key={bank.id}
+                              type="button"
+                              onClick={() => setSelectedBank(bank)}
+                              className={`p-2 rounded-xl text-[11px] font-bold border text-center transition-all ${
+                                selectedBank?.id === bank.id
+                                  ? "border-[#1E3B2E] bg-[#1E3B2E] text-white shadow-sm"
+                                  : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
+                              }`}
+                            >
+                              {bank.name.split(" ")[0].toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(selectedBank.accountNumber)}
-                        className="p-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
-                        title="Copy Account Number"
-                      >
-                        {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                        <span>{copied ? "Copied!" : "Copy"}</span>
-                      </button>
-                    </div>
+                        {/* Active Bank Card with Copy Action */}
+                        {selectedBank && (
+                          <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-stone-300/80 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
+                                {selectedBank.name}
+                              </span>
+                              <p className="font-mono text-base font-bold text-stone-900 mt-0.5 tracking-wider">
+                                {selectedBank.accountNumber}
+                              </p>
+                              <p className="text-[11px] text-stone-600 mt-0.5">
+                                A/C Name: {selectedBank.accountHolder}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(selectedBank.accountNumber)}
+                              className="p-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                              title="Copy Account Number"
+                            >
+                              {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                              <span>{copied ? "Copied!" : "Copy"}</span>
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {/* Step 3: Receipt Screenshot Upload */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
@@ -14,18 +14,24 @@ import {
   ArrowLeft, 
   Sparkles, 
   AlertCircle, 
-  Lock, 
   CheckCircle2,
-  Users
+  Users,
+  WifiOff,
+  Volume2,
+  HelpCircle,
+  Clock,
+  ShieldX
 } from "lucide-react";
 import { 
   LiveKitRoom, 
   useTracks, 
   useParticipants, 
   useRoomContext,
-  VideoTrack
+  useConnectionState,
+  VideoTrack,
+  RoomAudioRenderer
 } from "@livekit/components-react";
-import { Track, RoomEvent, Participant } from "livekit-client";
+import { Track, RoomEvent, Participant, DisconnectReason, ConnectionState } from "livekit-client";
 
 interface ChatMessage {
   id: string;
@@ -35,18 +41,27 @@ interface ChatMessage {
   isHost: boolean;
 }
 
-function StudentClassroomInner({ sessionId, sessionTitle }: { sessionId: string; sessionTitle: string }) {
+function StudentClassroomInner({ 
+  sessionId, 
+  sessionTitle 
+}: { 
+  sessionId: string; 
+  sessionTitle: string; 
+}) {
   const router = useRouter();
   const room = useRoomContext();
+  const connectionState = useConnectionState();
   const participants = useParticipants();
   const tracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare]);
 
   const [handRaised, setHandRaised] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
   const [micActive, setMicActive] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [wasRemoved, setWasRemoved] = useState(false);
   const [countdown, setCountdown] = useState(5);
 
   // Monitor room disconnects or permissions
@@ -55,11 +70,19 @@ function StudentClassroomInner({ sessionId, sessionTitle }: { sessionId: string;
 
     // Check local permissions
     const updatePermissions = () => {
-      const pubPerm = room.localParticipant?.permissions?.canPublish;
-      setCanSpeak(Boolean(pubPerm));
-      if (!pubPerm && micActive) {
-        room.localParticipant?.setMicrophoneEnabled(false);
-        setMicActive(false);
+      const pubPerm = Boolean(room.localParticipant?.permissions?.canPublish);
+      setCanSpeak(pubPerm);
+
+      // If permissions revoked, immediately halt local tracks
+      if (!pubPerm) {
+        if (micActive) {
+          room.localParticipant?.setMicrophoneEnabled(false);
+          setMicActive(false);
+        }
+        if (cameraActive) {
+          room.localParticipant?.setCameraEnabled(false);
+          setCameraActive(false);
+        }
       }
     };
 
@@ -90,8 +113,12 @@ function StudentClassroomInner({ sessionId, sessionTitle }: { sessionId: string;
     };
 
     // When room disconnects
-    const handleDisconnected = () => {
-      setSessionEnded(true);
+    const handleDisconnected = (reason?: DisconnectReason) => {
+      if (reason === DisconnectReason.PARTICIPANT_REMOVED) {
+        setWasRemoved(true);
+      } else {
+        setSessionEnded(true);
+      }
     };
 
     room.on(RoomEvent.DataReceived, handleDataReceived);
@@ -102,7 +129,7 @@ function StudentClassroomInner({ sessionId, sessionTitle }: { sessionId: string;
       room.off(RoomEvent.DataReceived, handleDataReceived);
       room.off(RoomEvent.Disconnected, handleDisconnected);
     };
-  }, [room, micActive]);
+  }, [room, micActive, cameraActive]);
 
   // Handle auto-redirect when session ended
   useEffect(() => {
@@ -150,6 +177,14 @@ function StudentClassroomInner({ sessionId, sessionTitle }: { sessionId: string;
     setMicActive(nextMic);
   };
 
+  // Toggle Camera (only enabled if host granted speaking permission)
+  const handleToggleCamera = async () => {
+    if (!canSpeak || !room.localParticipant) return;
+    const nextCam = !cameraActive;
+    await room.localParticipant.setCameraEnabled(nextCam);
+    setCameraActive(nextCam);
+  };
+
   // Send Student Chat Message
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,7 +221,17 @@ function StudentClassroomInner({ sessionId, sessionTitle }: { sessionId: string;
 
   return (
     <div className="flex flex-col h-screen bg-[#141517] text-stone-100 overflow-hidden">
-      
+      {/* Audio Renderer for remote participants */}
+      <RoomAudioRenderer />
+
+      {/* Reconnecting Banner */}
+      {connectionState === ConnectionState.Reconnecting && (
+        <div className="bg-amber-600 text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2 animate-pulse z-30 shrink-0">
+          <WifiOff size={14} />
+          <span>Connection interrupted. Reconnecting to live masterclass stream...</span>
+        </div>
+      )}
+
       {/* Top Bar */}
       <header className="h-16 border-b border-stone-800 bg-[#1A1C1E] px-6 flex items-center justify-between z-20 shrink-0">
         <div className="flex items-center gap-3">
@@ -249,29 +294,38 @@ function StudentClassroomInner({ sessionId, sessionTitle }: { sessionId: string;
           <div className="h-20 flex items-center justify-center gap-3 shrink-0 pt-4">
             <div className="bg-[#1F2124] border border-stone-700/80 rounded-full px-5 py-2.5 flex items-center gap-4 shadow-2xl">
               
-              {/* Mic Control */}
-              <div className="relative group">
-                <button
-                  onClick={handleToggleMic}
-                  disabled={!canSpeak}
-                  className={`p-3 rounded-full transition-all ${
-                    !canSpeak 
-                      ? "bg-stone-800/50 text-stone-600 cursor-not-allowed border border-stone-800" 
-                      : micActive 
-                      ? "bg-emerald-600 hover:bg-emerald-500 text-white" 
-                      : "bg-stone-800 hover:bg-stone-700 text-stone-300"
-                  }`}
-                >
-                  {micActive ? <Mic size={18} /> : <MicOff size={18} />}
-                </button>
+              {/* Host Speaking Granted Controls: Mic and Camera appear ONLY when permitted */}
+              {canSpeak && (
+                <div className="flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 rounded-full px-3 py-1">
+                  <span className="text-[10px] font-bold text-emerald-300 uppercase px-1">Speaking Granted:</span>
+                  
+                  {/* Mic Toggle */}
+                  <button
+                    onClick={handleToggleMic}
+                    className={`p-2.5 rounded-full transition-all ${
+                      micActive 
+                        ? "bg-emerald-600 hover:bg-emerald-500 text-white" 
+                        : "bg-stone-800 hover:bg-stone-700 text-stone-300"
+                    }`}
+                    title={micActive ? "Mute Microphone" : "Unmute Microphone"}
+                  >
+                    {micActive ? <Mic size={16} /> : <MicOff size={16} />}
+                  </button>
 
-                {!canSpeak && (
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-stone-900 text-stone-300 text-[11px] px-3 py-1.5 rounded-lg border border-stone-700 shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center gap-1.5">
-                    <Lock size={12} className="text-amber-400" />
-                    <span>Host has not granted speaking permission</span>
-                  </div>
-                )}
-              </div>
+                  {/* Camera Toggle */}
+                  <button
+                    onClick={handleToggleCamera}
+                    className={`p-2.5 rounded-full transition-all ${
+                      cameraActive 
+                        ? "bg-emerald-600 hover:bg-emerald-500 text-white" 
+                        : "bg-stone-800 hover:bg-stone-700 text-stone-300"
+                    }`}
+                    title={cameraActive ? "Turn Off Camera" : "Turn On Camera"}
+                  >
+                    {cameraActive ? <VideoIcon size={16} /> : <VideoOff size={16} />}
+                  </button>
+                </div>
+              )}
 
               {/* Raise Hand Button */}
               <button
@@ -380,6 +434,266 @@ function StudentClassroomInner({ sessionId, sessionTitle }: { sessionId: string;
         </div>
       )}
 
+      {/* Removed from Room Modal */}
+      {wasRemoved && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-stone-900 border border-red-500/30 p-8 rounded-3xl max-w-md w-full text-center space-y-4 shadow-2xl">
+            <ShieldX size={44} className="text-red-500 mx-auto" />
+            <h3 className="font-serif text-2xl font-bold text-white">Removed from Live Session</h3>
+            <p className="text-xs text-stone-400 leading-relaxed">
+              You have been removed from this live session by the session host.
+            </p>
+            <Link
+              href="/dashboard?tab=classes"
+              className="block w-full py-3 rounded-full bg-stone-800 hover:bg-stone-700 text-white text-xs font-bold transition-colors"
+            >
+              Return to Dashboard
+            </Link>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+// Pre-join Device Check & Waiting Room Component
+function PreJoinScreen({
+  sessionTitle,
+  sessionStatus,
+  startsAt,
+  onEnter,
+}: {
+  sessionTitle: string;
+  sessionStatus: string;
+  startsAt: string | null;
+  onEnter: () => void;
+}) {
+  const [micTested, setMicTested] = useState(false);
+  const [speakerTested, setSpeakerTested] = useState(false);
+  const [cameraPreviewActive, setCameraPreviewActive] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
+  const [secondsUntilStart, setSecondsUntilStart] = useState<number | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Calculate countdown
+  useEffect(() => {
+    if (!startsAt) return;
+    const calc = () => {
+      const diff = Math.floor((new Date(startsAt).getTime() - Date.now()) / 1000);
+      setSecondsUntilStart(diff > 0 ? diff : 0);
+    };
+    calc();
+    const interval = setInterval(calc, 1000);
+    return () => clearInterval(interval);
+  }, [startsAt]);
+
+  // Clean up camera preview on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, []);
+
+  const handleTogglePreviewCamera = async () => {
+    if (cameraPreviewActive) {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+      setCameraPreviewActive(false);
+    } else {
+      try {
+        setPermissionError(null);
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        setCameraPreviewActive(true);
+      } catch (err: any) {
+        setPermissionError(
+          "Camera access denied. Please click the lock icon in your browser address bar and set Camera to 'Allow'."
+        );
+      }
+    }
+  };
+
+  const handleTestSpeaker = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+      setSpeakerTested(true);
+    } catch {
+      setSpeakerTested(true);
+    }
+  };
+
+  const handleTestMic = async () => {
+    try {
+      setPermissionError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setMicTested(true);
+    } catch {
+      setPermissionError(
+        "Microphone access denied. Please check your browser address bar permissions to allow microphone."
+      );
+    }
+  };
+
+  const formatCountdown = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const isWaiting = sessionStatus !== "live" && secondsUntilStart !== null && secondsUntilStart > 0;
+
+  return (
+    <div className="min-h-screen bg-[#141517] text-white flex items-center justify-center p-4">
+      <div className="max-w-xl w-full bg-stone-900 border border-stone-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+        
+        {/* Header */}
+        <div className="space-y-1 text-center">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E] text-emerald-300 text-[11px] font-bold uppercase mb-2">
+            <Sparkles size={12} />
+            <span>Masterclass Studio Check-in</span>
+          </div>
+          <h2 className="font-serif text-2xl font-bold tracking-tight">{sessionTitle}</h2>
+          <p className="text-xs text-stone-400">
+            Verify your audio and video before entering the live session studio.
+          </p>
+        </div>
+
+        {/* Waiting Room Countdown Banner */}
+        {isWaiting && (
+          <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/30 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Clock size={20} className="text-amber-400 animate-pulse" />
+              <div>
+                <p className="text-xs font-bold text-amber-200">Waiting for Broadcast to Start</p>
+                <p className="text-[11px] text-stone-400">The instructor will open the studio room shortly.</p>
+              </div>
+            </div>
+            <div className="font-mono text-xl font-extrabold text-amber-400">
+              {formatCountdown(secondsUntilStart)}
+            </div>
+          </div>
+        )}
+
+        {/* Video Preview Box */}
+        <div className="relative aspect-video rounded-2xl bg-black border border-stone-800 overflow-hidden flex items-center justify-center">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`w-full h-full object-cover ${cameraPreviewActive ? "block" : "hidden"}`}
+          />
+          {!cameraPreviewActive && (
+            <div className="text-center space-y-2 p-4">
+              <VideoOff size={32} className="text-stone-600 mx-auto" />
+              <p className="text-xs text-stone-400 font-medium">Camera is currently off</p>
+              <button
+                type="button"
+                onClick={handleTogglePreviewCamera}
+                className="px-3.5 py-1.5 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-bold transition-colors"
+              >
+                Test Camera
+              </button>
+            </div>
+          )}
+          {cameraPreviewActive && (
+            <button
+              type="button"
+              onClick={handleTogglePreviewCamera}
+              className="absolute bottom-3 right-3 px-3 py-1 rounded-full bg-black/60 hover:bg-black/80 text-white text-[11px] font-bold backdrop-blur-md"
+            >
+              Turn Off
+            </button>
+          )}
+        </div>
+
+        {/* Device Check Toggles */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={handleTestMic}
+            className={`p-3.5 rounded-2xl border text-left flex items-center gap-3 transition-colors ${
+              micTested 
+                ? "bg-emerald-950/40 border-emerald-500/50 text-emerald-200" 
+                : "bg-stone-800/80 border-stone-700 hover:bg-stone-800 text-stone-300"
+            }`}
+          >
+            <Mic size={18} className={micTested ? "text-emerald-400" : "text-stone-400"} />
+            <div>
+              <p className="text-xs font-bold">{micTested ? "Microphone Verified" : "Test Microphone"}</p>
+              <p className="text-[10px] text-stone-400">Click to check browser audio input</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleTestSpeaker}
+            className={`p-3.5 rounded-2xl border text-left flex items-center gap-3 transition-colors ${
+              speakerTested 
+                ? "bg-emerald-950/40 border-emerald-500/50 text-emerald-200" 
+                : "bg-stone-800/80 border-stone-700 hover:bg-stone-800 text-stone-300"
+            }`}
+          >
+            <Volume2 size={18} className={speakerTested ? "text-emerald-400" : "text-stone-400"} />
+            <div>
+              <p className="text-xs font-bold">{speakerTested ? "Speaker Verified" : "Test Speaker"}</p>
+              <p className="text-[10px] text-stone-400">Play test chime</p>
+            </div>
+          </button>
+        </div>
+
+        {/* Permission Error Prompt */}
+        {permissionError && (
+          <div className="p-3.5 rounded-2xl bg-red-950/50 border border-red-500/40 flex items-start gap-2.5">
+            <HelpCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-red-200 leading-relaxed">{permissionError}</p>
+          </div>
+        )}
+
+        {/* Enter Studio Button */}
+        <div className="space-y-2 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (streamRef.current) {
+                streamRef.current.getTracks().forEach((t) => t.stop());
+              }
+              onEnter();
+            }}
+            className="w-full py-3.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold text-sm transition-all shadow-lg shadow-emerald-900/30"
+          >
+            Enter Live Classroom
+          </button>
+          <div className="text-center">
+            <Link
+              href="/dashboard?tab=classes"
+              className="text-xs text-stone-400 hover:text-stone-200 transition-colors"
+            >
+              Cancel and return to dashboard
+            </Link>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -387,11 +701,13 @@ function StudentClassroomInner({ sessionId, sessionTitle }: { sessionId: string;
 export default function StudentLiveClassPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const sessionId = resolvedParams.id;
-  const router = useRouter();
 
   const [token, setToken] = useState<string | null>(null);
   const [livekitUrl, setLivekitUrl] = useState<string | null>(null);
   const [sessionTitle, setSessionTitle] = useState("Live Masterclass");
+  const [sessionStatus, setSessionStatus] = useState("scheduled");
+  const [startsAt, setStartsAt] = useState<string | null>(null);
+  const [hasEntered, setHasEntered] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -411,6 +727,8 @@ export default function StudentLiveClassPage({ params }: { params: Promise<{ id:
         setToken(data.token);
         setLivekitUrl(data.livekitUrl);
         if (data.sessionTitle) setSessionTitle(data.sessionTitle);
+        if (data.sessionStatus) setSessionStatus(data.sessionStatus);
+        if (data.startsAt) setStartsAt(data.startsAt);
       } catch (err: any) {
         console.error("Token error:", err);
         setErrorMsg(err.message || "Failed to connect to LiveKit stream.");
@@ -434,11 +752,12 @@ export default function StudentLiveClassPage({ params }: { params: Promise<{ id:
     );
   }
 
+  // Not-approved or timing error -> Clear No-Access Screen
   if (errorMsg || !token || !livekitUrl) {
     return (
       <div className="flex h-screen bg-[#141517] items-center justify-center text-white p-4">
-        <div className="max-w-md w-full bg-stone-900 border border-stone-800 p-8 rounded-3xl text-center space-y-4">
-          <AlertCircle size={36} className="text-amber-500 mx-auto" />
+        <div className="max-w-md w-full bg-stone-900 border border-stone-800 p-8 rounded-3xl text-center space-y-4 shadow-2xl">
+          <AlertCircle size={38} className="text-amber-500 mx-auto" />
           <h2 className="font-serif text-xl font-bold">Live Stream Admission</h2>
           <p className="text-xs text-stone-400 leading-relaxed">{errorMsg}</p>
           <div className="flex flex-col gap-2 pt-2">
@@ -457,6 +776,18 @@ export default function StudentLiveClassPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Pre-join Device Check / Waiting Room
+  if (!hasEntered) {
+    return (
+      <PreJoinScreen
+        sessionTitle={sessionTitle}
+        sessionStatus={sessionStatus}
+        startsAt={startsAt}
+        onEnter={() => setHasEntered(true)}
+      />
     );
   }
 

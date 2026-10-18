@@ -24,7 +24,7 @@ interface EnrollmentItem {
   id: string;
   session_id: string;
   student_id: string;
-  status: "pending_verification" | "approved" | "rejected" | "cancelled";
+  status: "pending_verification" | "approved" | "confirmed" | "rejected" | "cancelled";
   payment_proof_path?: string;
   rejection_reason?: string;
   attended: boolean;
@@ -275,19 +275,20 @@ export default function MyClassesPage() {
           currentList.map((enr) => {
             const session = enr.class_sessions;
             const isLive = session?.type === "live";
-            const isApproved = enr.status === "approved";
+            const isApproved = enr.status === "approved" || enr.status === "confirmed";
             const isPending = enr.status === "pending_verification";
             const isRejected = enr.status === "rejected";
             const isCancelled = enr.status === "cancelled" || session?.status === "cancelled";
+            const isEnded = session?.status === "ended";
             const canCancel = isPending;
 
             // Live Join Button State:
             // - If not approved: disabled with notice
-            // - If approved: enabled if session is live or within start window
+            // - If approved: enabled if session is live or within 10-minute start window
             const isSessionLive = session?.status === "live";
             const sessionStart = session?.starts_at ? new Date(session.starts_at) : null;
             const diffMinutes = sessionStart ? (sessionStart.getTime() - Date.now()) / (1000 * 60) : 999;
-            const canJoinLive = isApproved && (isSessionLive || diffMinutes <= 15);
+            const canJoinLive = isApproved && (isSessionLive || diffMinutes <= 10) && !isEnded && !isCancelled;
 
             return (
               <div
@@ -411,14 +412,20 @@ export default function MyClassesPage() {
                             disabled
                             className="px-4 py-2.5 rounded-full bg-stone-100 text-stone-400 text-xs font-bold flex items-center gap-1.5 cursor-not-allowed"
                             title={
-                              !isApproved
+                              isEnded
+                                ? "This session has already ended"
+                                : !isApproved
                                 ? "Join link unlocks once tuition payment is approved"
-                                : "Join link activates 15 minutes before scheduled start"
+                                : "Join link activates 10 minutes before scheduled start"
                             }
                           >
                             <Radio size={14} />
                             <span>
-                              {!isApproved ? "Verification Pending" : "Join at Scheduled Start"}
+                              {isEnded
+                                ? "Session Concluded"
+                                : !isApproved
+                                ? "Verification Pending"
+                                : "Opens 10m Before Start"}
                             </span>
                           </button>
                         )}

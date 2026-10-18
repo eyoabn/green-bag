@@ -33,6 +33,7 @@ export async function POST(
       .from("class_sessions")
       .update({
         status: "ended",
+        ended_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq("id", sessionId);

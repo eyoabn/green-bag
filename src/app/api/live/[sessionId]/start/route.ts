@@ -51,7 +51,7 @@ export async function POST(
       .from("enrollments")
       .select("student_id")
       .eq("session_id", sessionId)
-      .eq("status", "confirmed");
+      .in("status", ["confirmed", "approved"]);
 
     if (confirmedEnrollments && confirmedEnrollments.length > 0) {
       const notifications = confirmedEnrollments.map((enr) => ({

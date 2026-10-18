@@ -15,7 +15,7 @@ export async function POST(
     // 1. Fetch class session
     const { data: session, error: sessErr } = await supabase
       .from("class_sessions")
-      .select("id, title, teacher_id, status, livekit_room_name, type")
+      .select("id, title, teacher_id, status, livekit_room_name, type, starts_at")
       .eq("id", sessionId)
       .maybeSingle();
 
@@ -33,7 +33,7 @@ export async function POST(
       canPublish = true;
       roomAdmin = true;
     } else {
-      // 2. Student check: must have confirmed enrollment
+      // 2. Student check: must have confirmed/approved enrollment
       const { data: enrollment, error: enrErr } = await supabase
         .from("enrollments")
         .select("id, status")
@@ -42,12 +42,30 @@ export async function POST(
         .maybeSingle();
 
       if (enrErr || !enrollment) {
-        return NextResponse.json({ error: "You are not enrolled in this session." }, { status: 403 });
+        return NextResponse.json({ error: "Access denied. You are not enrolled in this session." }, { status: 403 });
       }
 
       if (enrollment.status !== "confirmed" && enrollment.status !== "approved" && enrollment.status !== "attended") {
         return NextResponse.json({
           error: `Your enrollment is currently "${enrollment.status}". Access is only granted once payment is verified and confirmed.`,
+        }, { status: 403 });
+      }
+
+      // 3. Timing check: must be live or within 10 minutes of starts_at
+      if (session.status === "ended" || session.status === "cancelled") {
+        return NextResponse.json({
+          error: "This live session has ended or been cancelled.",
+        }, { status: 403 });
+      }
+
+      const isLive = session.status === "live";
+      const startsAtMs = session.starts_at ? new Date(session.starts_at).getTime() : null;
+      const tenMinutesBeforeMs = startsAtMs ? startsAtMs - 10 * 60 * 1000 : null;
+      const isWithinWindow = tenMinutesBeforeMs !== null && Date.now() >= tenMinutesBeforeMs;
+
+      if (!isLive && !isWithinWindow) {
+        return NextResponse.json({
+          error: "Session is not live yet. You can join starting 10 minutes before the scheduled start time.",
         }, { status: 403 });
       }
 
@@ -75,6 +93,8 @@ export async function POST(
       canPublish,
       livekitUrl: wsUrl,
       sessionTitle: session.title,
+      sessionStatus: session.status,
+      startsAt: session.starts_at,
     });
   } catch (err: any) {
     const status = err.status || 500;

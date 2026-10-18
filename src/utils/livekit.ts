@@ -50,14 +50,19 @@ export async function createLiveKitToken({
     ttl: `${ttlSeconds}s`,
   });
 
-  at.addGrant({
+  const videoGrant: any = {
     room: roomName,
     roomJoin: true,
     canPublish,
     canSubscribe,
     canPublishData: true,
-    roomAdmin,
-  });
+  };
+
+  if (roomAdmin) {
+    videoGrant.roomAdmin = true;
+  }
+
+  at.addGrant(videoGrant);
 
   return await at.toJwt();
 }

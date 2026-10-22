@@ -11,7 +11,7 @@ export async function GET(
 
     const res = await pool.query(
       `
-      SELECT id, name, description, price, images, image_urls, category, stock_quantity, is_available, is_featured, created_at, updated_at
+      SELECT id, name, description, price, images, image_urls, category, stock_quantity, is_available, is_featured, is_client_work, created_at, updated_at
       FROM public.products
       WHERE id = $1 AND is_deleted IS NOT TRUE
       LIMIT 1

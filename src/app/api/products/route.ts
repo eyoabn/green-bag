@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     // Data query
     const dataParams = [...params, pageSize, offset];
     const dataQuery = `
-      SELECT id, name, description, price, images, image_urls, category, stock_quantity, is_available, is_featured, created_at, updated_at
+      SELECT id, name, description, price, images, image_urls, category, stock_quantity, is_available, is_featured, is_client_work, created_at, updated_at
       FROM public.products
       ${whereClause}
       ORDER BY is_featured DESC, created_at DESC

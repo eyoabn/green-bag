@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("designs")
       .select(`
-        id, submitted_by, title, file_path, description, admin_reply, quoted_price, status, linked_order_id, created_at, updated_at,
+        id, submitted_by, title, file_path, description, quantity, dimensions, gsm, handle_type, print_finish, urgency, specs_json, admin_reply, quoted_price, status, linked_order_id, created_at, updated_at,
         profiles:submitted_by(id, full_name, email, phone)
       `)
       .order("created_at", { ascending: false });
@@ -49,12 +49,20 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireUser();
     const body = await request.json().catch(() => ({}));
-    const { title, filePath, description } = body;
+    const { 
+      title, 
+      filePath, 
+      description,
+      quantity,
+      dimensions,
+      gsm,
+      handleType,
+      printFinish,
+      urgency,
+      specsJson
+    } = body;
 
-    if (!filePath) {
-      return NextResponse.json({ error: "File path or design specification is required." }, { status: 400 });
-    }
-
+    const effectiveFilePath = filePath || "spec-draft-pending-artwork";
     const designTitle = (title && String(title).trim()) || "Custom Paper Packaging Design";
 
     const supabase = await createClient();
@@ -63,12 +71,19 @@ export async function POST(request: NextRequest) {
       .insert({
         submitted_by: user.id,
         title: designTitle,
-        file_path: filePath,
+        file_path: effectiveFilePath,
         description: description || "Custom kraft packaging specification",
+        quantity: quantity || "1,000 pcs",
+        dimensions: dimensions || "Medium (26cm × 32cm + 10cm)",
+        gsm: gsm ? Number(gsm) : 200,
+        handle_type: handleType || "Twisted Kraft Cord",
+        print_finish: printFinish || "1-Color Screenprint",
+        urgency: urgency || "Standard (7-10 Days)",
+        specs_json: specsJson || {},
         status: "new",
       })
       .select(`
-        id, submitted_by, title, file_path, description, admin_reply, quoted_price, status, linked_order_id, created_at
+        id, submitted_by, title, file_path, description, quantity, dimensions, gsm, handle_type, print_finish, urgency, specs_json, admin_reply, quoted_price, status, linked_order_id, created_at
       `)
       .single();
 

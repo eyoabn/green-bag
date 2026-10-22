@@ -16,7 +16,8 @@ import {
   ShoppingBag,
   FileText,
   Palette,
-  Eye
+  Eye,
+  PenTool
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { uploadFileSafely } from "@/utils/fileUpload";
@@ -52,6 +53,7 @@ export interface ProductDetail {
   dimensions?: string;
   material?: string;
   is_available?: boolean;
+  is_client_work?: boolean;
   stock_quantity?: number | null;
 }
 
@@ -132,6 +134,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             dimensions: p.dimensions || "24cm × 30cm + 10cm gusset",
             material: p.material || "100% Ethiopian Virgin Kraft",
             is_available: p.is_available !== false,
+            is_client_work: Boolean(p.is_client_work),
             stock_quantity: p.stock_quantity ?? 500,
           });
           setSelectedImage(gallery[0]);
@@ -439,334 +442,419 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {/* Right: Order Form & Bank Checkout */}
             <div className="lg:col-span-6 flex flex-col gap-6">
               
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-lg">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31] block mb-1">
-                  Product #{product.id} • Manufactured in Addis Ababa
-                </span>
-                <div className="flex flex-wrap items-center gap-3 mb-2">
-                  <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900">
-                    {product.name}
-                  </h1>
-                  {product.is_available === false ? (
-                    <span className="bg-rose-100 text-rose-800 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-rose-200">
-                      Unavailable
-                    </span>
-                  ) : (
-                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-emerald-200">
-                      In Stock
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-emerald-800 font-semibold bg-emerald-50 px-2.5 py-1 rounded-md inline-block mb-4">
-                  Produced for: {product.client}
-                </p>
+              {product.is_client_work ? (
+                /* Client Exclusive Showcase Card */
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-lg space-y-6">
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#8C4B31]/10 text-[#8C4B31] text-xs font-bold uppercase tracking-wider">
+                    <ShieldCheck size={14} />
+                    <span>Exclusive Client Showcase</span>
+                  </div>
 
-                <p className="text-stone-600 text-sm leading-relaxed mb-6">
-                  {product.description}
-                </p>
-                
-                {/* Pricing & Quantity Selector */}
-                <div className="pb-6 border-b border-stone-200">
-                  <div className="flex items-baseline gap-3 mb-4">
-                    <span className="font-serif text-3xl font-bold text-[#8C4B31]">
-                      {totalPrice} ETB
-                    </span>
-                    <span className="text-xs text-stone-500">
-                      for {quantity} bundle ({quantity * (product.bundleSize || 100)} bags)
-                    </span>
-                    {quantity >= 3 && (
-                      <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                        {quantity >= 10 ? "12% Bulk Discount" : "5% Bundle Discount"}
+                  <div>
+                    <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
+                      {product.name}
+                    </h1>
+                    <p className="text-xs text-stone-500 mt-1 font-medium">
+                      Custom packaging engineered exclusively for <strong className="text-stone-900">{product.client}</strong>
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-stone-700 text-xs leading-relaxed space-y-2">
+                    <p className="font-bold text-amber-900 flex items-center gap-1.5">
+                      <ShieldCheck size={14} className="text-[#8C4B31]" />
+                      <span>Not Available for Direct Retail Purchase</span>
+                    </p>
+                    <p>
+                      This packaging was custom-manufactured exclusively for <strong>{product.client}</strong>. In accordance with client exclusivity and brand trademark protections, arbitrary direct orders cannot be placed for this company&apos;s branded packaging.
+                    </p>
+                  </div>
+
+                  <p className="text-stone-600 text-sm leading-relaxed">
+                    {product.description || "Crafted in Addis Ababa using heavy-duty biodegradable Ethiopian kraft with custom botanical screenprint typography."}
+                  </p>
+
+                  {/* Custom Packaging Request Box */}
+                  <div className="p-6 rounded-2xl bg-[#FAF7F2] border border-stone-200/90 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={18} className="text-[#8C4B31]" />
+                      <h3 className="font-serif text-lg font-bold text-stone-900">
+                        Commission Your Own Branded Packaging
+                      </h3>
+                    </div>
+                    <p className="text-xs text-stone-600 leading-relaxed">
+                      Are you a cafe, roastery, hotel, or boutique? Green Bag can manufacture a custom batch with your own company logo, custom dimensions, and paper weights based on this build.
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="p-3 bg-white rounded-xl border border-stone-200">
+                        <span className="text-stone-500 block text-[10px]">Reference Weight</span>
+                        <span className="font-bold text-stone-900">{product.gsm} GSM Kraft</span>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl border border-stone-200">
+                        <span className="text-stone-500 block text-[10px]">Handle Style</span>
+                        <span className="font-bold text-stone-900">{product.handleType}</span>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl border border-stone-200">
+                        <span className="text-stone-500 block text-[10px]">Min. Custom Batch</span>
+                        <span className="font-bold text-stone-900">500 pcs</span>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl border border-stone-200">
+                        <span className="text-stone-500 block text-[10px]">Turnaround</span>
+                        <span className="font-bold text-stone-900">7–10 Days</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <Link
+                        href={`/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm}&dimensions=${encodeURIComponent(product.dimensions || '')}&handle=${encodeURIComponent(product.handleType || '')}`}
+                        className="btn-primary w-full py-3.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
+                      >
+                        <PenTool size={15} />
+                        <span>Configure in Design Studio</span>
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-between text-xs text-stone-500">
+                    <Link href="/products" className="hover:text-[#1E3B2E] font-medium flex items-center gap-1">
+                      <ArrowLeft size={13} />
+                      <span>Browse Standard Catalog</span>
+                    </Link>
+                    <Link href="/contact" className="hover:text-[#8C4B31] font-bold">
+                      Speak with Packaging Specialist &rarr;
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-lg">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31] block mb-1">
+                    Product #{product.id} • Manufactured in Addis Ababa
+                  </span>
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900">
+                      {product.name}
+                    </h1>
+                    {product.is_available === false ? (
+                      <span className="bg-rose-100 text-rose-800 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-rose-200">
+                        Unavailable
+                      </span>
+                    ) : (
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-emerald-200">
+                        In Stock
                       </span>
                     )}
                   </div>
+                  <p className="text-xs text-emerald-800 font-semibold bg-emerald-50 px-2.5 py-1 rounded-md inline-block mb-4">
+                    Produced for: {product.client}
+                  </p>
 
-                  {/* Quantity Counter & Add to Cart */}
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-stone-700 uppercase">Select Bundles:</span>
-                      <div className="flex items-center border border-stone-300 rounded-full overflow-hidden bg-white">
-                        <button 
-                          type="button"
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition-colors"
-                        >
-                          -
-                        </button>
-                        <span className="px-4 py-1.5 font-bold text-xs text-stone-900">
-                          {quantity} ({quantity * (product.bundleSize || 100)} pcs)
-                        </span>
-                        <button 
-                          type="button"
-                          onClick={() => setQuantity(quantity + 1)}
-                          className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition-colors"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={product.is_available === false}
-                      onClick={() => {
-                        addItem({
-                          id: product.id,
-                          productId: product.id,
-                          name: product.name,
-                          price: product.price,
-                          image: product.image,
-                          category: product.category,
-                          bundleSize: product.bundleSize,
-                        }, quantity);
-                      }}
-                      className="px-5 py-2 rounded-full border-2 border-[#1E3B2E] text-[#1E3B2E] hover:bg-[#1E3B2E] hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
-                    >
-                      <ShoppingBag size={14} />
-                      <span>Add to Cart</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Checkout Form or Unavailable Notification */}
-                {product.is_available === false ? (
-                  <div className="mt-6 p-8 bg-rose-50/70 rounded-3xl border border-rose-200 text-center">
-                    <ShieldCheck size={32} className="text-rose-400 mx-auto mb-3" />
-                    <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Product Currently Unavailable</h3>
-                    <p className="text-sm text-stone-600 mb-6">
-                      This paper bag model is currently unavailable for order. Please browse other active items in our catalog.
-                    </p>
-                    <button
-                      disabled
-                      className="w-full py-4 rounded-full bg-stone-300 text-stone-500 text-xs font-bold tracking-wider uppercase cursor-not-allowed shadow-none"
-                    >
-                      Product Currently Unavailable
-                    </button>
-                  </div>
-                ) : !currentUser ? (
-                  <div className="mt-6 p-8 bg-stone-100 rounded-3xl border border-stone-200 text-center">
-                    <ShieldCheck size={32} className="text-stone-400 mx-auto mb-3" />
-                    <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Sign in to Request Custom Bags</h3>
-                    <p className="text-sm text-stone-600 mb-6">
-                      Create an account or log in to customize this style with your brand logo and place an order.
-                    </p>
-                    <Link
-                      href={`/login?returnTo=/products/${productId}`}
-                      className="bg-[#1E3B2E] text-white text-sm font-bold px-6 py-3 rounded-full hover:bg-[#8C4B31] transition-colors inline-flex items-center gap-2"
-                    >
-                      Log In to Customize <ArrowRight size={16} />
-                    </Link>
-                  </div>
-                ) : (
-                <form onSubmit={handleSubmitOrder} className="mt-6 space-y-6">
+                  <p className="text-stone-600 text-sm leading-relaxed mb-6">
+                    {product.description}
+                  </p>
                   
-                  {/* Step 1: Customization Request */}
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">1</span>
-                      Your Brand Customization & Notes
-                    </h4>
-                    <div className="p-4 bg-[#FAF7F2] border border-stone-200 rounded-xl mb-6">
-                      <p className="text-xs text-stone-600 mb-3 leading-relaxed">
-                        You are requesting a custom production run based on the <span className="font-bold text-stone-900">{product.name}</span> style. Please describe the branding (logo, text) or specific instructions.
-                      </p>
-                      <textarea
-                        placeholder="E.g., Please print our logo 'Addis Cafe' in black ink centered on the bag. We will email the vector logo."
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        className="w-full p-3 text-xs bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 min-h-[80px]"
-                      />
+                  {/* Pricing & Quantity Selector */}
+                  <div className="pb-6 border-b border-stone-200">
+                    <div className="flex items-baseline gap-3 mb-4">
+                      <span className="font-serif text-3xl font-bold text-[#8C4B31]">
+                        {totalPrice} ETB
+                      </span>
+                      <span className="text-xs text-stone-500">
+                        for {quantity} bundle ({quantity * (product.bundleSize || 100)} bags)
+                      </span>
+                      {quantity >= 3 && (
+                        <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                          {quantity >= 10 ? "12% Bulk Discount" : "5% Bundle Discount"}
+                        </span>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Step 2: Contact & Delivery Details */}
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">2</span>
-                      Contact & Delivery Details
-                    </h4>
-                    <div className="space-y-3 mb-3">
-                      <div>
-                        <label className="text-[11px] font-semibold text-stone-700 block mb-1">
-                          Full Name or Business Name
-                        </label>
-                        <input 
-                          type="text" 
-                          autoComplete="name"
-                          placeholder="Your Name"
-                          required
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-stone-700 block mb-1">
-                          Phone Number (for SMS confirmation)
-                        </label>
-                        <input 
-                          type="tel" 
-                          inputMode="tel"
-                          autoComplete="tel"
-                          placeholder="e.g. 0911234567"
-                          required
-                          value={customerPhone}
-                          onChange={(e) => setCustomerPhone(e.target.value)}
-                          className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-stone-700 block mb-1">
-                          Delivery Address in Ethiopia
-                        </label>
-                        <input 
-                          type="text" 
-                          autoComplete="street-address"
-                          placeholder="e.g. Bole Medhanialem, Addis Ababa"
-                          required
-                          value={deliveryAddress}
-                          onChange={(e) => setDeliveryAddress(e.target.value)}
-                          className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Step 2: Bank Selection */}
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">2</span>
-                      Transfer {totalPrice} ETB to Official Account
-                    </h4>
-
-                    {/* Bank Tabs */}
-                    {banks.length === 0 ? (
-                      <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-stone-500 text-xs text-center">
-                        Loading active settlement accounts...
-                      </div>
-                    ) : (
-                      <>
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                          {banks.map((bank) => (
-                            <button
-                              key={bank.id}
-                              type="button"
-                              onClick={() => setSelectedBank(bank)}
-                              className={`p-2 rounded-xl text-[11px] font-bold border text-center transition-all ${
-                                selectedBank?.id === bank.id
-                                  ? "border-[#1E3B2E] bg-[#1E3B2E] text-white shadow-sm"
-                                  : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
-                              }`}
-                            >
-                              {bank.name.split(" ")[0].toUpperCase()}
-                            </button>
-                          ))}
+                    {/* Quantity Counter & Add to Cart */}
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-stone-700 uppercase">Select Bundles:</span>
+                        <div className="flex items-center border border-stone-300 rounded-full overflow-hidden bg-white">
+                          <button 
+                            type="button"
+                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition-colors"
+                          >
+                            -
+                          </button>
+                          <span className="px-4 py-1.5 font-bold text-xs text-stone-900">
+                            {quantity} ({quantity * (product.bundleSize || 100)} pcs)
+                          </span>
+                          <button 
+                            type="button"
+                            onClick={() => setQuantity(quantity + 1)}
+                            className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition-colors"
+                          >
+                            +
+                          </button>
                         </div>
+                      </div>
 
-                        {/* Active Bank Card with Copy Action */}
-                        {selectedBank && (
-                          <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-stone-300/80 flex items-center justify-between">
-                            <div>
-                              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
-                                {selectedBank.name}
-                              </span>
-                              <p className="font-mono text-base font-bold text-stone-900 mt-0.5 tracking-wider">
-                                {selectedBank.accountNumber}
-                              </p>
-                              <p className="text-[11px] text-stone-600 mt-0.5">
-                                A/C Name: {selectedBank.accountHolder}
-                              </p>
+                      <button
+                        type="button"
+                        disabled={product.is_available === false}
+                        onClick={() => {
+                          addItem({
+                            id: product.id,
+                            productId: product.id,
+                            name: product.name,
+                            price: product.price,
+                            image: product.image,
+                            category: product.category,
+                            bundleSize: product.bundleSize,
+                          }, quantity);
+                        }}
+                        className="px-5 py-2 rounded-full border-2 border-[#1E3B2E] text-[#1E3B2E] hover:bg-[#1E3B2E] hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                      >
+                        <ShoppingBag size={14} />
+                        <span>Add to Cart</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Checkout Form or Unavailable Notification */}
+                  {product.is_available === false ? (
+                    <div className="mt-6 p-8 bg-rose-50/70 rounded-3xl border border-rose-200 text-center">
+                      <ShieldCheck size={32} className="text-rose-400 mx-auto mb-3" />
+                      <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Product Currently Unavailable</h3>
+                      <p className="text-sm text-stone-600 mb-6">
+                        This paper bag model is currently unavailable for order. Please browse other active items in our catalog.
+                      </p>
+                      <button
+                        disabled
+                        className="w-full py-4 rounded-full bg-stone-300 text-stone-500 text-xs font-bold tracking-wider uppercase cursor-not-allowed shadow-none"
+                      >
+                        Product Currently Unavailable
+                      </button>
+                    </div>
+                  ) : !currentUser ? (
+                    <div className="mt-6 p-8 bg-stone-100 rounded-3xl border border-stone-200 text-center">
+                      <ShieldCheck size={32} className="text-stone-400 mx-auto mb-3" />
+                      <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Sign in to Request Custom Bags</h3>
+                      <p className="text-sm text-stone-600 mb-6">
+                        Create an account or log in to customize this style with your brand logo and place an order.
+                      </p>
+                      <Link
+                        href={`/login?returnTo=/products/${productId}`}
+                        className="bg-[#1E3B2E] text-white text-sm font-bold px-6 py-3 rounded-full hover:bg-[#8C4B31] transition-colors inline-flex items-center gap-2"
+                      >
+                        Log In to Customize <ArrowRight size={16} />
+                      </Link>
+                    </div>
+                  ) : (
+                  <form onSubmit={handleSubmitOrder} className="mt-6 space-y-6">
+                    
+                    {/* Step 1: Customization Request */}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">1</span>
+                        Your Brand Customization & Notes
+                      </h4>
+                      <div className="p-4 bg-[#FAF7F2] border border-stone-200 rounded-xl mb-6">
+                        <p className="text-xs text-stone-600 mb-3 leading-relaxed">
+                          You are requesting a custom production run based on the <span className="font-bold text-stone-900">{product.name}</span> style. Please describe the branding (logo, text) or specific instructions.
+                        </p>
+                        <textarea
+                          placeholder="E.g., Please print our logo 'Addis Cafe' in black ink centered on the bag. We will email the vector logo."
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          className="w-full p-3 text-xs bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 min-h-[80px]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Step 2: Contact & Delivery Details */}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">2</span>
+                        Contact & Delivery Details
+                      </h4>
+                      <div className="space-y-3 mb-3">
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-700 block mb-1">
+                            Full Name or Business Name
+                          </label>
+                          <input 
+                            type="text" 
+                            autoComplete="name"
+                            placeholder="Your Name"
+                            required
+                            value={customerName}
+                            onChange={(e) => setCustomerName(e.target.value)}
+                            className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-700 block mb-1">
+                            Phone Number (for SMS confirmation)
+                          </label>
+                          <input 
+                            type="tel" 
+                            inputMode="tel"
+                            autoComplete="tel"
+                            placeholder="e.g. 0911234567"
+                            required
+                            value={customerPhone}
+                            onChange={(e) => setCustomerPhone(e.target.value)}
+                            className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-700 block mb-1">
+                            Delivery Address in Ethiopia
+                          </label>
+                          <input 
+                            type="text" 
+                            autoComplete="street-address"
+                            placeholder="e.g. Bole Medhanialem, Addis Ababa"
+                            required
+                            value={deliveryAddress}
+                            onChange={(e) => setDeliveryAddress(e.target.value)}
+                            className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Step 2: Bank Selection */}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">2</span>
+                        Transfer {totalPrice} ETB to Official Account
+                      </h4>
+
+                      {/* Bank Tabs */}
+                      {banks.length === 0 ? (
+                        <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-stone-500 text-xs text-center">
+                          Loading active settlement accounts...
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-3 gap-2 mb-3">
+                            {banks.map((bank) => (
+                              <button
+                                key={bank.id}
+                                type="button"
+                                onClick={() => setSelectedBank(bank)}
+                                className={`p-2 rounded-xl text-[11px] font-bold border text-center transition-all ${
+                                  selectedBank?.id === bank.id
+                                    ? "border-[#1E3B2E] bg-[#1E3B2E] text-white shadow-sm"
+                                    : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
+                                }`}
+                              >
+                                {bank.name.split(" ")[0].toUpperCase()}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Active Bank Card with Copy Action */}
+                          {selectedBank && (
+                            <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-stone-300/80 flex items-center justify-between">
+                              <div>
+                                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
+                                  {selectedBank.name}
+                                </span>
+                                <p className="font-mono text-base font-bold text-stone-900 mt-0.5 tracking-wider">
+                                  {selectedBank.accountNumber}
+                                </p>
+                                <p className="text-[11px] text-stone-600 mt-0.5">
+                                  A/C Name: {selectedBank.accountHolder}
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(selectedBank.accountNumber)}
+                                className="p-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
+                                title="Copy Account Number"
+                              >
+                                {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                                <span>{copied ? "Copied!" : "Copy"}</span>
+                              </button>
                             </div>
+                          )}
+                        </>
+                      )}
+                    </div>
 
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(selectedBank.accountNumber)}
-                              className="p-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
-                              title="Copy Account Number"
-                            >
-                              {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                              <span>{copied ? "Copied!" : "Copy"}</span>
-                            </button>
+                    {/* Step 3: Receipt Screenshot Upload */}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">3</span>
+                        Upload Transaction Screenshot / Receipt
+                      </h4>
+
+                      <label className="border-2 border-dashed border-stone-300 hover:border-[#8C4B31] bg-[#FAF7F2] hover:bg-white rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={handleFileUpload}
+                        />
+                        <Upload size={28} className="text-[#8C4B31] mb-2" />
+                        {uploadedFile ? (
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-emerald-700 flex items-center justify-center gap-1">
+                              <CheckCircle2 size={14} /> {uploadedFile.name}
+                            </p>
+                            <p className="text-[10px] text-stone-500 mt-0.5">
+                              {(uploadedFile.size / 1024).toFixed(1)} KB • Click to change
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-xs font-bold text-stone-800">
+                              Click to upload receipt screenshot
+                            </p>
+                            <p className="text-[10px] text-stone-500 mt-0.5">
+                              Supports CBE Birr receipt, Telebirr SMS capture, or Bank Slip
+                            </p>
                           </div>
                         )}
-                      </>
-                    )}
-                  </div>
+                      </label>
+                    </div>
 
-                  {/* Step 3: Receipt Screenshot Upload */}
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">3</span>
-                      Upload Transaction Screenshot / Receipt
-                    </h4>
+                    {/* Submit Button */}
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || !uploadedFile}
+                        className="w-full py-4 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Sparkles size={16} className="animate-spin" />
+                            <span>Placing Order...</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingBag size={16} />
+                            <span>Request Custom Production ({totalPrice} ETB)</span>
+                          </>
+                        )}
+                      </button>
+                      <p className="text-[10px] text-center text-stone-500 mt-3 font-medium mb-4">
+                        By submitting, you agree to our Custom Manufacturing Terms. Our team will verify your payment and contact you for artwork approval before production begins.
+                      </p>
+                    </div>
+                  </form>
+                  )}
 
-                    <label className="border-2 border-dashed border-stone-300 hover:border-[#8C4B31] bg-[#FAF7F2] hover:bg-white rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={handleFileUpload}
-                      />
-                      <Upload size={28} className="text-[#8C4B31] mb-2" />
-                      {uploadedFile ? (
-                        <div className="text-center">
-                          <p className="text-xs font-bold text-emerald-700 flex items-center justify-center gap-1">
-                            <CheckCircle2 size={14} /> {uploadedFile.name}
-                          </p>
-                          <p className="text-[10px] text-stone-500 mt-0.5">
-                            {(uploadedFile.size / 1024).toFixed(1)} KB • Click to change
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <p className="text-xs font-bold text-stone-800">
-                            Click to upload receipt screenshot
-                          </p>
-                          <p className="text-[10px] text-stone-500 mt-0.5">
-                            Supports CBE Birr receipt, Telebirr SMS capture, or Bank Slip
-                          </p>
-                        </div>
-                      )}
-                    </label>
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || !uploadedFile}
-                      className="w-full py-4 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  <div className="text-center pt-2">
+                    <Link
+                      href="/design-submission"
+                      className="text-xs font-bold text-[#8C4B31] hover:underline inline-flex items-center gap-1"
                     >
-                      {isSubmitting ? (
-                        <>
-                          <Sparkles size={16} className="animate-spin" />
-                          <span>Placing Order...</span>
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingBag size={16} />
-                          <span>Request Custom Production ({totalPrice} ETB)</span>
-                        </>
-                      )}
-                    </button>
-                    <p className="text-[10px] text-center text-stone-500 mt-3 font-medium mb-4">
-                      By submitting, you agree to our Custom Manufacturing Terms. Our team will verify your payment and contact you for artwork approval before production begins.
-                    </p>
+                      <span>Need your own custom dimensions and logo? Use our Custom Studio</span>
+                      <ArrowRight size={12} />
+                    </Link>
                   </div>
-                </form>
-                )}
 
-                <div className="text-center pt-2">
-                  <Link
-                    href="/design-submission"
-                    className="text-xs font-bold text-[#8C4B31] hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>Need your own custom dimensions and logo? Use our Custom Studio</span>
-                    <ArrowRight size={12} />
-                  </Link>
                 </div>
-
-              </div>
+              )}
 
             </div>
 
@@ -774,24 +862,40 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* Mobile Sticky Action Bar */}
-        {!orderConfirmed && product.is_available !== false && (
-          <StickyBottomBar>
-            <div>
-              <span className="text-[10px] text-stone-500 block uppercase font-bold">Estimated</span>
-              <span className="text-base font-bold text-[#8C4B31]">Total: {totalPrice} ETB</span>
-            </div>
-            <button
-              onClick={() => {
-                const formEl = document.querySelector("form");
-                if (formEl) {
-                  formEl.scrollIntoView({ behavior: "smooth" });
-                }
-              }}
-              className="btn-primary touch-target text-xs px-6"
-            >
-              Order Now
-            </button>
-          </StickyBottomBar>
+        {!orderConfirmed && (
+          product.is_client_work ? (
+            <StickyBottomBar>
+              <div>
+                <span className="text-[10px] text-stone-500 block uppercase font-bold">Client Showcase</span>
+                <span className="text-xs font-bold text-stone-900 truncate max-w-[180px] block">{product.client}</span>
+              </div>
+              <Link
+                href={`/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm}&dimensions=${encodeURIComponent(product.dimensions || '')}&handle=${encodeURIComponent(product.handleType || '')}`}
+                className="btn-primary touch-target text-xs px-6 py-2.5 flex items-center gap-1.5"
+              >
+                <PenTool size={14} />
+                <span>Design Yours</span>
+              </Link>
+            </StickyBottomBar>
+          ) : product.is_available !== false ? (
+            <StickyBottomBar>
+              <div>
+                <span className="text-[10px] text-stone-500 block uppercase font-bold">Estimated</span>
+                <span className="text-base font-bold text-[#8C4B31]">Total: {totalPrice} ETB</span>
+              </div>
+              <button
+                onClick={() => {
+                  const formEl = document.querySelector("form");
+                  if (formEl) {
+                    formEl.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+                className="btn-primary touch-target text-xs px-6"
+              >
+                Order Now
+              </button>
+            </StickyBottomBar>
+          ) : null
         )}
       </div>
     </div>

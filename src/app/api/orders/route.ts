@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     // 1. Fetch real products from DB to strictly compute prices on the server
     const productIds = items.map(i => i.productId);
     const { rows: dbProducts } = await pool.query(
-      "SELECT id, name, price, is_available FROM public.products WHERE id = ANY($1::uuid[])",
+      "SELECT id, name, price, is_available, is_client_work FROM public.products WHERE id = ANY($1::uuid[])",
       [productIds]
     );
 
@@ -130,6 +130,11 @@ export async function POST(request: NextRequest) {
       const dbProd: any = productMap.get(item.productId);
       if (!dbProd) {
         return NextResponse.json({ error: `Product not found: ${item.productId}` }, { status: 400 });
+      }
+      if (dbProd.is_client_work) {
+        return NextResponse.json({
+          error: `Product "${dbProd.name}" is an exclusive client showcase deliverable and cannot be purchased directly. Please submit a request through our Custom Design Studio to produce packaging for your own brand.`,
+        }, { status: 400 });
       }
       if (!dbProd.is_available) {
         return NextResponse.json({ error: `Product "${dbProd.name}" is currently unavailable.` }, { status: 400 });

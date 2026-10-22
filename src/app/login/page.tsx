@@ -20,18 +20,15 @@ function LoginFormContent() {
     setLocalUser(user);
     const role = user.role;
 
-    setSuccessMessage(`Authenticated as ${role.toUpperCase()} (${user.full_name}). Loading workspace...`);
-    setTimeout(() => {
-      if (returnTo) {
-        router.push(returnTo);
-      } else if (role === "admin") {
-        router.push("/admin");
-      } else if (role === "teacher") {
-        router.push("/teacher");
-      } else {
-        router.push("/dashboard");
-      }
-    }, 500);
+    if (returnTo) {
+      router.push(returnTo);
+    } else if (role === "admin") {
+      router.push("/admin");
+    } else if (role === "teacher") {
+      router.push("/teacher");
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {

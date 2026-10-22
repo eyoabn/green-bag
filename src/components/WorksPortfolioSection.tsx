@@ -14,7 +14,7 @@ import {
   Building2,
   PenTool
 } from "lucide-react";
-import { PROJECTS_WORKS, ProjectWork } from "@/data/projectsData";
+import { type ProjectWork } from "@/data/projectsData";
 
 export default function WorksPortfolioSection({ 
   limit, 
@@ -23,23 +23,27 @@ export default function WorksPortfolioSection({
   limit?: number; 
   showViewAllButton?: boolean;
 }) {
-  const [projects, setProjects] = useState<ProjectWork[]>(PROJECTS_WORKS);
+  const [projects, setProjects] = useState<ProjectWork[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeModalWork, setActiveModalWork] = useState<ProjectWork | null>(null);
   const [activeModalImage, setActiveModalImage] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadPortfolio() {
+      setIsLoading(true);
       try {
         const res = await fetch("/api/portfolio");
         if (res.ok) {
           const data = await res.json();
-          if (data.projects && data.projects.length > 0) {
+          if (data.projects && Array.isArray(data.projects)) {
             setProjects(data.projects);
           }
         }
       } catch (err) {
-        // Fallback to PROJECTS_WORKS
+        setProjects([]);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadPortfolio();
@@ -124,100 +128,117 @@ export default function WorksPortfolioSection({
         </div>
 
         {/* Portfolio Gallery Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {displayedProjects.map((project) => (
-            <div
-              key={project.id}
-              className="group bg-white rounded-3xl overflow-hidden border border-stone-300/70 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
-            >
-              <div>
-                {/* Image Container with "Nice View" Lightbox Trigger */}
-                <div 
-                  onClick={() => openNiceView(project)}
-                  className="relative h-72 sm:h-80 w-full bg-stone-100 overflow-hidden cursor-pointer group-hover:brightness-95 transition-all"
-                >
-                  <Image
-                    src={project.image}
-                    alt={project.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10 opacity-70 group-hover:opacity-80 transition-opacity" />
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="bg-white rounded-3xl overflow-hidden border border-stone-200 p-4 animate-pulse">
+                <div className="h-72 bg-stone-200 rounded-2xl mb-4" />
+                <div className="h-5 bg-stone-200 rounded w-3/4 mb-2" />
+                <div className="h-4 bg-stone-100 rounded w-full mb-4" />
+                <div className="h-12 bg-stone-100 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        ) : displayedProjects.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-3xl border border-stone-200 p-8 text-stone-500">
+            <p className="text-sm font-medium">No projects found in this category.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {displayedProjects.map((project) => (
+              <div
+                key={project.id}
+                className="group bg-white rounded-3xl overflow-hidden border border-stone-300/70 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
+              >
+                <div>
+                  {/* Image Container with "Nice View" Lightbox Trigger */}
+                  <div 
+                    onClick={() => openNiceView(project)}
+                    className="relative h-72 sm:h-80 w-full bg-stone-100 overflow-hidden cursor-pointer group-hover:brightness-95 transition-all"
+                  >
+                    <Image
+                      src={project.image}
+                      alt={project.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10 opacity-70 group-hover:opacity-80 transition-opacity" />
 
-                  {/* Top Badges */}
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
-                    <span className="bg-[#1E3B2E]/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
-                      {project.category}
-                    </span>
-                    <span className="bg-white/90 backdrop-blur-md text-stone-900 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
-                      {project.gsm} GSM
-                    </span>
+                    {/* Top Badges */}
+                    <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
+                      <span className="bg-[#1E3B2E]/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
+                        {project.category}
+                      </span>
+                      <span className="bg-white/90 backdrop-blur-md text-stone-900 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
+                        {project.gsm} GSM
+                      </span>
+                    </div>
+
+                    {/* "Nice View" Interactive Button Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="bg-[#8C4B31] text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                        <Maximize2 size={14} />
+                        <span>Nice View (Full Specs)</span>
+                      </span>
+                    </div>
+
+                    {/* Client Name over image */}
+                    <div className="absolute bottom-4 left-4 right-4 text-white">
+                      <p className="text-[11px] font-semibold text-stone-200 tracking-wider uppercase flex items-center gap-1">
+                        <MapPin size={11} className="text-[#D7A977]" />
+                        {project.location}
+                      </p>
+                      <h3 className="font-serif text-xl font-bold text-white drop-shadow-sm line-clamp-1">
+                        {project.client}
+                      </h3>
+                    </div>
                   </div>
 
-                  {/* "Nice View" Interactive Button Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <span className="bg-[#8C4B31] text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                      <Maximize2 size={14} />
-                      <span>Nice View (Full Specs)</span>
-                    </span>
-                  </div>
-
-                  {/* Client Name over image */}
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <p className="text-[11px] font-semibold text-stone-200 tracking-wider uppercase flex items-center gap-1">
-                      <MapPin size={11} className="text-[#D7A977]" />
-                      {project.location}
+                  {/* Card Body Details */}
+                  <div className="p-6">
+                    <h4 className="font-serif text-lg font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors line-clamp-1 mb-2">
+                      {project.title}
+                    </h4>
+                    <p className="text-stone-600 text-xs leading-relaxed line-clamp-2 mb-4">
+                      {project.description}
                     </p>
-                    <h3 className="font-serif text-xl font-bold text-white drop-shadow-sm line-clamp-1">
-                      {project.client}
-                    </h3>
-                  </div>
-                </div>
 
-                {/* Card Body Details */}
-                <div className="p-6">
-                  <h4 className="font-serif text-lg font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors line-clamp-1 mb-2">
-                    {project.title}
-                  </h4>
-                  <p className="text-stone-600 text-xs leading-relaxed line-clamp-2 mb-4">
-                    {project.description}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-2 text-[11px] bg-[#FAF7F2] p-3 rounded-2xl border border-stone-200/80">
-                    <div>
-                      <span className="text-stone-400 block font-medium">Batch Run:</span>
-                      <span className="font-bold text-stone-800">{project.batchSize}</span>
-                    </div>
-                    <div>
-                      <span className="text-stone-400 block font-medium">Handle:</span>
-                      <span className="font-bold text-stone-800 truncate block">{project.handleType}</span>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] bg-[#FAF7F2] p-3 rounded-2xl border border-stone-200/80">
+                      <div>
+                        <span className="text-stone-400 block font-medium">Batch Run:</span>
+                        <span className="font-bold text-stone-800">{project.batchSize}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-400 block font-medium">Handle:</span>
+                        <span className="font-bold text-stone-800 truncate block">{project.handleType}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Card Footer Actions */}
-              <div className="px-6 pb-6 pt-2 border-t border-stone-100 flex items-center justify-between">
-                <button
-                  onClick={() => openNiceView(project)}
-                  className="text-xs font-bold text-[#8C4B31] hover:text-[#1E3B2E] transition-colors flex items-center gap-1"
-                >
-                  <Eye size={14} />
-                  <span>Inspect Details</span>
-                </button>
+                {/* Card Footer Actions */}
+                <div className="px-6 pb-6 pt-2 border-t border-stone-100 flex items-center justify-between">
+                  <button
+                    onClick={() => openNiceView(project)}
+                    className="text-xs font-bold text-[#8C4B31] hover:text-[#1E3B2E] transition-colors flex items-center gap-1"
+                  >
+                    <Eye size={14} />
+                    <span>Inspect Details</span>
+                  </button>
 
-                <Link
-                  href={`/design-submission?preset=${encodeURIComponent(project.title)}&gsm=${project.gsm}`}
-                  className="px-4 py-2 rounded-full bg-[#1E3B2E]/10 hover:bg-[#1E3B2E] text-[#1E3B2E] hover:text-white text-xs font-bold transition-all flex items-center gap-1"
-                >
-                  <span>Order Similar</span>
-                  <ArrowRight size={13} />
-                </Link>
+                  <Link
+                    href={`/design-submission?preset=${encodeURIComponent(project.title)}&gsm=${project.gsm}`}
+                    className="px-4 py-2 rounded-full bg-[#1E3B2E]/10 hover:bg-[#1E3B2E] text-[#1E3B2E] hover:text-white text-xs font-bold transition-all flex items-center gap-1"
+                  >
+                    <span>Order Similar</span>
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* View All / Explore Full Catalog Banner */}
         {showViewAllButton && limit && limit < filteredProjects.length && (

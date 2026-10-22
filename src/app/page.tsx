@@ -96,21 +96,19 @@ export default function Home() {
         setWorkshopsLoading(false);
       }
 
-      // 4. Fetch Company Settings
+      // 4. Fetch Company Settings from /api/settings (backed by PostgreSQL public.settings)
       try {
-        const supabase = createClient();
-        const { data } = await supabase.from("site_settings").select("key, value");
-        if (data && data.length > 0) {
-          const cfg: any = {};
-          data.forEach((row) => (cfg[row.key] = row.value));
-          setCompanySettings((prev) => ({
-            company_name: cfg.company_name || prev.company_name,
-            contact_email: cfg.contact_email || prev.contact_email,
-            contact_phone: cfg.contact_phone || prev.contact_phone,
-          }));
+        const res = await fetch("/api/settings");
+        const json = await res.json();
+        if (json.settings) {
+          setCompanySettings({
+            company_name: json.settings.company_name || "Ethiopia Arenguade Paper Product",
+            contact_email: json.settings.contact_email || "support@arenguadepaper.com",
+            contact_phone: json.settings.contact_phone || "+251 911 741618",
+          });
         }
-      } catch (e) {
-        console.warn("Settings fetch fallback:", e);
+      } catch {
+        // Fallback handled safely
       }
     }
 

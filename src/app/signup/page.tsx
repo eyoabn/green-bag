@@ -21,14 +21,11 @@ function SignupFormContent() {
 
   const completeSignup = (user: AppUser) => {
     setLocalUser(user);
-    setSuccessMessage(`Account registered successfully as ${user.full_name}! Redirecting to your dashboard...`);
-    setTimeout(() => {
-      if (returnTo) {
-        router.push(returnTo);
-      } else {
-        router.push("/dashboard");
-      }
-    }, 600);
+    if (returnTo) {
+      router.push(returnTo);
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {

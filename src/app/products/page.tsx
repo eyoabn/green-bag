@@ -38,19 +38,11 @@ export interface Product {
   stock_quantity?: number | null;
 }
 
-const CATEGORIES = [
-  "All", 
-  "Packaging",
-  "Coffee & Food", 
-  "Luxury Retail", 
-  "Standard Retail", 
-  "Heavy Duty"
-];
-
 export default function ProductsPage() {
   const { formatPrice } = useCurrency();
   const { addItem } = useCart();
   const [productsList, setProductsList] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>(["All"]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -101,6 +93,10 @@ export default function ProductsPage() {
           mappedProducts.sort((a, b) => a.price - b.price);
         } else if (sortBy === "price-high") {
           mappedProducts.sort((a, b) => b.price - a.price);
+        }
+
+        if (resJson.categories && Array.isArray(resJson.categories) && resJson.categories.length > 0) {
+          setCategories(resJson.categories);
         }
 
         setProductsList(mappedProducts);
@@ -169,7 +165,7 @@ export default function ProductsPage() {
           
           {/* Category Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => {

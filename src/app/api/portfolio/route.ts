@@ -1,24 +1,54 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { PROJECTS_WORKS, ProjectWork } from "@/data/projectsData";
+import { type ProjectWork } from "@/data/projectsData";
 
 export async function GET() {
   try {
     const supabase = await createClient();
     
-    // Query published products and portfolio items from PostgreSQL
-    const { data: dbProducts, error } = await supabase
+    // 1. Query dedicated portfolio projects from public.portfolio_projects table
+    const { data: dbPortfolio, error: portfolioError } = await supabase
+      .from("portfolio_projects")
+      .select("*")
+      .order("featured", { ascending: false })
+      .order("year", { ascending: false });
+
+    if (portfolioError) {
+      throw portfolioError;
+    }
+
+    const mappedPortfolio: ProjectWork[] = (dbPortfolio || []).map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      client: p.client,
+      category: p.category as ProjectWork["category"],
+      sector: p.sector,
+      location: p.location,
+      batchSize: p.batch_size,
+      gsm: Number(p.gsm),
+      handleType: p.handle_type,
+      printFinish: p.print_finish,
+      dimensions: p.dimensions,
+      image: p.image,
+      secondaryImages: Array.isArray(p.secondary_images) ? p.secondary_images : [],
+      year: p.year,
+      featured: Boolean(p.featured),
+      description: p.description,
+      clientQuote: p.client_quote || undefined,
+    }));
+
+    // 2. Query published products from PostgreSQL to showcase active manufactured lines
+    const { data: dbProducts, error: productsError } = await supabase
       .from("products")
       .select("id, name, description, price, images, category, created_at")
       .eq("is_available", true)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      throw error;
+    if (productsError) {
+      throw productsError;
     }
 
-    // Merge database manufactured products into the portfolio presentation format
-    const dbProjects: ProjectWork[] = (dbProducts || []).map((p) => {
+    const dbProductProjects: ProjectWork[] = (dbProducts || []).map((p: any) => {
       const img = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : "/images/photo_6_2026-09-05_00-36-03.jpg";
       const secondary = Array.isArray(p.images) && p.images.length > 1 ? p.images.slice(1) : [];
 
@@ -49,8 +79,8 @@ export async function GET() {
       };
     });
 
-    // Combine database products with curated industrial showcase works
-    const combinedProjects = [...dbProjects, ...PROJECTS_WORKS];
+    // Combine database portfolio records with database products
+    const combinedProjects = [...mappedPortfolio, ...dbProductProjects];
 
     return NextResponse.json({
       success: true,
@@ -58,11 +88,14 @@ export async function GET() {
       total: combinedProjects.length,
     });
   } catch (err: any) {
-    // Return curated portfolio as resilient fallback
-    return NextResponse.json({
-      success: true,
-      projects: PROJECTS_WORKS,
-      total: PROJECTS_WORKS.length,
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: err?.message || "Failed to query portfolio from database",
+        projects: [],
+        total: 0,
+      },
+      { status: 500 }
+    );
   }
 }

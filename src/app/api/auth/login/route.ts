@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { checkRateLimit } from "@/utils/rateLimit";
 import { LoginSchema } from "@/utils/validation";
+import { logAuditEvent } from "@/utils/audit";
 
 export async function POST(request: NextRequest) {
   // Rate limit protection
@@ -27,7 +28,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError || !authData.user) {
-      console.error("DEBUG LOGIN authError:", authError?.message, "for email:", trimmedEmail);
+      // Record failed authentication event to database audit log
+      await logAuditEvent({
+        actorId: null,
+        action: "AUTH_LOGIN_FAILED",
+        entity: "auth",
+        metadata: {
+          email: trimmedEmail,
+          error: authError?.message || "Unknown credentials failure",
+        },
+      });
+
       const isFetchFailed = authError?.message?.toLowerCase().includes("fetch failed");
       const errorMessage = isFetchFailed
         ? "Unable to reach database service. Please check your network or verify your Supabase environment variables on Vercel."

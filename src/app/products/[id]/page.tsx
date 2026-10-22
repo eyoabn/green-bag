@@ -61,28 +61,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const { addItem } = useCart();
 
-  const [product, setProduct] = useState<ProductDetail>({
-    id: productId,
-    name: "Ethiopian Kraft Packaging",
-    client: "Arenguade Standard Catalog",
-    category: "Packaging",
-    price: 180,
-    bundleSize: 100,
-    gsm: 200,
-    handleType: "Twisted Kraft Cord",
-    image: "/images/photo_6_2026-09-05_00-36-03.jpg",
-    gallery: ["/images/photo_6_2026-09-05_00-36-03.jpg"],
-    badge: "Verified Production Batch",
-    description: "High-performance Ethiopian kraft packaging.",
-    dimensions: "24cm × 30cm + 10cm gusset",
-    material: "100% Ethiopian Virgin Kraft",
-    is_available: true,
-    stock_quantity: 500,
-  });
+  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
-  const [selectedImage, setSelectedImage] = useState<string>(product.image);
+  const [selectedImage, setSelectedImage] = useState<string>("/images/photo_6_2026-09-05_00-36-03.jpg");
   const [copied, setCopied] = useState<boolean>(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [customerName, setCustomerName] = useState<string>("");
@@ -99,6 +83,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     async function loadProductAndBanks() {
+      setLoading(true);
       const supabase = createClient();
 
       // 1. Fetch real active banks from Supabase
@@ -153,6 +138,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }
       } catch (err) {
         console.error("Error loading product detail:", err);
+      } finally {
+        setLoading(false);
       }
 
       // 3. Auto-populate logged-in user information
@@ -169,9 +156,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
 
     loadProductAndBanks();
-  }, [productId, product.name]);
+  }, [productId]);
 
-  const basePrice = product.price;
+  const basePrice = product ? product.price : 0;
   // Volume discount: 5% off for 3+ bundles, 12% off for 10+ bundles
   const discountMultiplier = quantity >= 10 ? 0.88 : quantity >= 3 ? 0.95 : 1;
   const totalPrice = Math.round(basePrice * quantity * discountMultiplier);
@@ -190,7 +177,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (product.is_available === false) {
+    if (!product || product.is_available === false) {
       alert("This product is currently marked unavailable and cannot be ordered.");
       return;
     }
@@ -270,6 +257,37 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full animate-pulse">
+          <div className="h-6 w-32 bg-stone-200 rounded-full mb-8" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-7 h-[480px] bg-stone-200 rounded-3xl" />
+            <div className="lg:col-span-5 space-y-4">
+              <div className="h-8 bg-stone-200 rounded w-3/4" />
+              <div className="h-4 bg-stone-200 rounded w-1/2" />
+              <div className="h-24 bg-stone-100 rounded-2xl" />
+              <div className="h-40 bg-stone-200 rounded-2xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0] items-center justify-center text-center px-4">
+        <h1 className="font-serif text-3xl font-bold text-stone-900 mb-2">Packaging Item Not Found</h1>
+        <p className="text-stone-600 text-sm mb-6 max-w-md">The requested packaging item could not be retrieved from the database.</p>
+        <Link href="/products" className="bg-[#1E3B2E] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider">
+          Return to Catalog
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">

@@ -68,21 +68,7 @@ export default function SchedulePage() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [confirmedEnrollment, setConfirmedEnrollment] = useState<any>(null);
   const [copied, setCopied] = useState(false);
-
-  const [activeBanks, setActiveBanks] = useState<BankAccount[]>([
-    {
-      id: "cbe",
-      name: "Commercial Bank of Ethiopia (CBE)",
-      accountNumber: "1000123456789",
-      accountHolder: "Ethiopia Arenguade Paper Product PLC",
-    },
-    {
-      id: "telebirr",
-      name: "Telebirr Merchant",
-      accountNumber: "0911234567",
-      accountHolder: "Arenguade Packaging Official",
-    },
-  ]);
+  const [activeBanks, setActiveBanks] = useState<BankAccount[]>([]);
 
   // Load User, Classes, and Banks
   useEffect(() => {
@@ -103,20 +89,34 @@ export default function SchedulePage() {
         console.warn("Auth check error:", err);
       }
 
-      // 2. Fetch Active Banks
+      // 2. Fetch Active Banks from Database
       try {
-        const { data: dbBanks } = await supabase
-          .from("bank_accounts")
-          .select("id, bank_name, account_number, account_name")
-          .eq("is_active", true);
+        const res = await fetch("/api/bank-accounts");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.bankAccounts && data.bankAccounts.length > 0) {
+            const activeOnly = data.bankAccounts.filter((b: any) => b.is_active !== false);
+            setActiveBanks(activeOnly.map((b: any) => ({
+              id: b.id,
+              name: b.bank_name,
+              accountNumber: b.account_number,
+              accountHolder: b.account_name,
+            })));
+          }
+        } else {
+          const { data: dbBanks } = await supabase
+            .from("bank_accounts")
+            .select("id, bank_name, account_number, account_name")
+            .eq("is_active", true);
 
-        if (dbBanks && dbBanks.length > 0) {
-          setActiveBanks(dbBanks.map((b) => ({
-            id: b.id,
-            name: b.bank_name,
-            accountNumber: b.account_number,
-            accountHolder: b.account_name,
-          })));
+          if (dbBanks && dbBanks.length > 0) {
+            setActiveBanks(dbBanks.map((b) => ({
+              id: b.id,
+              name: b.bank_name,
+              accountNumber: b.account_number,
+              accountHolder: b.account_name,
+            })));
+          }
         }
       } catch (err) {
         console.warn("Bank fetch error:", err);

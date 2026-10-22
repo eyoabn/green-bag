@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AccessToken } from 'livekit-server-sdk';
 import { createClient } from '@/utils/supabase/server';
+import { getLiveKitConfig } from '@/utils/livekit';
 
 export async function GET(request: NextRequest) {
   const room = request.nextUrl.searchParams.get('room');
@@ -13,43 +14,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing "username" query parameter' }, { status: 400 });
   }
 
-  // Security check: ensure user is authenticated (with demo fallback)
-  let user = null;
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    user = data?.user;
-  } catch (err) {
-    // Ignore auth failure in demo mode
+  // Security check: ensure user is authenticated
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   }
 
-  // Get LiveKit credentials from environment
-  const apiKey = process.env.LIVEKIT_API_KEY || "APIR3wML2N82ZS5";
-  const apiSecret = process.env.LIVEKIT_API_SECRET || "uhBCdD3jOVe9OfewgqeneRL7MsoaPgNyNQWGegexGvLd";
-  
-  if (!apiKey || !apiSecret || apiKey.includes('placeholder') || apiKey.includes('your-')) {
-    // Generate a secure mock demo token for previewing the classroom UI
-    return NextResponse.json({ 
-      token: `demo_token_${Buffer.from(username).toString('base64')}_${Date.now()}`,
-      isDemo: true 
+  try {
+    const { apiKey, apiSecret } = getLiveKitConfig();
+    
+    // Create a real signed LiveKit access token
+    const at = new AccessToken(apiKey, apiSecret, {
+      identity: username,
+      name: user.user_metadata?.full_name || username,
     });
-  }
-
-  // Create a new access token
-  const at = new AccessToken(apiKey, apiSecret, {
-    identity: username,
-  });
-  
-  at.addGrant({ roomJoin: true, room: room });
-
-  try {
+    
+    at.addGrant({ roomJoin: true, room: room });
     const token = await at.toJwt();
     return NextResponse.json({ token, isDemo: false });
-  } catch (error) {
-    console.error('Error generating token:', error);
-    return NextResponse.json({ 
-      token: `demo_token_${Buffer.from(username).toString('base64')}_${Date.now()}`,
-      isDemo: true 
-    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || 'Error generating LiveKit token' }, { status: 500 });
   }
 }

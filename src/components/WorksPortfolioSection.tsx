@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { 
@@ -23,9 +23,27 @@ export default function WorksPortfolioSection({
   limit?: number; 
   showViewAllButton?: boolean;
 }) {
+  const [projects, setProjects] = useState<ProjectWork[]>(PROJECTS_WORKS);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeModalWork, setActiveModalWork] = useState<ProjectWork | null>(null);
   const [activeModalImage, setActiveModalImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadPortfolio() {
+      try {
+        const res = await fetch("/api/portfolio");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.projects && data.projects.length > 0) {
+            setProjects(data.projects);
+          }
+        }
+      } catch (err) {
+        // Fallback to PROJECTS_WORKS
+      }
+    }
+    loadPortfolio();
+  }, []);
 
   const categories = [
     { id: "all", label: "All Projects" },
@@ -36,7 +54,7 @@ export default function WorksPortfolioSection({
     { id: "Industrial Guild", label: "Factory & Guild" },
   ];
 
-  const filteredProjects = PROJECTS_WORKS.filter((p) => {
+  const filteredProjects = projects.filter((p) => {
     if (selectedCategory === "all") return true;
     return p.category === selectedCategory;
   });
@@ -208,7 +226,7 @@ export default function WorksPortfolioSection({
               href="/portfolio"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white border border-stone-300 text-stone-900 hover:bg-[#1E3B2E] hover:text-white text-xs font-bold tracking-wider uppercase transition-all shadow-sm hover:shadow-md"
             >
-              <span>View All Delivered Client Projects ({PROJECTS_WORKS.length})</span>
+              <span>View All Delivered Client Projects ({projects.length})</span>
               <ArrowRight size={15} />
             </Link>
           </div>

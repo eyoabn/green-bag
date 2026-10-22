@@ -94,9 +94,16 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Query distinct active categories from database
+    const catRes = await pool.query(
+      `SELECT DISTINCT category FROM public.products WHERE is_deleted IS NOT TRUE AND category IS NOT NULL ORDER BY category ASC`
+    );
+    const dbCategories = ["All", ...Array.from(new Set(catRes.rows.map((r: any) => r.category).filter(Boolean)))];
+
     return NextResponse.json({
       success: true,
       products: normalized,
+      categories: dbCategories,
       totalCount,
       page,
       pageSize,

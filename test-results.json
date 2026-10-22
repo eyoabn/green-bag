@@ -4,9 +4,9 @@
       "C:\\Program Files\\nodejs\\node.exe",
       "C:\\Users\\us\\greenwork\\node_modules\\@playwright\\test\\cli.js",
       "test",
-      "tests/e2e/phase9-notifications-admin.spec.ts",
+      "tests/e2e/master-flows.spec.ts",
       "-g",
-      "4. Admin Dashboard Metrics"
+      "10. LiveKit token generation privileges by role"
     ],
     "configFile": "C:\\Users\\us\\greenwork\\playwright.config.ts",
     "rootDir": "C:/Users/us/greenwork/tests/e2e",
@@ -112,21 +112,21 @@
   },
   "suites": [
     {
-      "title": "phase9-notifications-admin.spec.ts",
-      "file": "phase9-notifications-admin.spec.ts",
+      "title": "master-flows.spec.ts",
+      "file": "master-flows.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Phase 9: Realtime Notifications, Audit Log & Admin Dashboard",
-          "file": "phase9-notifications-admin.spec.ts",
-          "line": 24,
+          "title": "Ethiopia Arenguade Paper Product - Master Flows v2",
+          "file": "master-flows.spec.ts",
+          "line": 22,
           "column": 6,
           "specs": [
             {
-              "title": "4. Admin Dashboard Metrics: Real DB numbers match direct SQL counts with zero fakes",
-              "ok": true,
+              "title": "10. LiveKit token generation privileges by role",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -139,23 +139,45 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 38898,
-                      "errors": [],
+                      "status": "timedOut",
+                      "duration": 60013,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
+                            "column": 36,
+                            "line": 288
+                          },
+                          "message": "Error: apiRequestContext.post: Request context disposed.\nCall log:\n\u001b[2m  - → POST http://localhost:3000/api/live/7e4628c4-3498-494e-9c0d-d74327340a10/start\u001b[22m\n\u001b[2m    - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36\u001b[22m\n\u001b[2m    - accept: */*\u001b[22m\n\u001b[2m    - accept-encoding: gzip,deflate,br\u001b[22m\n\u001b[2m    - cookie: sb-heslqxyonklerdcxjohf-auth-token=base64-eyJhY2Nlc3NfdG9rZW4iOiJleUpoYkdjaU9pSkZVekkxTmlJc0ltdHBaQ0k2SWpGa1lqSXhORGszTFdZMVpXSXROREJrTkMwNU5XRmhMVEEyTW1Oa09EZGpNVFF5WmlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUpvZEhSd2N6b3ZMMmhsYzJ4eGVIbHZibXRzWlhKa1kzaHFiMmhtTG5OMWNHRmlZWE5sTG1OdkwyRjFkR2d2ZGpFaUxDSnpkV0lpT2lJME1qaG1Nakk0T0MxaU5XRm1MVFJtT0RNdE9UWTVPQzB6TVRWa1ltSmtOREZtT0RRaUxDSmhkV1FpT2lKaGRYUm9aVzUwYVdOaGRHVmtJaXdpWlhod0lqb3hOemt5TXpVMU56RTRMQ0pwWVhRaU9qRTNPVEl6TlRJeE1UZ3NJbVZ0WVdsc0lqb2lkR1ZoWTJobGNpNTBhV2RwYzNSQVlYSmxibWQxWVdSbExtTnZiU0lzSW5Cb2IyNWxJam9pSWl3aVlYQndYMjFsZEdGa1lYUmhJanA3SW5CeWIzWnBaR1Z5SWpvaVpXMWhhV3dpTENKd2NtOTJhV1JsY25NaU9sc2laVzFoYVd3aVhYMHNJblZ6WlhKZmJXVjBZV1JoZEdFaU9uc2lablZzYkY5dVlXMWxJam9pVkdsbmFYTjBJRlJoWkdWemMyVWlMQ0p3YUc5dVpTSTZJaXN5TlRFNU1URXdNREF3TURJaUxDSnliMnhsSWpvaWRHVmhZMmhsY2lKOUxDSnliMnhsSWpvaVlYVjBhR1Z1ZEdsallYUmxaQ0lzSW1GaGJDSTZJbUZoYkRFaUxDSmhiWElpT2x0N0ltMWxkR2h2WkNJNkluQmhjM04zYjNKa0lpd2lkR2x0WlhOMFlXMXdJam94TnpreU16VXlNVEU0ZlYwc0luTmxjM05wYjI1ZmFXUWlPaUkyTmpKbU1EWTRaUzAwTWpabExUUm1PRGN0T1dFek9TMWhORGd4TnpNNU5EazJOMkVpTENKcGMxOWhibTl1ZVcxdmRYTWlPbVpoYkhObGZRLnRIVlNMT3QxNkVpdnBYenB5MWdhR2NDWmFJRmlzM3NkM056c25WWFZBdkdyQnJjMEVnNlNza2Vzc1BJWWZsVFVfUExiQlB0YzBnd0NKS2ZfcjNqZWN3IiwidG9rZW5fdHlwZSI6ImJlYXJlciIsImV4cGlyZXNfaW4iOjM2MDAsImV4cGlyZXNfYXQiOjE3OTIzNTU3MTgsInJlZnJlc2hfdG9rZW4iOiJna3diZHVndWx5eGciLCJ1c2VyIjp7ImlkIjoiNDI4ZjIyODgtYjVhZi00ZjgzLTk2OTgtMzE1ZGJiZDQxZjg0IiwiYXVkIjoiYXV0aGVudGljYXRlZCIsInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiZW1haWwiOiJ0ZWFjaGVyLnRpZ2lzdEBhcmVuZ3VhZGUuY29tIiwiZW1haWxfY29uZmlybWVkX2F0IjoiMjAyNi0xMC0xN1QwOTo1OTowOC4xMjAwMDNaIiwicGhvbmUiOiIiLCJjb25maXJtZWRfYXQiOiIyMDI2LTEwLTE3VDA5OjU5OjA4LjEyMDAwM1oiLCJsYXN0X3NpZ25faW5fYXQiOiIyMDI2LTEwLTE4VDE5OjM1OjE4LjE4MDIwNDE3M1oiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJmdWxsX25hbWUiOiJUaWdpc3QgVGFkZXNzZSIsInBob25lIjoiKzI1MTkxMTAwMDAwMiIsInJvbGUiOiJ0ZWFjaGVyIn0sImlkZW50aXRpZXMiOltdLCJjcmVhdGVkX2F0IjoiMjAyNi0xMC0xN1QwODowNToyMi4zMTg4NDhaIiwidXBkYXRlZF9hdCI6IjIwMjYtMTAtMThUMTk6MzU6MTguMjI2MDU3WiIsImlzX2Fub255bW91cyI6ZmFsc2V9LCJ3ZWFrX3Bhc3N3b3JkIjpudWxsfQ\u001b[22m\n\n\n  286 |     });\n  287 |\n> 288 |     const startRes = await request.post(`/api/live/${liveSession.id}/start`);\n      |                                    ^\n  289 |     expect(startRes.ok()).toBeTruthy();\n  290 |\n  291 |     // 3. Teacher gets token -> isHost = true, canPublish = true\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:288:36"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T17:34:56.618Z",
+                      "startTime": "2026-10-18T19:34:47.057Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\us\\greenwork\\test-results\\master-flows-Ethiopia-Aren-bc1cc-neration-privileges-by-role-chromium\\error-context.md"
+                        }
+                      ]
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "ed6c4318eeeede302e6a-59d358611d1a3ee0d423",
-              "file": "phase9-notifications-admin.spec.ts",
-              "line": 255,
+              "id": "7d9eaf825ac121dedd69-c4190752a0315c3a5bf8",
+              "file": "master-flows.spec.ts",
+              "line": 264,
               "column": 7
             }
           ]
@@ -165,11 +187,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-18T17:34:54.410Z",
-    "duration": 51888.478,
-    "expected": 1,
+    "startTime": "2026-10-18T19:34:45.450Z",
+    "duration": 61771.907,
+    "expected": 0,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 1,
     "flaky": 0
   }
 }

@@ -25,7 +25,10 @@ export function checkRateLimit(
     prefix?: string;
   } = {}
 ): { allowed: boolean; remaining: number; reset: number; response?: NextResponse } {
-  const limit = options.limit || 30; // default 30 requests
+  const defaultLimit = process.env.NODE_ENV === "production" ? 30 : 500;
+  const limit = options.limit
+    ? (process.env.NODE_ENV === "production" ? options.limit : Math.max(options.limit, 500))
+    : defaultLimit;
   const windowMs = options.windowMs || 60000; // default 1 minute
   const prefix = options.prefix || "global";
 

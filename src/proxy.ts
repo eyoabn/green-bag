@@ -4,12 +4,8 @@ import { updateSession } from '@/utils/supabase/middleware'
 export async function proxy(request: NextRequest) {
   try {
     return await updateSession(request)
-  } catch (_error) {
-    // If anything fails inside Edge middleware, gracefully pass through
-    // to prevent Vercel MIDDLEWARE_INVOCATION_FAILED (500) error.
-    return NextResponse.next({
-      request,
-    })
+  } catch (err) {
+    return NextResponse.next()
   }
 }
 

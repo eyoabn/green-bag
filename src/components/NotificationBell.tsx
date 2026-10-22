@@ -39,67 +39,70 @@ export default function NotificationBell() {
   };
 
   useEffect(() => {
+    let isMounted = true;
     const supabase = createClient();
     let channel: any = null;
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setUserId(user.id);
-        loadNotifications();
+      if (!isMounted || !user) return;
+      setUserId(user.id);
+      loadNotifications();
 
-        // Subscribe to Supabase Realtime for this user's notifications
-        channel = supabase
-          .channel(`user-notifications-${user.id}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "notifications",
-              filter: `user_id=eq.${user.id}`,
-            },
-            (payload) => {
-              const raw = payload.new as any;
-              const newNotif: NotificationItem = {
-                id: raw.id,
-                user_id: raw.user_id,
-                title: raw.title,
-                message: raw.body || raw.message,
-                link: raw.link,
-                is_read: Boolean(raw.is_read),
-                created_at: raw.created_at,
-              };
-              setNotifications((prev) => [newNotif, ...prev.filter((n) => n.id !== raw.id)]);
-              if (!newNotif.is_read) {
-                setUnreadCount((c) => c + 1);
-              }
+      // Subscribe to Supabase Realtime for this user's notifications with unique channel ID
+      channel = supabase
+        .channel(`user-notif-${user.id}-${Math.random().toString(36).substring(2, 8)}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            if (!isMounted) return;
+            const raw = payload.new as any;
+            const newNotif: NotificationItem = {
+              id: raw.id,
+              user_id: raw.user_id,
+              title: raw.title,
+              message: raw.body || raw.message,
+              link: raw.link,
+              is_read: Boolean(raw.is_read),
+              created_at: raw.created_at,
+            };
+            setNotifications((prev) => [newNotif, ...prev.filter((n) => n.id !== raw.id)]);
+            if (!newNotif.is_read) {
+              setUnreadCount((c) => c + 1);
             }
-          )
-          .on(
-            "postgres_changes",
-            {
-              event: "UPDATE",
-              schema: "public",
-              table: "notifications",
-              filter: `user_id=eq.${user.id}`,
-            },
-            (payload) => {
-              const raw = payload.new as any;
-              setNotifications((prev) =>
-                prev.map((n) =>
-                  n.id === raw.id
-                    ? { ...n, is_read: Boolean(raw.is_read), message: raw.body || n.message }
-                    : n
-                )
-              );
-              loadNotifications();
-            }
-          )
-          .subscribe();
-      }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            if (!isMounted) return;
+            const raw = payload.new as any;
+            setNotifications((prev) =>
+              prev.map((n) =>
+                n.id === raw.id
+                  ? { ...n, is_read: Boolean(raw.is_read), message: raw.body || n.message }
+                  : n
+              )
+            );
+            loadNotifications();
+          }
+        )
+        .subscribe();
     });
 
     return () => {
+      isMounted = false;
       if (channel) {
         supabase.removeChannel(channel);
       }

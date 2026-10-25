@@ -678,18 +678,34 @@ function PreJoinScreen({
 
         {/* Enter Studio Button */}
         <div className="space-y-2 pt-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (streamRef.current) {
-                streamRef.current.getTracks().forEach((t) => t.stop());
-              }
-              onEnter();
-            }}
-            className="w-full py-3.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold text-sm transition-all shadow-lg shadow-emerald-900/30"
-          >
-            Enter Live Classroom
-          </button>
+          {sessionStatus !== "live" ? (
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled
+                className="w-full py-3.5 rounded-full bg-stone-800 text-stone-400 font-bold text-sm cursor-not-allowed flex items-center justify-center gap-2 border border-stone-700"
+              >
+                <Clock size={16} className="animate-spin text-amber-400" />
+                <span>Waiting for Instructor to Go Live...</span>
+              </button>
+              <p className="text-[11px] text-center text-stone-400">
+                You can test your camera and audio while waiting. The button will activate automatically.
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (streamRef.current) {
+                  streamRef.current.getTracks().forEach((t) => t.stop());
+                }
+                onEnter();
+              }}
+              className="w-full py-3.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white font-bold text-sm transition-all shadow-lg shadow-emerald-900/30 cursor-pointer"
+            >
+              Enter Live Classroom
+            </button>
+          )}
           <div className="text-center">
             <Link
               href="/dashboard?tab=classes"
@@ -716,36 +732,57 @@ export default function StudentLiveClassPage({ params }: { params: Promise<{ id:
   const [startsAt, setStartsAt] = useState<string | null>(null);
   const [hasEntered, setHasEntered] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isWaitingForHost, setIsWaitingForHost] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchToken() {
-      setLoading(true);
-      setErrorMsg(null);
-      try {
-        const res = await fetch(`/api/live/${sessionId}/token`, {
-          method: "POST",
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || "Unable to join live session.");
+  const fetchToken = async (silent = false) => {
+    if (!silent) setLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch(`/api/live/${sessionId}/token`, {
+        method: "POST",
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.isWaitingForHost) {
+          setIsWaitingForHost(true);
+          if (data.sessionTitle) setSessionTitle(data.sessionTitle);
+          if (data.sessionStatus) setSessionStatus(data.sessionStatus);
+          if (data.startsAt) setStartsAt(data.startsAt);
+          return;
         }
-
-        setToken(data.token);
-        setLivekitUrl(data.livekitUrl);
-        if (data.sessionTitle) setSessionTitle(data.sessionTitle);
-        if (data.sessionStatus) setSessionStatus(data.sessionStatus);
-        if (data.startsAt) setStartsAt(data.startsAt);
-      } catch (err: any) {
-        console.error("Token error:", err);
-        setErrorMsg(err.message || "Failed to connect to LiveKit stream.");
-      } finally {
-        setLoading(false);
+        throw new Error(data.error || "Unable to join live session.");
       }
-    }
 
-    fetchToken();
+      setIsWaitingForHost(false);
+      setToken(data.token);
+      setLivekitUrl(data.livekitUrl);
+      if (data.sessionTitle) setSessionTitle(data.sessionTitle);
+      if (data.sessionStatus) setSessionStatus(data.sessionStatus);
+      if (data.startsAt) setStartsAt(data.startsAt);
+    } catch (err: any) {
+      console.error("Token error:", err);
+      setErrorMsg(err.message || "Failed to connect to LiveKit stream.");
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchToken(false);
   }, [sessionId]);
+
+  // Automatic Polling while waiting for host to open studio
+  useEffect(() => {
+    if (!isWaitingForHost) return;
+
+    const interval = setInterval(() => {
+      fetchToken(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isWaitingForHost, sessionId]);
 
   if (loading) {
     return (
@@ -754,6 +791,52 @@ export default function StudentLiveClassPage({ params }: { params: Promise<{ id:
           <Sparkles size={32} className="animate-spin text-emerald-400 mx-auto" />
           <p className="font-serif text-lg font-bold">Connecting to Masterclass Stream...</p>
           <p className="text-xs text-stone-400">Verifying your enrollment and subscription token</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Waiting for Host Room Lobby
+  if (isWaitingForHost && !token) {
+    return (
+      <div className="flex h-screen bg-[#141517] items-center justify-center text-white p-4">
+        <div className="max-w-md w-full bg-stone-900 border border-stone-800 p-8 rounded-3xl text-center space-y-6 shadow-2xl relative overflow-hidden">
+          <div className="relative mx-auto w-16 h-16 flex items-center justify-center">
+            <span className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
+            <div className="w-12 h-12 rounded-full bg-[#1E3B2E] border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+              <Clock size={22} className="animate-pulse" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <span className="inline-block px-3 py-1 rounded-full bg-[#1E3B2E]/60 text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
+              Enrolled & Verified
+            </span>
+            <h2 className="font-serif text-2xl font-bold text-white">{sessionTitle}</h2>
+            <p className="text-xs text-stone-300 leading-relaxed">
+              The instructor has not opened the live studio yet. You will be connected automatically the moment the teacher goes live.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-stone-800/80 border border-stone-700/60 text-stone-400 text-xs flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span>Auto-refreshing every 4 seconds...</span>
+          </div>
+
+          <div className="flex flex-col gap-2 pt-2">
+            <button
+              onClick={() => fetchToken(false)}
+              className="w-full py-3 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+            >
+              Check Again Now
+            </button>
+            <Link
+              href="/dashboard?tab=classes"
+              className="w-full py-3 rounded-full bg-stone-800 text-stone-300 text-xs font-bold hover:bg-stone-700 transition-colors text-center"
+            >
+              Return to Student Dashboard
+            </Link>
+          </div>
         </div>
       </div>
     );

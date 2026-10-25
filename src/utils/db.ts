@@ -1,9 +1,9 @@
 import { Pool } from "pg";
 
 const connectionString =
-  process.env.DIRECT_URL ||
   process.env.DATABASE_URL ||
-  "postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres";
+  process.env.DIRECT_URL ||
+  "postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
 
 // Singleton PostgreSQL pool for direct administrative and schema operations
 declare global {

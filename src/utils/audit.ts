@@ -20,10 +20,11 @@ export async function logAuditEvent({
   metadata = {},
 }: AuditEventParams): Promise<void> {
   try {
+    const resolvedEntityId = entityId ? String(entityId) : (actorId ? String(actorId) : (entity || "system"));
     await pool.query(
       `INSERT INTO public.audit_log (actor_id, action, entity, entity_id, metadata, created_at)
        VALUES ($1, $2, $3, $4, $5, NOW())`,
-      [actorId, action, entity, entityId ? String(entityId) : null, JSON.stringify(metadata)]
+      [actorId, action, entity, resolvedEntityId, JSON.stringify(metadata)]
     );
   } catch (err) {
     console.error("Failed to write audit log event:", err);

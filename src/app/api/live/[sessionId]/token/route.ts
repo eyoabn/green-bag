@@ -51,21 +51,21 @@ export async function POST(
         }, { status: 403 });
       }
 
-      // 3. Timing check: must be live or within 10 minutes of starts_at
+      // 3. Status check: Only teacher/host can open studio; students only admitted once teacher goes live
       if (session.status === "ended" || session.status === "cancelled") {
         return NextResponse.json({
           error: "This live session has ended or been cancelled.",
         }, { status: 403 });
       }
 
-      const isLive = session.status === "live";
-      const startsAtMs = session.starts_at ? new Date(session.starts_at).getTime() : null;
-      const tenMinutesBeforeMs = startsAtMs ? startsAtMs - 10 * 60 * 1000 : null;
-      const isWithinWindow = tenMinutesBeforeMs !== null && Date.now() >= tenMinutesBeforeMs;
-
-      if (!isLive && !isWithinWindow) {
+      if (session.status !== "live") {
         return NextResponse.json({
-          error: "Session is not live yet. You can join starting 10 minutes before the scheduled start time.",
+          error: "The instructor has not opened the live studio yet. Please wait in the waiting room — you will be connected automatically once the teacher starts broadcasting.",
+          isWaitingForHost: true,
+          isLive: false,
+          sessionStatus: session.status,
+          startsAt: session.starts_at,
+          sessionTitle: session.title,
         }, { status: 403 });
       }
 

@@ -1,41 +1,25 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect, use } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { 
   ArrowLeft, 
-  ArrowRight,
-  Upload, 
   CheckCircle2, 
-  Copy, 
-  Check, 
   ShieldCheck, 
-  Truck, 
+  Sparkles, 
   Layers, 
-  Sparkles,
-  ShoppingBag,
-  FileText,
-  Palette,
-  Eye,
-  PenTool
+  Building2, 
+  Phone, 
+  Mail, 
+  PenTool, 
+  ArrowRight,
+  Maximize2,
+  X,
+  FileText
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { uploadFileSafely } from "@/utils/fileUpload";
-import { StickyBottomBar } from "@/components/StickyBottomBar";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { getCurrentUser, isValidUUID, AppUser } from "@/utils/auth";
-import { useCart } from "@/context/CartContext";
-
-export interface BankAccount {
-  id: string;
-  name: string;
-  accountNumber: string;
-  accountHolder: string;
-  accountName?: string;
-  type?: string;
-  isActive: boolean;
-}
+import { useLanguage } from "@/context/LanguageContext";
 
 export interface ProductDetail {
   id: string;
@@ -54,227 +38,70 @@ export interface ProductDetail {
   material?: string;
   is_available?: boolean;
   is_client_work?: boolean;
-  stock_quantity?: number | null;
 }
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
-  const router = useRouter();
-  const { addItem } = useCart();
+  const { lang, t } = useLanguage();
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-
-  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
   const [selectedImage, setSelectedImage] = useState<string>("/images/photo_6_2026-09-05_00-36-03.jpg");
-  const [copied, setCopied] = useState<boolean>(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [customerName, setCustomerName] = useState<string>("");
-  const [customerPhone, setCustomerPhone] = useState<string>("");
-  const [deliveryAddress, setDeliveryAddress] = useState<string>("Bole, Addis Ababa");
-  const [notes, setNotes] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [orderConfirmed, setOrderConfirmed] = useState<boolean>(false);
-  const [orderRef, setOrderRef] = useState<string>("");
-  const [createdOrderId, setCreatedOrderId] = useState<string>("");
-
-  const [banks, setBanks] = useState<BankAccount[]>([]);
-  const [selectedBank, setSelectedBank] = useState<BankAccount | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    async function loadProductAndBanks() {
+    async function loadProduct() {
       setLoading(true);
       const supabase = createClient();
 
-      // 1. Fetch real active banks from Supabase
       try {
-        const { data: dbBanks } = await supabase.from("bank_accounts").select("*").eq("is_active", true);
-        if (dbBanks && dbBanks.length > 0) {
-          const mappedBanks: BankAccount[] = (dbBanks as Array<{
-            id: string;
-            bank_name: string;
-            account_number: string;
-            account_name: string;
-          }>).map((b) => ({
-            id: b.id,
-            name: b.bank_name,
-            accountNumber: b.account_number,
-            accountHolder: b.account_name,
-            accountName: b.account_name,
-            type: "bank",
-            isActive: true,
-          }));
-          setBanks(mappedBanks);
-          setSelectedBank(mappedBanks[0]);
-        }
-      } catch {}
+        const { data: dbProduct } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", productId)
+          .maybeSingle();
 
-      // 2. Fetch product from API
-      try {
-        const res = await fetch(`/api/products/${productId}`);
-        const data = await res.json();
-        if (data.product) {
-          const p = data.product;
-          const gallery = (p.images && p.images.length > 0) ? p.images : ((p.image_urls && p.image_urls.length > 0) ? p.image_urls : ["/images/photo_6_2026-09-05_00-36-03.jpg"]);
-          setProduct({
-            id: p.id,
-            name: p.name,
-            client: p.client || "Arenguade Standard Catalog",
-            category: p.category || "Standard Retail",
-            price: Number(p.price),
-            bundleSize: p.bundle_size || p.bundleSize || 100,
-            gsm: p.gsm || 200,
-            handleType: p.handle_type || p.handleType || "Twisted Kraft Cord",
-            image: gallery[0],
-            gallery,
-            badge: p.badge || "Verified Production Batch",
-            description: p.description || "",
-            dimensions: p.dimensions || "24cm × 30cm + 10cm gusset",
-            material: p.material || "100% Ethiopian Virgin Kraft",
-            is_available: p.is_available !== false,
-            is_client_work: Boolean(p.is_client_work),
-            stock_quantity: p.stock_quantity ?? 500,
-          });
-          setSelectedImage(gallery[0]);
+        if (dbProduct) {
+          const detail: ProductDetail = {
+            id: dbProduct.id,
+            name: dbProduct.name,
+            client: dbProduct.client || "Ethiopian Enterprise Partner",
+            category: dbProduct.category || "B2B Custom Packaging",
+            price: Number(dbProduct.price || 0),
+            bundleSize: dbProduct.bundle_size || 100,
+            gsm: dbProduct.gsm || 220,
+            handleType: dbProduct.handle_type || "Twisted Kraft Paper Cord",
+            image: dbProduct.image_url || "/images/photo_6_2026-09-05_00-36-03.jpg",
+            gallery: dbProduct.gallery_urls && dbProduct.gallery_urls.length > 0 
+              ? dbProduct.gallery_urls 
+              : [dbProduct.image_url || "/images/photo_6_2026-09-05_00-36-03.jpg"],
+            badge: dbProduct.badge || "Client Showcase Deliverable",
+            description: dbProduct.description || "Precision engineered sustainable paper packaging manufactured at our Addis Ababa production plant.",
+            dimensions: dbProduct.dimensions || "26cm × 32cm + 10cm Gusset",
+            material: dbProduct.material || "100% Recycled Biodegradable Kraft",
+            is_available: dbProduct.is_available ?? true,
+            is_client_work: dbProduct.is_client_work ?? true,
+          };
+          setProduct(detail);
+          setSelectedImage(detail.image);
         }
       } catch (err) {
-        console.error("Error loading product detail:", err);
+        console.error("Failed to load product showcase:", err);
       } finally {
         setLoading(false);
       }
-
-      // 3. Auto-populate logged-in user information
-      try {
-        const u = await getCurrentUser();
-        if (u) {
-          setCurrentUser(u);
-          if (u.full_name) setCustomerName(u.full_name);
-          if (u.phone) setCustomerPhone(u.phone);
-        } else {
-          setCurrentUser(null);
-        }
-      } catch {}
     }
 
-    loadProductAndBanks();
+    loadProduct();
   }, [productId]);
-
-  const basePrice = product ? product.price : 0;
-  // Volume discount: 5% off for 3+ bundles, 12% off for 10+ bundles
-  const discountMultiplier = quantity >= 10 ? 0.88 : quantity >= 3 ? 0.95 : 1;
-  const totalPrice = Math.round(basePrice * quantity * discountMultiplier);
-
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0]);
-    }
-  };
-
-  const handleSubmitOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!product || product.is_available === false) {
-      alert("This product is currently marked unavailable and cannot be ordered.");
-      return;
-    }
-    if (!uploadedFile) {
-      alert("Please upload your bank transaction receipt / screenshot to complete your order.");
-      return;
-    }
-    if (!deliveryAddress || deliveryAddress.trim().length < 5) {
-      alert("Please enter a valid delivery address (at least 5 characters).");
-      return;
-    }
-    if (!customerPhone || customerPhone.trim().length < 6) {
-      alert("Please enter a valid phone number (at least 6 characters).");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // 1. Verify user is logged in
-      const user = await getCurrentUser();
-      if (!user) {
-        alert("Please sign in or create an account to complete your order.");
-        router.push(`/login?returnTo=/products/${productId}`);
-        return;
-      }
-
-      // 2. Ensure product ID is a valid UUID
-      let targetProductId = product.id;
-      if (!isValidUUID(targetProductId)) {
-        const supabase = createClient();
-        const { data: dbP } = await supabase.from("products").select("id").eq("is_available", true).limit(1).maybeSingle();
-        if (dbP?.id) {
-          targetProductId = dbP.id;
-        } else {
-          throw new Error("Unable to identify product in database. Please choose an active product from the catalog.");
-        }
-      }
-
-      // 3. Upload receipt screenshot using safe upload with auto-compression
-      const uploadResult = await uploadFileSafely(uploadedFile, "payment-proofs");
-
-      // 4. Place real order in PostgreSQL
-      const orderRes = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: [{ productId: targetProductId, quantity }],
-          bankAccountId: selectedBank?.id || banks[0]?.id || "",
-          deliveryAddress: deliveryAddress.trim(),
-          phone: customerPhone.trim(),
-          notes: notes.trim() || undefined,
-          paymentProofPath: uploadResult.filePath,
-        }),
-      });
-
-      const orderText = await orderRes.text();
-      let orderData: any = {};
-      try {
-        orderData = JSON.parse(orderText);
-      } catch {
-        throw new Error(orderText || `Server returned error (${orderRes.status})`);
-      }
-
-      if (!orderRes.ok || !orderData.order) {
-        throw new Error(orderData.error || "Failed to record order.");
-      }
-
-      const confirmedOrder = orderData.order;
-      setCreatedOrderId(confirmedOrder.id);
-      setOrderRef(confirmedOrder.order_number || confirmedOrder.id);
-      setOrderConfirmed(true);
-    } catch (err: unknown) {
-      console.error("Order submission failed:", err);
-      const message = err instanceof Error ? err.message : "Something went wrong during checkout.";
-      alert(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-32 sm:pb-20 bg-[#F9F6F0]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full animate-pulse">
-          <div className="h-6 w-32 bg-stone-200 rounded-full mb-8" />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            <div className="lg:col-span-7 h-[480px] bg-stone-200 rounded-3xl" />
-            <div className="lg:col-span-5 space-y-4">
-              <div className="h-8 bg-stone-200 rounded w-3/4" />
-              <div className="h-4 bg-stone-200 rounded w-1/2" />
-              <div className="h-24 bg-stone-100 rounded-2xl" />
-              <div className="h-40 bg-stone-200 rounded-2xl" />
-            </div>
-          </div>
+      <div className="min-h-screen bg-[#F9F6F0] pt-24 pb-16 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Sparkles size={32} className="animate-spin text-[#1E3B2E] mx-auto" />
+          <p className="font-serif text-lg font-bold text-stone-800">Loading Packaging Deliverable Showcase...</p>
         </div>
       </div>
     );
@@ -282,562 +109,249 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   if (!product) {
     return (
-      <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0] items-center justify-center text-center px-4">
-        <h1 className="font-serif text-3xl font-bold text-stone-900 mb-2">Packaging Item Not Found</h1>
-        <p className="text-stone-600 text-sm mb-6 max-w-md">The requested packaging item could not be retrieved from the database.</p>
-        <Link href="/products" className="bg-[#1E3B2E] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider">
-          Return to Catalog
-        </Link>
+      <div className="min-h-screen bg-[#F9F6F0] pt-28 pb-16 px-4">
+        <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-stone-200 text-center space-y-4">
+          <FileText size={40} className="text-stone-400 mx-auto" />
+          <h2 className="font-serif text-xl font-bold text-stone-900">Showcase Item Not Found</h2>
+          <p className="text-xs text-stone-500">This packaging piece may have been updated or archived.</p>
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#1E3B2E] text-white text-xs font-bold hover:bg-[#8C4B31] transition-colors"
+          >
+            <ArrowLeft size={14} />
+            <span>Return to Portfolio</span>
+          </Link>
+        </div>
       </div>
     );
   }
 
+  const commissionUrl = `/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm || 220}&dimensions=${encodeURIComponent(product.dimensions || "")}&handle=${encodeURIComponent(product.handleType || "")}`;
+
   return (
-    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-32 sm:pb-20 bg-[#F9F6F0]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full">
+    <div className="min-h-screen bg-[#F9F6F0] pt-20 sm:pt-24 pb-28 md:pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Back navigation */}
-        <Link 
-          href="/products" 
-          className="inline-flex items-center gap-2 text-xs font-bold text-stone-600 hover:text-[#8C4B31] transition-colors mb-8 group"
-        >
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Catalog</span>
-        </Link>
+        {/* Top Breadcrumb */}
+        <div className="flex items-center justify-between mb-6">
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-2 text-xs font-bold text-stone-600 hover:text-[#8C4B31] transition-colors group"
+          >
+            <ArrowLeft size={15} className="group-hover:-translate-x-1 transition-transform" />
+            <span>{lang === "am" ? "ወደ ካታሎግ ተመለስ" : "Back to Packaging Showcase"}</span>
+          </Link>
 
-        {orderConfirmed ? (
-          /* Order Confirmation Success State */
-          <div className="max-w-2xl mx-auto bg-white rounded-3xl p-8 sm:p-12 border border-stone-200 shadow-xl text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 size={36} />
-            </div>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#1E3B2E]">
-              Order Successfully Placed
-            </span>
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-2 mb-3">
-              Payment Under Verification
-            </h1>
-            <p className="text-stone-600 text-sm max-w-md mx-auto leading-relaxed mb-6">
-              Thank you, <span className="font-semibold text-stone-900">{customerName || "Valued Customer"}</span>. We have received your payment screenshot for <span className="font-semibold text-stone-900">{product.name}</span>. Our Addis Ababa plant will verify and process your shipment within 24 hours.
-            </p>
+          <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] border border-[#1E3B2E]/20">
+            {product.badge || "Client Deliverable Showcase"}
+          </span>
+        </div>
 
-            <div className="bg-[#FAF7F2] p-5 rounded-2xl border border-stone-200 text-left max-w-md mx-auto mb-8 space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-stone-500">Order Reference:</span>
-                <span className="font-mono font-bold text-stone-900">{orderRef}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500">Product Model:</span>
-                <span className="font-semibold text-stone-900">{product.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500">Total Paid:</span>
-                <span className="font-bold text-[#8C4B31]">{totalPrice} ETB</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500">Quantity:</span>
-                <span className="font-semibold text-stone-900">{quantity} Bundles ({quantity * (product.bundleSize || 100)} bags)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500">Payment Channel:</span>
-                <span className="font-semibold text-stone-900">{selectedBank ? selectedBank.name : "Verified Settlement Channel"}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link 
-                href={createdOrderId ? `/dashboard/orders/${createdOrderId}` : "/dashboard?tab=orders"} 
-                className="w-full sm:w-auto bg-[#1E3B2E] hover:bg-[#8C4B31] text-white px-8 py-3.5 rounded-full text-xs font-bold transition-all shadow-md"
-              >
-                Track Order #{orderRef}
-              </Link>
-              <Link 
-                href="/products" 
-                className="w-full sm:w-auto bg-stone-100 hover:bg-stone-200 text-stone-800 px-6 py-3.5 rounded-full text-xs font-bold transition-all"
-              >
-                Continue Shopping
-              </Link>
-            </div>
-          </div>
-        ) : (
-          /* Main Product & Checkout Layout */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        {/* Main Showcase Presentation Card */}
+        <div className="bg-white rounded-3xl border border-stone-200/90 shadow-sm overflow-hidden p-6 sm:p-10 mb-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             
-            {/* Left: Product Real Photo Showcase & Specs */}
-            <div className="lg:col-span-6 flex flex-col gap-6">
-              
-              {/* Main Photo */}
-              <div className="aspect-[4/3] rounded-3xl bg-stone-100 relative overflow-hidden border border-stone-300 shadow-md">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+            {/* Left Column: Imagery (5 Cols) */}
+            <div className="lg:col-span-5 space-y-4">
+              <div 
+                onClick={() => setLightboxOpen(true)}
+                className="relative aspect-4/5 w-full rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 cursor-zoom-in group shadow-xs"
+              >
+                <Image
                   src={selectedImage}
                   alt={product.name}
-                  className="w-full h-full object-cover object-center"
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  priority
                 />
-
-                <div className="absolute top-4 left-4 bg-[#1E3B2E] text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                  {product.badge || "Verified Production Batch"}
-                </div>
-
-                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-semibold text-stone-800 shadow-sm">
-                  Client: {product.client}
+                <div className="absolute bottom-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-xs text-stone-800 shadow-md opacity-80 group-hover:opacity-100 transition-opacity">
+                  <Maximize2 size={16} />
                 </div>
               </div>
 
-              {/* Gallery Thumbnails (if multiple photos available) */}
+              {/* Gallery Thumbnails */}
               {product.gallery && product.gallery.length > 1 && (
-                <div className="flex gap-3">
+                <div className="flex items-center gap-3 overflow-x-auto pb-2">
                   {product.gallery.map((img, idx) => (
                     <button
                       key={idx}
+                      type="button"
                       onClick={() => setSelectedImage(img)}
-                      className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all ${
-                        selectedImage === img ? "border-[#8C4B31] scale-105 shadow-md" : "border-stone-200 opacity-70 hover:opacity-100"
+                      className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
+                        selectedImage === img ? "border-[#1E3B2E] scale-105 shadow-xs" : "border-stone-200 opacity-70 hover:opacity-100"
                       }`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <Image src={img} alt={`View ${idx + 1}`} fill className="object-cover" />
                     </button>
                   ))}
                 </div>
               )}
+            </div>
 
-              {/* Product Technical Specifications */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-sm">
-                <h3 className="font-serif text-xl font-bold text-stone-900 mb-4">Engineering Specifications</h3>
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                    <span className="text-stone-500 block">Paper Weight</span>
-                    <span className="font-bold text-stone-900 text-sm">{product.gsm} GSM Kraft</span>
-                  </div>
-                  <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                    <span className="text-stone-500 block">Handle Type</span>
-                    <span className="font-bold text-stone-900 text-sm">{product.handleType}</span>
-                  </div>
-                  <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                    <span className="text-stone-500 block">Dimensions</span>
-                    <span className="font-bold text-stone-900 text-sm">{product.dimensions}</span>
-                  </div>
-                  <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                    <span className="text-stone-500 block">Material Grade</span>
-                    <span className="font-bold text-stone-900 text-sm">{product.material}</span>
-                  </div>
+            {/* Right Column: Narrative, Engineering Specs & Commission Action (7 Cols) */}
+            <div className="lg:col-span-7 space-y-6">
+              
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">
+                    {product.category}
+                  </span>
+                  <span>•</span>
+                  <span className="text-xs text-stone-500 font-semibold">
+                    Client: <strong>{product.client}</strong>
+                  </span>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-stone-100 flex items-center justify-between text-xs text-stone-600">
-                  <span className="flex items-center gap-1.5">
-                    <Truck size={15} className="text-[#1E3B2E]" /> Dispatched in 24-48 hrs in Addis Ababa
+                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
+                  {product.name}
+                </h1>
+                
+                <p className="text-stone-600 text-sm mt-3 leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
+
+              {/* Client Exclusivity & Manufacturing Notice */}
+              <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-amber-200/80 text-xs text-stone-700 flex items-start gap-3">
+                <ShieldCheck size={18} className="text-[#8C4B31] shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <span className="font-bold text-stone-900 block mb-0.5">
+                    {lang === "am" ? "የደንበኛ ማሸጊያ ሾውኬዝ (ለቀጥታ ሽያጭ የቀረበ አይደለም)" : "Client Case Study (Showcase Only — Not for Direct Retail Sale)"}
                   </span>
-                  <Link 
-                    href="/design-submission" 
-                    className="text-[#8C4B31] font-bold hover:underline flex items-center gap-1"
+                  <span>
+                    {lang === "am"
+                      ? "ይህ ማሸጊያ ለተወሰነ የኢትዮጵያ ደንበኛ በልዩ ትዕዛዝ የተመረተ ነው። የደንበኛውን የብራንድ ጥበቃ በመከተል በሌላ ሰው ሎጎ የተሰራ ቦርሳ ለቀጥታ ሽያጭ አይቀርብም። ይልቁንስ ይህንን ተመሳሳይ መዋቅር በራስዎ ሎጎ እና መጠን ማዘዝ ይችላሉ።"
+                      : "This packaging was custom-manufactured exclusively for our partner client. To protect brand trademarks, arbitrary retail sales cannot be placed for this branded packaging. You can commission this exact structural profile custom-manufactured with your own company logo."}
+                  </span>
+                </div>
+              </div>
+
+              {/* Technical Engineering Specifications Grid */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
+                  <Layers size={14} className="text-[#1E3B2E]" />
+                  <span>{lang === "am" ? "የቴክኒክ ዝርዝሮች" : "Engineering Specifications"}</span>
+                </h3>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200/80">
+                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Dimensions</span>
+                    <span className="font-bold text-stone-900">{product.dimensions}</span>
+                  </div>
+
+                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200/80">
+                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Paper Weight</span>
+                    <span className="font-bold text-stone-900">{product.gsm} GSM Kraft</span>
+                  </div>
+
+                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200/80">
+                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Handle Type</span>
+                    <span className="font-bold text-stone-900">{product.handleType}</span>
+                  </div>
+
+                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200/80">
+                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Material</span>
+                    <span className="font-bold text-stone-900">{product.material}</span>
+                  </div>
+
+                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200/80">
+                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Origin</span>
+                    <span className="font-bold text-stone-900">Manufactured in Addis Ababa</span>
+                  </div>
+
+                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200/80">
+                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Eco Standard</span>
+                    <span className="font-bold text-emerald-800">100% Recyclable</span>
+                  </div>
+
+                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200/80">
+                    <span className="text-stone-400 block text-[10px] uppercase font-bold">Turnaround</span>
+                    <span className="font-bold text-stone-900">5-7 Business Days</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* PRIMARY B2B ACTION: COMMISSION CUSTOM DESIGN */}
+              <div className="p-6 rounded-3xl bg-[#1E3B2E] text-white space-y-4 shadow-md">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={18} className="text-[#E0B382]" />
+                  <h3 className="font-serif text-lg font-bold text-white">
+                    {lang === "am" ? "የራስዎን ብጁ ባች በብራንድዎ ያመርቱ" : "Commission Your Brand's Custom Batch"}
+                  </h3>
+                </div>
+
+                <p className="text-xs text-emerald-100/90 leading-relaxed">
+                  {lang === "am"
+                    ? "ይህንን ተመሳሳይ ጥራት እና መጠን በራስዎ የድርጅት ሎጎ፣ ቀለሞች እና አሻራ ማምረት ይፈልጋሉ? በዲዛይን ስቱዲዮአችን ውስጥ ወዲያውኑ መጠን ይምረጡ፣ ሎጎዎን ይጫኑ እና የዋጋ ግምት ያግኙ።"
+                    : "Want this exact packaging structure custom-branded with your company logo, pantone colors, and tailored dimensions? We manufacture custom production runs for roasters, fashion boutiques, hotels, and retail brands across Ethiopia."}
+                </p>
+
+                <div className="pt-1">
+                  <Link
+                    href={commissionUrl}
+                    className="w-full py-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 bg-[#8C4B31] hover:bg-[#A3593B] text-white rounded-full transition-all shadow-md cursor-pointer"
                   >
-                    <Palette size={14} /> Customize Your Logo
+                    <PenTool size={15} />
+                    <span>{lang === "am" ? "ይህንን ዲዛይን በራስዎ ሎጎ ይዘዙ" : "Commission Similar Custom Design &rarr;"}</span>
                   </Link>
                 </div>
               </div>
 
-            </div>
-
-            {/* Right: Order Form & Bank Checkout */}
-            <div className="lg:col-span-6 flex flex-col gap-6">
-              
-                              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-lg space-y-6">
-                  <div>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider mb-2">
-                      <Sparkles size={13} className="text-[#8C4B31]" />
-                      <span>Factory Showcase • Manufactured in Addis Ababa</span>
-                    </span>
-                    <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
-                      {product.name}
-                    </h1>
-                    {product.client && (
-                      <p className="text-xs text-stone-600 mt-1.5 font-medium flex items-center gap-1.5">
-                        <span>Manufactured for:</span>
-                        <strong className="text-[#8C4B31] font-bold">{product.client}</strong>
-                      </p>
-                    )}
-                  </div>
-
-                  <p className="text-stone-600 text-sm leading-relaxed">
-                    {product.description || "Authentic heavy-duty biodegradable packaging manufactured at our Addis Ababa facility using 100% recyclable Ethiopian kraft."}
-                  </p>
-
-                  {/* Engineering Highlights Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Paper</span>
-                      <span className="font-bold text-stone-900">{product.gsm} GSM Kraft</span>
-                    </div>
-                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Handle</span>
-                      <span className="font-bold text-stone-900 truncate">{product.handleType}</span>
-                    </div>
-                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Min. Batch</span>
-                      <span className="font-bold text-stone-900">500 pcs</span>
-                    </div>
-                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Turnaround</span>
-                      <span className="font-bold text-stone-900">5-7 Days</span>
-                    </div>
-                  </div>
-
-                  {/* Primary CTA Box: Commission Custom Logo Batch */}
-                  <div className="p-5 rounded-2xl bg-[#1E3B2E] text-white space-y-3 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <Sparkles size={16} className="text-[#E0B382]" />
-                      <h3 className="font-serif text-base font-bold text-white">
-                        Commission Your Brand&apos;s Custom Batch
-                      </h3>
-                    </div>
-                    <p className="text-xs text-emerald-100/90 leading-relaxed">
-                      Want this exact packaging structure custom-branded with your company logo, pantone colors, and tailored dimensions? We manufacture custom runs for cafés, roasters, fashion boutiques, and hotels.
-                    </p>
-                    <Link
-                      href={`/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm}&dimensions=${encodeURIComponent(product.dimensions || "")}&handle=${encodeURIComponent(product.handleType || "")}`}
-                      className="w-full py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 bg-[#8C4B31] hover:bg-[#A3593B] text-white rounded-xl transition-all shadow-sm"
-                    >
-                      <PenTool size={14} />
-                      <span>Commission This Custom Design &rarr;</span>
-                    </Link>
-                  </div>
-
-                  {/* Pricing & Quantity Selector */}
-                  <div className="pb-6 border-b border-stone-200">
-                    <div className="flex items-baseline gap-3 mb-4">
-                      <span className="font-serif text-3xl font-bold text-[#8C4B31]">
-                        {totalPrice} ETB
-                      </span>
-                      <span className="text-xs text-stone-500">
-                        for {quantity} bundle ({quantity * (product.bundleSize || 100)} bags)
-                      </span>
-                      {quantity >= 3 && (
-                        <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                          {quantity >= 10 ? "12% Bulk Discount" : "5% Bundle Discount"}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Quantity Counter & Add to Cart */}
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-stone-700 uppercase">Select Bundles:</span>
-                        <div className="flex items-center border border-stone-300 rounded-full overflow-hidden bg-white">
-                          <button 
-                            type="button"
-                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                            className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition-colors"
-                          >
-                            -
-                          </button>
-                          <span className="px-4 py-1.5 font-bold text-xs text-stone-900">
-                            {quantity} ({quantity * (product.bundleSize || 100)} pcs)
-                          </span>
-                          <button 
-                            type="button"
-                            onClick={() => setQuantity(quantity + 1)}
-                            className="px-3.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold transition-colors"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        disabled={product.is_available === false}
-                        onClick={() => {
-                          addItem({
-                            id: product.id,
-                            productId: product.id,
-                            name: product.name,
-                            price: product.price,
-                            image: product.image,
-                            category: product.category,
-                            bundleSize: product.bundleSize,
-                          }, quantity);
-                        }}
-                        className="px-5 py-2 rounded-full border-2 border-[#1E3B2E] text-[#1E3B2E] hover:bg-[#1E3B2E] hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
-                      >
-                        <ShoppingBag size={14} />
-                        <span>Add to Cart</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Checkout Form or Unavailable Notification */}
-                  {product.is_available === false ? (
-                    <div className="mt-6 p-8 bg-rose-50/70 rounded-3xl border border-rose-200 text-center">
-                      <ShieldCheck size={32} className="text-rose-400 mx-auto mb-3" />
-                      <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Product Currently Unavailable</h3>
-                      <p className="text-sm text-stone-600 mb-6">
-                        This paper bag model is currently unavailable for order. Please browse other active items in our catalog.
-                      </p>
-                      <button
-                        disabled
-                        className="w-full py-4 rounded-full bg-stone-300 text-stone-500 text-xs font-bold tracking-wider uppercase cursor-not-allowed shadow-none"
-                      >
-                        Product Currently Unavailable
-                      </button>
-                    </div>
-                  ) : !currentUser ? (
-                    <div className="mt-6 p-8 bg-stone-100 rounded-3xl border border-stone-200 text-center">
-                      <ShieldCheck size={32} className="text-stone-400 mx-auto mb-3" />
-                      <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Sign in to Request Custom Bags</h3>
-                      <p className="text-sm text-stone-600 mb-6">
-                        Create an account or log in to customize this style with your brand logo and place an order.
-                      </p>
-                      <Link
-                        href={`/login?returnTo=/products/${productId}`}
-                        className="bg-[#1E3B2E] text-white text-sm font-bold px-6 py-3 rounded-full hover:bg-[#8C4B31] transition-colors inline-flex items-center gap-2"
-                      >
-                        Log In to Customize <ArrowRight size={16} />
-                      </Link>
-                    </div>
-                  ) : (
-                  <form onSubmit={handleSubmitOrder} className="mt-6 space-y-6">
-                    
-                    {/* Step 1: Customization Request */}
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">1</span>
-                        Your Brand Customization & Notes
-                      </h4>
-                      <div className="p-4 bg-[#FAF7F2] border border-stone-200 rounded-xl mb-6">
-                        <p className="text-xs text-stone-600 mb-3 leading-relaxed">
-                          You are requesting a custom production run based on the <span className="font-bold text-stone-900">{product.name}</span> style. Please describe the branding (logo, text) or specific instructions.
-                        </p>
-                        <textarea
-                          placeholder="E.g., Please print our logo 'Addis Cafe' in black ink centered on the bag. We will email the vector logo."
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          className="w-full p-3 text-xs bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 min-h-[80px]"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Step 2: Contact & Delivery Details */}
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">2</span>
-                        Contact & Delivery Details
-                      </h4>
-                      <div className="space-y-3 mb-3">
-                        <div>
-                          <label className="text-[11px] font-semibold text-stone-700 block mb-1">
-                            Full Name or Business Name
-                          </label>
-                          <input 
-                            type="text" 
-                            autoComplete="name"
-                            placeholder="Your Name"
-                            required
-                            value={customerName}
-                            onChange={(e) => setCustomerName(e.target.value)}
-                            className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-stone-700 block mb-1">
-                            Phone Number (for SMS confirmation)
-                          </label>
-                          <input 
-                            type="tel" 
-                            inputMode="tel"
-                            autoComplete="tel"
-                            placeholder="e.g. 0911234567"
-                            required
-                            value={customerPhone}
-                            onChange={(e) => setCustomerPhone(e.target.value)}
-                            className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-stone-700 block mb-1">
-                            Delivery Address in Ethiopia
-                          </label>
-                          <input 
-                            type="text" 
-                            autoComplete="street-address"
-                            placeholder="e.g. Bole Medhanialem, Addis Ababa"
-                            required
-                            value={deliveryAddress}
-                            onChange={(e) => setDeliveryAddress(e.target.value)}
-                            className="w-full min-h-[44px] p-3 text-xs bg-[#FAF7F2] border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Step 2: Bank Selection */}
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">2</span>
-                        Transfer {totalPrice} ETB to Official Account
-                      </h4>
-
-                      {/* Bank Tabs */}
-                      {banks.length === 0 ? (
-                        <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-stone-500 text-xs text-center">
-                          Loading active settlement accounts...
-                        </div>
-                      ) : (
-                        <>
-                          <div className="grid grid-cols-3 gap-2 mb-3">
-                            {banks.map((bank) => (
-                              <button
-                                key={bank.id}
-                                type="button"
-                                onClick={() => setSelectedBank(bank)}
-                                className={`p-2 rounded-xl text-[11px] font-bold border text-center transition-all ${
-                                  selectedBank?.id === bank.id
-                                    ? "border-[#1E3B2E] bg-[#1E3B2E] text-white shadow-sm"
-                                    : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
-                                }`}
-                              >
-                                {bank.name.split(" ")[0].toUpperCase()}
-                              </button>
-                            ))}
-                          </div>
-
-                          {/* Active Bank Card with Copy Action */}
-                          {selectedBank && (
-                            <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-stone-300/80 flex items-center justify-between">
-                              <div>
-                                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
-                                  {selectedBank.name}
-                                </span>
-                                <p className="font-mono text-base font-bold text-stone-900 mt-0.5 tracking-wider">
-                                  {selectedBank.accountNumber}
-                                </p>
-                                <p className="text-[11px] text-stone-600 mt-0.5">
-                                  A/C Name: {selectedBank.accountHolder}
-                                </p>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => handleCopy(selectedBank.accountNumber)}
-                                className="p-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-700 transition-colors flex items-center gap-1.5 text-xs font-bold"
-                                title="Copy Account Number"
-                              >
-                                {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                                <span>{copied ? "Copied!" : "Copy"}</span>
-                              </button>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-
-                    {/* Step 3: Receipt Screenshot Upload */}
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900 mb-3 flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-[#1E3B2E] text-white text-[10px] flex items-center justify-center">3</span>
-                        Upload Transaction Screenshot / Receipt
-                      </h4>
-
-                      <label className="border-2 border-dashed border-stone-300 hover:border-[#8C4B31] bg-[#FAF7F2] hover:bg-white rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all">
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          className="hidden" 
-                          onChange={handleFileUpload}
-                        />
-                        <Upload size={28} className="text-[#8C4B31] mb-2" />
-                        {uploadedFile ? (
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-emerald-700 flex items-center justify-center gap-1">
-                              <CheckCircle2 size={14} /> {uploadedFile.name}
-                            </p>
-                            <p className="text-[10px] text-stone-500 mt-0.5">
-                              {(uploadedFile.size / 1024).toFixed(1)} KB • Click to change
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-stone-800">
-                              Click to upload receipt screenshot
-                            </p>
-                            <p className="text-[10px] text-stone-500 mt-0.5">
-                              Supports CBE Birr receipt, Telebirr SMS capture, or Bank Slip
-                            </p>
-                          </div>
-                        )}
-                      </label>
-                    </div>
-
-                    {/* Submit Button */}
-                    <div className="pt-2">
-                      <button
-                        type="submit"
-                        disabled={isSubmitting || !uploadedFile}
-                        className="w-full py-4 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold tracking-wider uppercase transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Sparkles size={16} className="animate-spin" />
-                            <span>Placing Order...</span>
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingBag size={16} />
-                            <span>Request Custom Production ({totalPrice} ETB)</span>
-                          </>
-                        )}
-                      </button>
-                      <p className="text-[10px] text-center text-stone-500 mt-3 font-medium mb-4">
-                        By submitting, you agree to our Custom Manufacturing Terms. Our team will verify your payment and contact you for artwork approval before production begins.
-                      </p>
-                    </div>
-                  </form>
-                  )}
-
-                  <div className="text-center pt-2">
-                    <Link
-                      href="/design-submission"
-                      className="text-xs font-bold text-[#8C4B31] hover:underline inline-flex items-center gap-1"
-                    >
-                      <span>Need your own custom dimensions and logo? Use our Custom Studio</span>
-                      <ArrowRight size={12} />
-                    </Link>
-                  </div>
-
+              {/* Factory Hotline & Direct Enterprise Desk */}
+              <div className="p-4 bg-white rounded-2xl border border-stone-200 text-xs text-stone-600 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="font-bold text-stone-900 block">Addis Ababa Plant Engineering Desk</span>
+                  <span className="text-[11px] text-stone-500">Bole Subcity, Industrial Zone • Direct WhatsApp / Phone Inquiries</span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <a
+                    href="tel:+251911741618"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold"
+                  >
+                    <Phone size={13} className="text-[#1E3B2E]" />
+                    <span>+251 911 741618</span>
+                  </a>
+                  <a
+                    href="mailto:orders@arenguade.et"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold"
+                  >
+                    <Mail size={13} className="text-[#8C4B31]" />
+                    <span>Email Desk</span>
+                  </a>
                 </div>
               </div>
-            </div>
-          )}
 
-        {/* Mobile Sticky Action Bar */}
-        {!orderConfirmed && product && (
-          <StickyBottomBar>
-            <div>
-              <span className="text-[10px] text-stone-500 block uppercase font-bold">Batch Pricing</span>
-              <span className="text-base font-bold text-[#8C4B31]">{totalPrice} ETB</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm}&dimensions=${encodeURIComponent(product.dimensions || '')}&handle=${encodeURIComponent(product.handleType || '')}`}
-                className="px-3 py-2 rounded-xl bg-stone-200 text-stone-800 text-xs font-bold"
-              >
-                Customize
-              </Link>
-              <button
-                onClick={() => {
-                  const formEl = document.querySelector("form");
-                  if (formEl) {
-                    formEl.scrollIntoView({ behavior: "smooth" });
-                  }
-                }}
-                className="btn-primary touch-target text-xs px-5"
-              >
-                Order
-              </button>
-            </div>
-          </StickyBottomBar>
-        )}
+
+          </div>
+        </div>
+
       </div>
+
+      {/* Lightbox Modal for High-Resolution Inspection */}
+      {lightboxOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-5 right-5 p-2 rounded-full bg-white/20 text-white hover:bg-white/40 cursor-pointer"
+          >
+            <X size={24} />
+          </button>
+          <div className="relative max-w-4xl max-h-[85vh] w-full h-full">
+            <Image
+              src={selectedImage}
+              alt={product.name}
+              fill
+              className="object-contain"
+            />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

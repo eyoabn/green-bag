@@ -275,18 +275,57 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Invalid action for student." }, { status: 400 });
     }
 
-    // 2. TEACHER ACTIONS (Mark Attendance)
+    // 2. TEACHER ACTIONS (Mark Attendance & Accept Students)
     if (user.role === "teacher") {
-      if (action === "approve") {
-        return NextResponse.json({ error: "Forbidden: Teachers cannot approve payments." }, { status: 403 });
-      }
+      const teacherId = Array.isArray(enrollment.class_sessions)
+        ? enrollment.class_sessions[0]?.teacher_id
+        : enrollment.class_sessions?.teacher_id;
+      const sessionTitle = Array.isArray(enrollment.class_sessions)
+        ? enrollment.class_sessions[0]?.title
+        : enrollment.class_sessions?.title;
 
       // Must be teacher of this class session
-      if (enrollment.class_sessions?.teacher_id !== user.id) {
+      if (teacherId !== user.id) {
         return NextResponse.json(
           { error: "Forbidden: You are not the assigned instructor for this class." },
           { status: 403 }
         );
+      }
+
+      if (action === "approve") {
+        const { data, error } = await supabase
+          .from("enrollments")
+          .update({
+            status: "approved",
+            verified_by: user.id,
+            verified_at: new Date().toISOString(),
+            rejection_reason: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", enrollmentId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Notify student that instructor accepted their enrollment
+        await supabase.from("notifications").insert({
+          user_id: enrollment.student_id,
+          title: "Registration Approved by Instructor!",
+          body: `Your seat for "${sessionTitle || 'Class Session'}" has been approved by your teacher. You are ready to join!`,
+          link: "/dashboard?tab=classes",
+        });
+
+        // Audit log
+        await supabase.from("audit_log").insert({
+          actor_id: user.id,
+          action: "ENROLLMENT_TEACHER_APPROVED",
+          entity: "enrollments",
+          entity_id: enrollmentId,
+          metadata: { teacher_id: user.id, session_id: enrollment.session_id },
+        });
+
+        return NextResponse.json({ success: true, enrollment: data });
       }
 
       if (action === "attendance") {
@@ -301,7 +340,7 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ success: true, enrollment: data });
       }
 
-      return NextResponse.json({ error: "Teachers can only mark attendance." }, { status: 400 });
+      return NextResponse.json({ error: "Teachers can only mark attendance or accept students." }, { status: 400 });
     }
 
     // 3. ADMIN ACTIONS (Approve, Reject, Attendance)

@@ -120,6 +120,31 @@ export default function ClassRosterPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const approveStudent = async (enrollment: EnrollmentItem) => {
+    setUpdatingId(enrollment.id);
+    try {
+      const res = await fetch("/api/enrollments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enrollmentId: enrollment.id,
+          action: "approve",
+        }),
+      });
+
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || "Failed to approve student registration.");
+
+      setEnrollments((prev) =>
+        prev.map((e) => (e.id === enrollment.id ? { ...e, status: "approved" } : e))
+      );
+    } catch (err: any) {
+      alert(err.message || "Could not approve student.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const viewProof = async (path?: string) => {
     if (!path) return;
     try {
@@ -292,7 +317,18 @@ export default function ClassRosterPage({ params }: { params: Promise<{ id: stri
                     </div>
 
                     {/* Touch-friendly attendance button */}
-                    <div className="pt-1">
+                    <div className="pt-1 space-y-2">
+                      {(enr.status === "pending_verification" || enr.status === "pending") && (
+                        <button
+                          onClick={() => approveStudent(enr)}
+                          disabled={updatingId === enr.id}
+                          className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-[#1E3B2E] hover:bg-[#8C4B31] text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                        >
+                          <CheckCircle2 size={16} />
+                          <span>Accept Student & Confirm Seat</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => toggleAttendance(enr)}
                         disabled={updatingId === enr.id}
@@ -371,15 +407,28 @@ export default function ClassRosterPage({ params }: { params: Promise<{ id: stri
                         </td>
 
                         <td className="py-4 px-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            enr.status === "approved" || enr.status === "confirmed" || enr.status === "attended"
-                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                              : enr.status === "pending_verification" || enr.status === "pending"
-                              ? "bg-amber-50 text-amber-800 border border-amber-200"
-                              : "bg-red-50 text-red-800 border border-red-200"
-                          }`}>
-                            {enr.status}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              enr.status === "approved" || enr.status === "confirmed" || enr.status === "attended"
+                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                : enr.status === "pending_verification" || enr.status === "pending"
+                                ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                : "bg-red-50 text-red-800 border border-red-200"
+                            }`}>
+                              {enr.status}
+                            </span>
+                            {(enr.status === "pending_verification" || enr.status === "pending") && (
+                              <button
+                                onClick={() => approveStudent(enr)}
+                                disabled={updatingId === enr.id}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-[11px] font-bold transition-all shadow-xs cursor-pointer"
+                                title="Approve student registration"
+                              >
+                                <CheckCircle2 size={13} />
+                                <span>Accept Student</span>
+                              </button>
+                            )}
+                          </div>
                         </td>
 
                         <td className="py-4 px-4">

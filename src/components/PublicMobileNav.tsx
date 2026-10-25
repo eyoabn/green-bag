@@ -7,23 +7,19 @@ import {
   ShoppingBag, 
   Sparkles, 
   BookOpen, 
-  ShoppingCart
+  User
 } from "lucide-react";
-import { useCart } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function PublicMobileNav() {
   const pathname = usePathname();
-  const { totalItems, setIsCartOpen } = useCart();
   const { lang } = useLanguage();
 
   // Hide on internal portals and pages with their own sticky action bars
   const shouldHide = 
     !pathname ||
     pathname.startsWith("/admin") ||
-    pathname.startsWith("/dashboard") ||
     pathname.startsWith("/teacher") ||
-    pathname.startsWith("/checkout") ||
     pathname === "/design-submission" ||
     (pathname.startsWith("/products/") && pathname !== "/products");
 
@@ -33,8 +29,8 @@ export default function PublicMobileNav() {
 
   const isHome = pathname === "/";
   const isProducts = pathname === "/products" || pathname.startsWith("/portfolio");
-  const isStudio = pathname === "/design-submission";
   const isAcademy = pathname.startsWith("/learn");
+  const isPortal = pathname.startsWith("/dashboard") || pathname === "/profile" || pathname === "/login";
 
   return (
     <nav 
@@ -107,25 +103,22 @@ export default function PublicMobileNav() {
           </span>
         </Link>
 
-        {/* Cart Drawer Trigger */}
-        <button
-          type="button"
-          onClick={() => setIsCartOpen(true)}
-          className="flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-full text-stone-500 hover:text-stone-900 transition-all touch-target active:scale-95 cursor-pointer relative"
-          aria-label="View Shopping Cart"
+        {/* Portal / Account */}
+        <Link
+          href="/dashboard"
+          className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-full transition-all touch-target active:scale-95 ${
+            isPortal 
+              ? "text-[#1E3B2E] font-bold" 
+              : "text-stone-500 hover:text-stone-900"
+          }`}
         >
-          <div className="p-1 rounded-full relative">
-            <ShoppingCart size={19} className="stroke-2" />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1.5 bg-[#8C4B31] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs animate-in zoom-in-50">
-                {totalItems > 99 ? "99+" : totalItems}
-              </span>
-            )}
+          <div className={`p-1 rounded-full transition-transform ${isPortal ? "bg-[#1E3B2E]/10" : ""}`}>
+            <User size={19} className={isPortal ? "stroke-[2.5]" : "stroke-2"} />
           </div>
           <span className="text-[10px] tracking-tight mt-0.5">
-            {lang === "am" ? "ቅርጫት" : "Cart"}
+            {lang === "am" ? "መለያ" : "Portal"}
           </span>
-        </button>
+        </Link>
 
       </div>
     </nav>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useCurrency } from "@/components/CurrencyContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { createClient } from "@/utils/supabase/client";
 import { 
   ShoppingBag, 
@@ -37,6 +38,7 @@ const ThreeBagScene = dynamic(() => import("@/components/ThreeBag"), {
 
 export default function Home() {
   const { formatPrice } = useCurrency();
+  const { t, lang } = useLanguage();
   
   // Adaptive 3D rendering: only render on desktop/tablet without data saver or reduced motion
   const [canRender3D, setCanRender3D] = useState(false);
@@ -150,16 +152,16 @@ export default function Home() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-200/70 border border-stone-300 w-fit">
                 <span className="w-2 h-2 rounded-full bg-[#1E3B2E]" />
                 <span className="text-[11px] font-bold tracking-wider text-stone-700 uppercase">
-                  {cmsContent.hero_badge || "Addis Ababa • Eco-Packaging"}
+                  {lang === "am" ? t.hero_badge : (cmsContent.hero_badge || "Addis Ababa • Eco-Packaging")}
                 </span>
               </div>
 
               <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.12] text-stone-900 tracking-tight">
-                {cmsContent.hero_headline || heroContent.headline || "Artisanal Kraft Packaging & Craft Academy"}
+                {lang === "am" ? t.hero_headline : (cmsContent.hero_headline || heroContent.headline || "Artisanal Kraft Packaging & Craft Academy")}
               </h1>
 
               <p className="text-stone-600 text-sm sm:text-lg max-w-xl leading-relaxed">
-                {cmsContent.hero_subline || heroContent.subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses."}
+                {lang === "am" ? t.hero_subline : (cmsContent.hero_subline || heroContent.subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses.")}
               </p>
 
               {/* One primary action, one secondary */}
@@ -169,7 +171,7 @@ export default function Home() {
                   className="btn-primary touch-target text-center"
                 >
                   <ShoppingBag size={18} />
-                  <span>View Packaging Showcase</span>
+                  <span>{t.hero_cta_portfolio}</span>
                   <ArrowRight size={16} />
                 </Link>
 
@@ -178,20 +180,20 @@ export default function Home() {
                   className="btn-secondary touch-target text-center"
                 >
                   <BookOpen size={18} className="text-[#8C4B31]" />
-                  <span>Join a Workshop</span>
+                  <span>{t.hero_cta_design}</span>
                 </Link>
               </div>
 
               {/* Trust Badges Chips (Driven by Admin CMS stats or defaults) */}
               <div className="pt-4 mt-2 border-t border-stone-200/90 flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold text-stone-700">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
-                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {cmsContent.stat_1_val ? `${cmsContent.stat_1_val} ${cmsContent.stat_1_label}` : "1.2M+ Bags Produced"}
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {lang === "am" ? t.hero_trust_1 : (cmsContent.stat_1_val ? `${cmsContent.stat_1_val} ${cmsContent.stat_1_label}` : "1.2M+ Bags Produced")}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
-                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {cmsContent.stat_2_val ? `${cmsContent.stat_2_val} ${cmsContent.stat_2_label}` : "50+ Enterprise Clients"}
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {lang === "am" ? t.hero_trust_2 : (cmsContent.stat_2_val ? `${cmsContent.stat_2_val} ${cmsContent.stat_2_label}` : "50+ Enterprise Clients")}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
-                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {cmsContent.stat_3_val ? `${cmsContent.stat_3_val} ${cmsContent.stat_3_label}` : "100% Recyclable Kraft"}
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {lang === "am" ? t.hero_trust_3 : (cmsContent.stat_3_val ? `${cmsContent.stat_3_val} ${cmsContent.stat_3_label}` : "100% Recyclable Kraft")}
                 </span>
               </div>
             </div>
@@ -240,13 +242,13 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
             <div>
               <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase">
-                Factory Deliverables • Bespoke Client Works
+                {lang === "am" ? "የፋብሪካ ውጤቶች • ልዩ የደንበኞች ሥራዎች" : "Factory Deliverables • Bespoke Client Works"}
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
-                {cmsContent.showcase_title || "Custom Packaging Showcase"}
+                {lang === "am" ? t.products_heading : (cmsContent.showcase_title || "Custom Packaging Showcase")}
               </h2>
               <p className="text-stone-600 text-xs sm:text-sm mt-1 max-w-2xl">
-                {cmsContent.showcase_sub || "Real production runs manufactured exclusively for Ethiopian roasters, boutiques, and corporate clients. Every piece is tailor-made to brand specifications."}
+                {lang === "am" ? t.products_subheading : (cmsContent.showcase_sub || "Real production runs manufactured exclusively for Ethiopian roasters, boutiques, and corporate clients. Every piece is tailor-made to brand specifications.")}
               </p>
             </div>
 
@@ -254,7 +256,7 @@ export default function Home() {
               href="/products" 
               className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
             >
-              <span>Explore Full Packaging Showcase</span>
+              <span>{t.products_view_all}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -309,7 +311,7 @@ export default function Home() {
                         href={`/products/${product.id}`}
                         className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-[#E0B382] hover:text-white transition-all text-xs font-bold py-2 px-4 rounded-xl shadow-xs"
                       >
-                        View Showcase
+                        {t.products_view_details}
                       </Link>
                     </div>
                   </div>
@@ -330,10 +332,10 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
             <div>
               <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase">
-                Arenguade Craft Academy
+                {t.academy_badge}
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
-                How Learning Works
+                {t.academy_heading}
               </h2>
             </div>
 
@@ -341,7 +343,7 @@ export default function Home() {
               href="/learn/schedule" 
               className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
             >
-              <span>Full Schedule & Booking</span>
+              <span>{t.catalog_workshops}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -351,28 +353,36 @@ export default function Home() {
             <div className="app-card border-stone-200">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8C4B31]/10 text-[#8C4B31] text-xs font-bold mb-3">
                 <MapPin size={13} />
-                <span>In-Person Addis Ababa Studio</span>
+                <span>{lang === "am" ? "የአዲስ አበባ ስቱዲዮ (በአካል)" : "In-Person Addis Ababa Studio"}</span>
               </div>
-              <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Hands-On Apprenticeship</h3>
+              <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">
+                {lang === "am" ? "የእጅ ሙያ ስልጠና" : "Hands-On Apprenticeship"}
+              </h3>
               <p className="text-xs text-stone-600 leading-relaxed mb-4">
-                Work alongside master artisans inside our plant in Bole Sub-City. Learn paper cutting, scoring, bottom reinforcement, cord handle attachment, and box die-making. All materials included.
+                {lang === "am" 
+                  ? "በቦሌ ክፍለ ከተማ ከሚገኘው የዕደ-ጥበብ ባለሙያዎቻችን ጋር አብረው ይስሩ። የወረቀት መቁረጥ፣ ማጠፍ፣ የታችኛውን ክፍል ማጠናከር እና የማሸጊያ ሳጥን ዲዛይን ይማሩ። ሁሉም ቁሳቁሶች ተዘጋጅተዋል።" 
+                  : "Work alongside master artisans inside our plant in Bole Sub-City. Learn paper cutting, scoring, bottom reinforcement, cord handle attachment, and box die-making. All materials included."}
               </p>
               <Link href="/learn/schedule" className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1">
-                View Studio Dates <ArrowRight size={13} />
+                {lang === "am" ? "የስቱዲዮ ቀናትን ይመልከቱ" : "View Studio Dates"} <ArrowRight size={13} />
               </Link>
             </div>
 
             <div className="app-card border-stone-200">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold mb-3">
                 <Video size={13} />
-                <span>LiveKit Interactive Online</span>
+                <span>{lang === "am" ? "በቀጥታ ስርጭት (LiveKit)" : "LiveKit Interactive Online"}</span>
               </div>
-              <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Real-Time Global Masterclasses</h3>
+              <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">
+                {lang === "am" ? "የቀጥታ ስርጭት ማስተርክላስ" : "Real-Time Global Masterclasses"}
+              </h3>
               <p className="text-xs text-stone-600 leading-relaxed mb-4">
-                Interactive video classrooms powered by low-latency LiveKit WebRTC. Ask questions in real time, unmute to speak with the teacher, and receive digital certification upon completion.
+                {lang === "am"
+                  ? "በዝቅተኛ መዘግየት ባለው LiveKit WebRTC የሚሰራ የቀጥታ ቪዲዮ ክፍል። ጥያቄዎችን በቅጽበት ይጠይቁ፣ ከአስተማሪው ጋር ይነጋገሩ እና ሲያጠናቅቁ ዲጂታል ሰርተፍኬት ይቀበሉ።"
+                  : "Interactive video classrooms powered by low-latency LiveKit WebRTC. Ask questions in real time, unmute to speak with the teacher, and receive digital certification upon completion."}
               </p>
               <Link href="/learn/schedule" className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1">
-                View Live Streams <ArrowRight size={13} />
+                {lang === "am" ? "የቀጥታ ስርጭቶችን ይመልከቱ" : "View Live Streams"} <ArrowRight size={13} />
               </Link>
             </div>
           </div>
@@ -382,7 +392,7 @@ export default function Home() {
             <div className="space-y-4">
               <div>
                 <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">
-                  {cmsContent?.classes_section_title || "Upcoming Classes Ready for Registration"}
+                  {lang === "am" ? t.academy_upcoming_title : (cmsContent?.classes_section_title || "Upcoming Classes Ready for Registration")}
                 </h4>
                 {cmsContent?.classes_section_sub && (
                   <p className="text-xs text-stone-500 mt-1">
@@ -410,7 +420,7 @@ export default function Home() {
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             isLive ? "bg-[#1E3B2E] text-white" : "bg-[#8C4B31] text-white"
                           }`}>
-                            {isLive ? "LiveKit Online" : "In-Person Studio"}
+                            {isLive ? (lang === "am" ? "በቀጥታ ስርጭት" : "LiveKit Online") : (lang === "am" ? "በአካል ስቱዲዮ" : "In-Person Studio")}
                           </span>
                           <span className="text-[11px] text-stone-500 flex items-center gap-1 font-medium">
                             <Calendar size={12} /> {dateStr}
@@ -426,7 +436,7 @@ export default function Home() {
                           href="/learn/schedule"
                           className="btn-primary touch-target text-xs py-2 px-5"
                         >
-                          Register
+                          {t.academy_register_btn}
                         </Link>
                       </div>
                     </div>
@@ -434,7 +444,7 @@ export default function Home() {
                 })
               ) : (
                 <div className="app-card text-center py-6 text-xs text-stone-500">
-                  New sessions will be announced soon.
+                  {lang === "am" ? "አዳዲስ ስልጠናዎች በቅርቡ ይፋ ይሆናሉ።" : "New sessions will be announced soon."}
                 </div>
               )}
             </div>
@@ -449,14 +459,15 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div>
                 <span className="text-xs font-bold text-[#D7A977] uppercase tracking-wider">
-                  Contact & Factory Inquiries
+                  {lang === "am" ? "የፋብሪካ አድራሻ እና ግንኙነት" : "Contact & Factory Inquiries"}
                 </span>
                 <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">
                   {companySettings.company_name}
                 </h3>
                 <p className="text-xs sm:text-sm text-stone-400 mt-2 leading-relaxed">
-                  Plant & Showroom: Bole Sub-City, Kebele 03, Addis Ababa, Ethiopia. 
-                  Wholesale orders, bespoke branded packaging, and academy partnerships.
+                  {lang === "am" 
+                    ? "ፋብሪካ እና ሾውሩም፦ ቦሌ ክፍለ ከተማ፣ ቀበሌ 03፣ አዲስ አበባ፣ ኢትዮጵያ። የጅምላ ትዕዛዞች፣ የብራንድ ማሸጊያዎች እና የስልጠና አጋርነቶች።"
+                    : "Plant & Showroom: Bole Sub-City, Kebele 03, Addis Ababa, Ethiopia. Wholesale orders, bespoke branded packaging, and academy partnerships."}
                 </p>
 
                 <div className="flex flex-col gap-2 mt-5 text-xs text-stone-300">
@@ -467,7 +478,7 @@ export default function Home() {
                     <Mail size={14} className="text-[#D7A977]" /> {companySettings.contact_email}
                   </span>
                   <span className="inline-flex items-center gap-2">
-                    <Building2 size={14} className="text-[#D7A977]" /> Settlement Banks: CBE, Telebirr, Awash
+                    <Building2 size={14} className="text-[#D7A977]" /> {lang === "am" ? "የክፍያ ባንኮች፦ ንግድ ባንክ፣ ቴሌብር፣ አዋሽ" : "Settlement Banks: CBE, Telebirr, Awash"}
                   </span>
                 </div>
               </div>
@@ -478,14 +489,14 @@ export default function Home() {
                   className="btn-primary bg-[#8C4B31] hover:bg-[#A3593B] touch-target text-center text-xs"
                 >
                   <ShoppingBag size={15} />
-                  <span>Order Packaging</span>
+                  <span>{lang === "am" ? "ማሸጊያ እዘዝ" : "Order Packaging"}</span>
                 </Link>
                 <Link 
                   href="/design-submission" 
                   className="btn-secondary bg-stone-800 text-white border-stone-700 hover:bg-stone-700 touch-target text-center text-xs"
                 >
                   <Sparkles size={15} />
-                  <span>Custom Design Studio</span>
+                  <span>{lang === "am" ? t.nav_design_studio : "Custom Design Studio"}</span>
                 </Link>
               </div>
             </div>

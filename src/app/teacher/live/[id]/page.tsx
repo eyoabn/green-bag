@@ -688,6 +688,16 @@ export default function TeacherLiveRoomPage({ params }: { params: Promise<{ id: 
       setLoading(true);
       setErrorMsg(null);
       try {
+        // 1. Mark session as 'live' and initialize LiveKit room
+        try {
+          await fetch(`/api/live/${sessionId}/start`, {
+            method: "POST",
+          });
+        } catch (startErr) {
+          console.warn("LiveKit start session ping notice:", startErr);
+        }
+
+        // 2. Fetch Host Token
         const res = await fetch(`/api/live/${sessionId}/token`, {
           method: "POST",
         });

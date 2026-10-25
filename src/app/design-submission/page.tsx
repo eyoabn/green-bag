@@ -23,7 +23,13 @@ import {
   SlidersHorizontal,
   Info,
   RefreshCw,
-  Sparkle
+  Sparkle,
+  User,
+  Phone,
+  MapPin,
+  Truck,
+  Building2,
+  QrCode
 } from "lucide-react";
 import { uploadFileSafely } from "@/utils/fileUpload";
 import { getCurrentUser } from "@/utils/auth";
@@ -201,6 +207,12 @@ function DesignSubmissionForm() {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
 
+  // Customer Contact & Delivery Address Details
+  const [customerName, setCustomerName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [companyBrand, setCompanyBrand] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
@@ -210,6 +222,10 @@ function DesignSubmissionForm() {
   useEffect(() => {
     getCurrentUser().then((u) => {
       setCurrentUser(u);
+      if (u) {
+        if (u.full_name) setCustomerName(u.full_name);
+        if (u.phone) setContactPhone(u.phone);
+      }
     }).catch(() => {});
 
     // Restore draft from localStorage
@@ -218,6 +234,10 @@ function DesignSubmissionForm() {
       if (savedDraft && !presetParam) {
         const draft = JSON.parse(savedDraft);
         if (draft.title) setTitle(draft.title);
+        if (draft.customerName) setCustomerName(draft.customerName);
+        if (draft.contactPhone) setContactPhone(draft.contactPhone);
+        if (draft.deliveryAddress) setDeliveryAddress(draft.deliveryAddress);
+        if (draft.companyBrand) setCompanyBrand(draft.companyBrand);
         if (draft.quantity) setQuantity(draft.quantity);
         if (draft.gsm) setGsm(draft.gsm);
         if (draft.handleType) setHandleType(draft.handleType);
@@ -248,6 +268,10 @@ function DesignSubmissionForm() {
     try {
       localStorage.setItem("greenwork_design_draft", JSON.stringify({
         title,
+        customerName,
+        contactPhone,
+        deliveryAddress,
+        companyBrand,
         quantity,
         gsm,
         handleType,
@@ -256,7 +280,7 @@ function DesignSubmissionForm() {
         paperColor,
       }));
     } catch {}
-  }, [title, quantity, gsm, handleType, printFinish, notes, paperColor]);
+  }, [title, customerName, contactPhone, deliveryAddress, companyBrand, quantity, gsm, handleType, printFinish, notes, paperColor]);
 
   // Dimensions formatted
   const activeDimensions = useMemo(() => {
@@ -351,6 +375,21 @@ function DesignSubmissionForm() {
       return;
     }
 
+    if (!customerName.trim()) {
+      setErrorMsg("Please enter your Contact Person / Full Name in Section 10.");
+      return;
+    }
+
+    if (!contactPhone.trim()) {
+      setErrorMsg("Please enter your Contact Phone Number (e.g. 0911... or +251...) in Section 10.");
+      return;
+    }
+
+    if (!deliveryAddress.trim()) {
+      setErrorMsg("Please enter your Delivery Destination / Address in Section 10.");
+      return;
+    }
+
     if (artworkMode === "upload" && !file) {
       setErrorMsg("Please select your artwork file or switch to 'Request Dieline Drafting' below.");
       return;
@@ -381,6 +420,11 @@ function DesignSubmissionForm() {
         urgency,
         description: notes.trim() || `Custom manufacturing configuration for ${title}.`,
         specsJson: {
+          customerName: customerName.trim(),
+          contactPhone: contactPhone.trim(),
+          deliveryAddress: deliveryAddress.trim(),
+          companyBrand: companyBrand.trim() || title.trim(),
+          workflow_stage: "submitted",
           paperColor,
           hasBottomCard,
           hasFoodLining,
@@ -524,6 +568,70 @@ function DesignSubmissionForm() {
             <span>{errorMsg}</span>
           </div>
         )}
+
+        {/* B2B Manufacturing Journey Stepper Guide */}
+        <div className="bg-white rounded-3xl p-6 sm:p-7 border border-stone-200/90 shadow-sm mb-8 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C4B31] block">
+                How It Works • Transparent B2B Factory Process
+              </span>
+              <h3 className="font-serif text-lg font-bold text-stone-900 mt-0.5">
+                From Custom Design to Factory Delivery
+              </h3>
+            </div>
+            <span className="text-[11px] font-semibold text-[#1E3B2E] bg-[#1E3B2E]/10 px-3 py-1 rounded-full self-start sm:self-auto">
+              5 Transparent Steps
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
+            {/* Step 1 */}
+            <div className="p-3.5 bg-[#FAF7F2] rounded-2xl border border-stone-200/80">
+              <span className="text-[10px] font-bold text-[#1E3B2E] uppercase block mb-1">Step 01</span>
+              <h4 className="font-bold text-stone-900">Submit Specs</h4>
+              <p className="text-[11px] text-stone-600 mt-1 leading-tight">
+                Enter size, kraft paper, upload logo or dieline, and provide your delivery contact info.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="p-3.5 bg-[#FAF7F2] rounded-2xl border border-stone-200/80">
+              <span className="text-[10px] font-bold text-[#8C4B31] uppercase block mb-1">Step 02</span>
+              <h4 className="font-bold text-stone-900">&ldquo;We Can Do It!&rdquo;</h4>
+              <p className="text-[11px] text-stone-600 mt-1 leading-tight">
+                Admin accepts design, dispatches feasibility confirmation and binding ETB quotation to pay.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="p-3.5 bg-[#FAF7F2] rounded-2xl border border-stone-200/80">
+              <span className="text-[10px] font-bold text-[#1E3B2E] uppercase block mb-1">Step 03</span>
+              <h4 className="font-bold text-stone-900">QR Code / Payment</h4>
+              <p className="text-[11px] text-stone-600 mt-1 leading-tight">
+                Transfer via CBE or Telebirr QR, upload receipt screenshot, and enter your QR reference code.
+              </p>
+            </div>
+
+            {/* Step 4 */}
+            <div className="p-3.5 bg-[#FAF7F2] rounded-2xl border border-stone-200/80">
+              <span className="text-[10px] font-bold text-[#8C4B31] uppercase block mb-1">Step 04</span>
+              <h4 className="font-bold text-stone-900">&ldquo;It Is On Doing&rdquo;</h4>
+              <p className="text-[11px] text-stone-600 mt-1 leading-tight">
+                Admin verifies QR proof & confirms: <strong>It is on doing</strong> (active laser plates, printing & cutting).
+              </p>
+            </div>
+
+            {/* Step 5 */}
+            <div className="p-3.5 bg-[#FAF7F2] rounded-2xl border border-stone-200/80">
+              <span className="text-[10px] font-bold text-[#1E3B2E] uppercase block mb-1">Step 05</span>
+              <h4 className="font-bold text-stone-900">QC & Delivery</h4>
+              <p className="text-[11px] text-stone-600 mt-1 leading-tight">
+                Inspect finish notice, and choose Bole showroom pickup or direct van delivery to your address.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Two Design Submission Options */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -1142,6 +1250,78 @@ function DesignSubmissionForm() {
                   rows={3}
                   className="form-input text-xs"
                 />
+              </div>
+            </div>
+
+            {/* 10. Customer Contact Person & Delivery Address */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-stone-200/90 shadow-sm space-y-4">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900 flex items-center gap-2">
+                  <User size={15} className="text-[#1E3B2E]" />
+                  <span>10. Contact Person & Delivery Address *</span>
+                </h3>
+                <p className="text-[11px] text-stone-500 mt-0.5">
+                  Enter your contact details and destination so our plant logistics desk can coordinate your quotation and delivery.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    Contact Person / Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="e.g. Abebe Bikila / Meron Tadesse"
+                    className="form-input text-xs"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    Direct Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="e.g. 0911 234 567 or +251 9..."
+                    className="form-input text-xs font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    Company / Registered Brand
+                  </label>
+                  <input
+                    type="text"
+                    value={companyBrand}
+                    onChange={(e) => setCompanyBrand(e.target.value)}
+                    placeholder="e.g. Tomoca Coffee PLC / Personal Run"
+                    className="form-input text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    Delivery Address / Plant Pickup Destination *
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    placeholder="e.g. Addis Ababa, Bole Sub-City (or Factory Collection)"
+                    className="form-input text-xs"
+                    required
+                  />
+                </div>
               </div>
             </div>
 

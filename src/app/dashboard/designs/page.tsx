@@ -21,7 +21,12 @@ import {
   Truck,
   ShieldCheck,
   CheckCircle,
-  Eye
+  Eye,
+  QrCode,
+  MapPin,
+  Phone,
+  User,
+  PackageCheck
 } from "lucide-react";
 
 interface BankAccount {
@@ -54,7 +59,7 @@ interface DesignItem {
 
 const MANUFACTURING_STEPS = [
   { id: "dieline_approved", title: "Dieline Approved", desc: "CAD specifications verified by plant engineers" },
-  { id: "payment_verified", title: "Deposit Verified", desc: "Bank settlement verified by plant finance desk" },
+  { id: "payment_verified", title: "Deposit Verified", desc: "Bank & QR settlement verified by plant finance desk" },
   { id: "plate_engraving", title: "Plate Engraving & Pigments", desc: "Laser flexo platemaking & food-grade ink formulation" },
   { id: "printing_and_cutting", title: "Die-Cutting & Assembly", desc: "Rotary die-cutting, folding & handle reinforcement" },
   { id: "ready_for_delivery", title: "QC & Dispatched", desc: "Optical tensile testing complete; packaged for delivery" },
@@ -70,9 +75,19 @@ export default function CustomerDesignsPage() {
   // Payment upload state per design
   const [paymentFiles, setPaymentFiles] = useState<Record<string, File>>({});
   const [paymentRefs, setPaymentRefs] = useState<Record<string, string>>({});
+  const [qrCodeRefs, setQrCodeRefs] = useState<Record<string, string>>({});
   const [selectedBanks, setSelectedBanks] = useState<Record<string, string>>({});
   const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  // Delivery options selection state per design
+  const [deliverySelections, setDeliverySelections] = useState<Record<string, {
+    option: "pickup" | "direct_delivery";
+    address: string;
+    phone: string;
+    notes: string;
+  }>>({});
+  const [deliverySubmittingId, setDeliverySubmittingId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -85,7 +100,24 @@ export default function CustomerDesignsPage() {
 
       const designsData = await designsRes.json();
       if (!designsRes.ok) throw new Error(designsData.error || "Failed to load custom designs.");
-      setDesigns(designsData.designs || []);
+      const loadedDesigns: DesignItem[] = designsData.designs || [];
+      setDesigns(loadedDesigns);
+
+      // Initialize delivery form selections
+      const initialDelivery: Record<string, any> = {};
+      loadedDesigns.forEach((d) => {
+        let specs: any = {};
+        try {
+          specs = typeof d.specs_json === "string" ? JSON.parse(d.specs_json) : (d.specs_json || {});
+        } catch {}
+        initialDelivery[d.id] = {
+          option: specs.delivery_preference?.option || "direct_delivery",
+          address: specs.delivery_preference?.address || specs.deliveryAddress || "",
+          phone: specs.delivery_preference?.phone || specs.contactPhone || "",
+          notes: specs.delivery_preference?.notes || "",
+        };
+      });
+      setDeliverySelections(initialDelivery);
 
       if (banksRes && banksRes.ok) {
         const banksData = await banksRes.json();
@@ -93,10 +125,9 @@ export default function CustomerDesignsPage() {
         if (accs.length > 0) {
           setBankAccounts(accs);
         } else {
-          // Default official accounts if database has none
           setBankAccounts([
             { id: "cbe-1", bank_name: "Commercial Bank of Ethiopia (CBE)", account_name: "Ethiopia Arenguade Paper Products PLC", account_number: "1000 1234 5678 9" },
-            { id: "telebirr-1", bank_name: "Telebirr Enterprise", account_name: "Arenguade Packaging Merchant", account_number: "+251 911 741618" },
+            { id: "telebirr-1", bank_name: "Telebirr Enterprise QR & Till", account_name: "Arenguade Packaging Merchant", account_number: "+251 911 741618 (Till: 893201)" },
             { id: "awash-1", bank_name: "Awash International Bank", account_name: "Arenguade Packaging Factory", account_number: "0132 0876 5432 00" },
           ]);
         }
@@ -127,7 +158,7 @@ export default function CustomerDesignsPage() {
       await loadData();
       alert(
         action === "accept"
-          ? "Quote accepted! You can now transfer your deposit using the bank details below and upload your screenshot."
+          ? "Quote accepted! Please transfer using Telebirr QR or CBE, enter your QR transaction reference, and upload your payment proof."
           : "Quote declined."
       );
     } catch (err: any) {
@@ -139,35 +170,40 @@ export default function CustomerDesignsPage() {
 
   const handlePaymentSubmit = async (designId: string) => {
     const file = paymentFiles[designId];
-    if (!file) {
-      alert("Please select your bank transfer payment screenshot first.");
+    const qrRef = qrCodeRefs[designId] || paymentRefs[designId];
+
+    if (!file && !qrRef) {
+      alert("Please provide your Telebirr QR Code / CBE Reference or upload your deposit slip.");
       return;
     }
 
     setUploadingId(designId);
     try {
-      // 1. Upload screenshot to payment-proofs bucket
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("bucket", "payment-proofs");
+      let uploadedFilePath = "";
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("bucket", "payment-proofs");
 
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok || !uploadData.filePath) {
-        throw new Error(uploadData.error || "Failed to upload payment receipt screenshot.");
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || !uploadData.filePath) {
+          throw new Error(uploadData.error || "Failed to upload payment receipt screenshot.");
+        }
+        uploadedFilePath = uploadData.filePath;
       }
 
-      // 2. Patch design with payment details
       const patchRes = await fetch(`/api/designs/${designId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "submit_payment",
-          payment_proof_url: uploadData.filePath,
-          payment_ref: paymentRefs[designId] || "",
+          payment_proof_url: uploadedFilePath || `qr-ref://${qrRef}`,
+          payment_ref: qrRef || paymentRefs[designId] || "",
+          qr_code_ref: qrRef || "",
           bank_account_id: selectedBanks[designId] || (bankAccounts[0]?.id ?? null),
         }),
       });
@@ -177,11 +213,48 @@ export default function CustomerDesignsPage() {
       }
 
       await loadData();
-      alert("Payment proof uploaded successfully! Our Addis Ababa finance team has been notified to verify your deposit.");
+      alert("Payment proof and QR reference uploaded successfully! Our Addis Ababa finance team has been notified to verify your deposit.");
     } catch (err: any) {
       alert(err.message || "Error submitting payment proof.");
     } finally {
       setUploadingId(null);
+    }
+  };
+
+  const handleConfirmDelivery = async (designId: string) => {
+    const sel = deliverySelections[designId];
+    if (!sel || !sel.option) {
+      alert("Please choose a delivery option.");
+      return;
+    }
+
+    if (sel.option === "direct_delivery" && (!sel.address || sel.address.trim().length < 3)) {
+      alert("Please enter a direct delivery address in Addis Ababa or destination city.");
+      return;
+    }
+
+    setDeliverySubmittingId(designId);
+    try {
+      const res = await fetch(`/api/designs/${designId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "confirm_delivery",
+          delivery_option: sel.option,
+          delivery_address: sel.address,
+          delivery_phone: sel.phone,
+          delivery_notes: sel.notes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to confirm delivery option.");
+
+      await loadData();
+      alert("Delivery choice confirmed! Our logistics team will fulfill according to your instructions.");
+    } catch (err: any) {
+      alert(err.message || "Error confirming delivery preference.");
+    } finally {
+      setDeliverySubmittingId(null);
     }
   };
 
@@ -192,6 +265,10 @@ export default function CustomerDesignsPage() {
   };
 
   const openSignedFile = async (path: string, bucket = "designs") => {
+    if (path.startsWith("qr-ref://")) {
+      alert(`Payment Reference: ${path.replace("qr-ref://", "")}`);
+      return;
+    }
     try {
       const res = await fetch(`/api/storage/signed-url?bucket=${bucket}&path=${encodeURIComponent(path)}`);
       const data = await res.json();
@@ -243,7 +320,7 @@ export default function CustomerDesignsPage() {
               My Custom Designs & Orders
             </h1>
             <p className="text-xs text-stone-500 mt-1">
-              Submit brand dielines, review factory quotes in ETB, upload transfer screenshots, and monitor live manufacturing progress.
+              Submit brand dielines, review factory quotes in ETB, upload QR code / transfer receipts, and track live manufacturing through delivery.
             </p>
           </div>
 
@@ -254,6 +331,71 @@ export default function CustomerDesignsPage() {
             <PenTool size={14} />
             <span>Submit New Custom Bag</span>
           </Link>
+        </div>
+
+        {/* 5-Stage Customer Journey Stepper Banner */}
+        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-stone-200 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-serif text-sm font-bold text-stone-900 flex items-center gap-2">
+              <PackageCheck size={16} className="text-[#1E3B2E]" />
+              <span>Transparent 5-Stage Packaging Workflow</span>
+            </h3>
+            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+              Always Know Where Your Order Is
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5 pt-1 text-xs">
+            <div className="p-3 bg-[#FAF7F2] rounded-2xl border border-stone-200">
+              <div className="flex items-center gap-1.5 text-[#1E3B2E] font-bold text-[11px] mb-1">
+                <span className="w-4 h-4 rounded-full bg-[#1E3B2E] text-white flex items-center justify-center text-[10px]">1</span>
+                <span>Design Intake</span>
+              </div>
+              <p className="text-[10px] text-stone-500 leading-snug">
+                Submit dieline, company brand, phone, and delivery address.
+              </p>
+            </div>
+
+            <div className="p-3 bg-[#FAF7F2] rounded-2xl border border-stone-200">
+              <div className="flex items-center gap-1.5 text-purple-900 font-bold text-[11px] mb-1">
+                <span className="w-4 h-4 rounded-full bg-purple-800 text-white flex items-center justify-center text-[10px]">2</span>
+                <span>"We Can Do It!" Quote</span>
+              </div>
+              <p className="text-[10px] text-stone-500 leading-snug">
+                Factory reviews tolerance & sends binding quote in ETB.
+              </p>
+            </div>
+
+            <div className="p-3 bg-[#FAF7F2] rounded-2xl border border-stone-200">
+              <div className="flex items-center gap-1.5 text-blue-900 font-bold text-[11px] mb-1">
+                <span className="w-4 h-4 rounded-full bg-blue-800 text-white flex items-center justify-center text-[10px]">3</span>
+                <span>QR Code Payment</span>
+              </div>
+              <p className="text-[10px] text-stone-500 leading-snug">
+                Pay via Telebirr QR or CBE bank transfer and input QR reference.
+              </p>
+            </div>
+
+            <div className="p-3 bg-[#FAF7F2] rounded-2xl border border-stone-200">
+              <div className="flex items-center gap-1.5 text-emerald-900 font-bold text-[11px] mb-1">
+                <span className="w-4 h-4 rounded-full bg-emerald-800 text-white flex items-center justify-center text-[10px]">4</span>
+                <span>"It Is On Doing"</span>
+              </div>
+              <p className="text-[10px] text-stone-500 leading-snug">
+                QR verified: plates engraved, rotary printing & cutting starts.
+              </p>
+            </div>
+
+            <div className="p-3 bg-[#FAF7F2] rounded-2xl border border-stone-200">
+              <div className="flex items-center gap-1.5 text-[#8C4B31] font-bold text-[11px] mb-1">
+                <span className="w-4 h-4 rounded-full bg-[#8C4B31] text-white flex items-center justify-center text-[10px]">5</span>
+                <span>Finished & Delivery</span>
+              </div>
+              <p className="text-[10px] text-stone-500 leading-snug">
+                QC approved: select Bole Showroom pickup or direct delivery.
+              </p>
+            </div>
+          </div>
         </div>
 
         {errorMsg && (
@@ -303,8 +445,12 @@ export default function CustomerDesignsPage() {
               const isAccepted = design.status === "accepted";
               const isPaymentSubmitted = Boolean(specsObj.payment_submitted);
               const isPaymentVerified = Boolean(specsObj.payment_verified);
+              const isFinished = specsObj.workflow_stage === "finished" || specsObj.production_stage === "ready_for_delivery" || specsObj.workflow_stage === "delivery_confirmed";
               const currentStage = specsObj.production_stage || (isAccepted ? "quote_accepted" : "new");
               const activeStepIdx = getStageStepIndex(currentStage);
+
+              // Delivery preference
+              const deliveryPref = specsObj.delivery_preference;
 
               return (
                 <div
@@ -314,7 +460,7 @@ export default function CustomerDesignsPage() {
                   {/* Top Bar: Title, ID, Status, and Quoted Price */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-100">
                     <div>
-                      <div className="flex items-center gap-2.5 mb-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className="font-mono text-xs font-bold text-stone-500">
                           Ref #{design.id.substring(0, 8)}
                         </span>
@@ -333,15 +479,24 @@ export default function CustomerDesignsPage() {
                         >
                           {design.status}
                         </span>
-                        {isPaymentVerified && (
+
+                        {isPaymentVerified && !isFinished && (
                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1E3B2E] text-white flex items-center gap-1">
                             <ShieldCheck size={11} />
-                            <span>In Production</span>
+                            <span>It Is On Doing</span>
+                          </span>
+                        )}
+
+                        {isFinished && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#8C4B31] text-white flex items-center gap-1">
+                            <CheckCircle2 size={11} />
+                            <span>Run Finished</span>
                           </span>
                         )}
                       </div>
+
                       <h2 className="font-serif text-2xl font-bold text-stone-900">
-                        {design.title || parsedSpec.clientCompany || "Custom Paper Bag Design"}
+                        {design.title || specsObj.companyBrand || parsedSpec.clientCompany || "Custom Paper Bag Design"}
                       </h2>
                       <span className="text-[11px] text-stone-400">
                         Submitted on {new Date(design.created_at).toLocaleDateString()}
@@ -365,6 +520,37 @@ export default function CustomerDesignsPage() {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Customer Contact & Delivery Target Badges */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {(specsObj.customerName || parsedSpec.customerName) && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-stone-100 rounded-full text-stone-700 font-medium">
+                        <User size={12} className="text-[#1E3B2E]" />
+                        <span>Contact: <strong>{specsObj.customerName || parsedSpec.customerName}</strong></span>
+                      </span>
+                    )}
+
+                    {(specsObj.contactPhone || parsedSpec.contactPhone) && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-stone-100 rounded-full text-stone-700 font-medium">
+                        <Phone size={12} className="text-[#1E3B2E]" />
+                        <span>Phone: <strong>{specsObj.contactPhone || parsedSpec.contactPhone}</strong></span>
+                      </span>
+                    )}
+
+                    {(specsObj.deliveryAddress || parsedSpec.deliveryAddress) && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-[#1E3B2E]/10 rounded-full text-[#1E3B2E] font-medium">
+                        <MapPin size={12} />
+                        <span>Destination: <strong>{specsObj.deliveryAddress || parsedSpec.deliveryAddress}</strong></span>
+                      </span>
+                    )}
+
+                    {specsObj.qr_code_ref && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 rounded-full text-purple-900 font-mono font-bold">
+                        <QrCode size={12} />
+                        <span>QR Ref: {specsObj.qr_code_ref}</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Specification Breakdown */}
@@ -424,12 +610,17 @@ export default function CustomerDesignsPage() {
 
                   {/* Quotation Decision Bar (When status is 'quoted') */}
                   {design.status === "quoted" && (
-                    <div className="p-5 bg-purple-50 rounded-2xl border border-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="p-5 bg-gradient-to-r from-purple-50 to-emerald-50 rounded-2xl border-2 border-purple-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
-                        <h4 className="text-xs font-bold text-purple-950">Quotation Ready for Your Approval</h4>
-                        <p className="text-[11px] text-purple-800 mt-0.5">
-                          The plant has reviewed your dieline and quoted this production run at{" "}
-                          <strong>{Number(design.quoted_price).toLocaleString()} ETB</strong>. Accept to proceed to deposit settlement.
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-bold uppercase mb-1">
+                          <CheckCircle2 size={12} />
+                          <span>We Can Do It! Factory Accepted Your Design</span>
+                        </div>
+                        <h4 className="text-sm font-bold text-purple-950">
+                          Quotation Ready: {Number(design.quoted_price).toLocaleString()} ETB
+                        </h4>
+                        <p className="text-[11px] text-stone-700 mt-0.5 leading-relaxed">
+                          Our Addis Ababa engineering team verified your dielines and confirmed manufacturing capability. Accept this quote to receive official payment details and begin your production run.
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -439,7 +630,7 @@ export default function CustomerDesignsPage() {
                           className="px-5 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
                         >
                           <Check size={14} />
-                          <span>Accept Quote</span>
+                          <span>Accept Quote & Pay</span>
                         </button>
                         <button
                           onClick={() => handleRespondToQuote(design.id, "decline")}
@@ -454,29 +645,30 @@ export default function CustomerDesignsPage() {
 
                   {/* WORKFLOW PHASE 1: ACCEPTED BUT PAYMENT NOT YET SUBMITTED */}
                   {isAccepted && !isPaymentSubmitted && (
-                    <div className="p-6 bg-[#FAF7F2] rounded-3xl border border-amber-300 shadow-xs space-y-5">
+                    <div className="p-6 bg-[#FAF7F2] rounded-3xl border-2 border-amber-300 shadow-sm space-y-5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-stone-900">
-                          <Building2 size={18} className="text-[#8C4B31]" />
+                          <Building2 size={20} className="text-[#8C4B31]" />
                           <div>
-                            <h4 className="font-serif text-base font-bold">Step 2: Bank Deposit & Settlement</h4>
+                            <h4 className="font-serif text-base font-bold">Step 3: Telebirr QR & CBE Bank Settlement</h4>
                             <p className="text-[11px] text-stone-500">
-                              Please deposit the order total ({Number(design.quoted_price).toLocaleString()} ETB) into one of our official factory accounts and upload your transfer screenshot below.
+                              Please transfer the order total ({Number(design.quoted_price).toLocaleString()} ETB) via Telebirr QR or CBE bank transfer, enter the QR reference below, and upload your payment proof.
                             </p>
                           </div>
                         </div>
-                        <span className="text-[10px] uppercase font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900">
+                        <span className="text-[10px] uppercase font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
                           Payment Pending
                         </span>
                       </div>
 
-                      {/* Official Bank Account Cards */}
+                      {/* Official Bank & Telebirr QR Cards */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {bankAccounts.map((b) => (
                           <div key={b.id} className="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-2">
                             <div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1E3B2E] block">
-                                {b.bank_name}
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1E3B2E] flex items-center gap-1">
+                                {b.bank_name.toLowerCase().includes("telebirr") && <QrCode size={13} className="text-[#8C4B31]" />}
+                                <span>{b.bank_name}</span>
                               </span>
                               <p className="text-xs font-mono font-bold text-stone-900 mt-1 select-all">
                                 {b.account_number}
@@ -496,7 +688,7 @@ export default function CustomerDesignsPage() {
                               ) : (
                                 <>
                                   <Copy size={12} />
-                                  <span>Copy Account</span>
+                                  <span>Copy Account / Till</span>
                                 </>
                               )}
                             </button>
@@ -504,12 +696,33 @@ export default function CustomerDesignsPage() {
                         ))}
                       </div>
 
-                      {/* Upload Screenshot Dropzone & Form */}
-                      <div className="p-4 bg-white rounded-2xl border border-stone-200 space-y-4">
+                      {/* Upload Screenshot & QR Ref Form */}
+                      <div className="p-5 bg-white rounded-2xl border border-stone-200 space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                              Payment Screenshot / Deposit Slip (JPG, PNG, PDF)
+                            <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1 flex items-center gap-1">
+                              <QrCode size={13} className="text-[#1E3B2E]" />
+                              <span>Telebirr QR Transaction ID / Bank Ref *</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. TB-QR-984712 or CBE-FT24109"
+                              value={qrCodeRefs[design.id] || paymentRefs[design.id] || ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setQrCodeRefs((prev) => ({ ...prev, [design.id]: val }));
+                                setPaymentRefs((prev) => ({ ...prev, [design.id]: val }));
+                              }}
+                              className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                            />
+                            <span className="text-[10px] text-stone-400 mt-0.5 block">
+                              Enter the Telebirr transaction ID or CBE slip confirmation number.
+                            </span>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1">
+                              Payment Screenshot / QR Receipt (JPG, PNG, PDF)
                             </label>
                             <input
                               type="file"
@@ -527,30 +740,17 @@ export default function CustomerDesignsPage() {
                               </p>
                             )}
                           </div>
-
-                          <div>
-                            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                              Transaction Reference / Slip No. (Optional)
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="e.g. CBE-TXN-984712 or Telebirr ID"
-                              value={paymentRefs[design.id] || ""}
-                              onChange={(e) => setPaymentRefs((prev) => ({ ...prev, [design.id]: e.target.value }))}
-                              className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
-                            />
-                          </div>
                         </div>
 
                         <div className="flex justify-end pt-2 border-t border-stone-100">
                           <button
                             type="button"
-                            disabled={uploadingId === design.id || !paymentFiles[design.id]}
+                            disabled={uploadingId === design.id || (!paymentFiles[design.id] && !qrCodeRefs[design.id])}
                             onClick={() => handlePaymentSubmit(design.id)}
                             className="px-6 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                           >
                             <Upload size={14} />
-                            <span>{uploadingId === design.id ? "Uploading Screenshot..." : "Submit Bank Payment Proof"}</span>
+                            <span>{uploadingId === design.id ? "Submitting Payment Proof..." : "Submit QR Code & Payment Proof"}</span>
                           </button>
                         </div>
                       </div>
@@ -563,10 +763,10 @@ export default function CustomerDesignsPage() {
                       <div>
                         <div className="flex items-center gap-2 text-amber-950 font-bold">
                           <Clock size={16} className="text-amber-700 animate-spin" />
-                          <span>Bank Payment Proof Submitted — Awaiting Finance Verification</span>
+                          <span>QR Code & Payment Proof Submitted — Awaiting Plant Verification</span>
                         </div>
                         <p className="text-[11px] text-amber-800 mt-1">
-                          Our Addis Ababa finance desk is verifying your deposit slip. Once approved, the production line will immediately begin engraving your printing plates.
+                          Our Addis Ababa finance desk is analyzing your QR code transaction ({specsObj.qr_code_ref || "Recorded"}). Once confirmed, you will receive our "It Is On Doing" production confirmation and laser platemaking will initiate.
                         </p>
                       </div>
 
@@ -583,75 +783,332 @@ export default function CustomerDesignsPage() {
                     </div>
                   )}
 
-                  {/* WORKFLOW PHASE 3: LIVE MANUFACTURING PROGRESS STEPPER */}
-                  {isAccepted && isPaymentSubmitted && (
-                    <div className="p-6 bg-white rounded-3xl border border-stone-200 shadow-xs space-y-4">
-                      <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                        <div className="flex items-center gap-2">
-                          <Layers size={18} className="text-[#1E3B2E]" />
-                          <h4 className="font-serif text-sm font-bold text-stone-900">
-                            Live Factory Manufacturing Status
-                          </h4>
+                  {/* WORKFLOW PHASE 3: "IT IS ON DOING" BANNER & LIVE MANUFACTURING PIPELINE */}
+                  {isPaymentVerified && (
+                    <div className="space-y-4">
+                      {/* Prominent "It Is On Doing" Confirmation Banner */}
+                      <div className="p-5 bg-gradient-to-r from-emerald-900 to-[#1E3B2E] rounded-3xl text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                            <Sparkles size={22} className="text-amber-300" />
+                          </div>
+                          <div>
+                            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-700/80 text-amber-300 text-[10px] font-extrabold uppercase tracking-wider mb-1">
+                              <ShieldCheck size={11} />
+                              <span>Confirmation Verified</span>
+                            </div>
+                            <h3 className="font-serif text-lg font-bold">
+                              It Is On Doing! Active Factory Production
+                            </h3>
+                            <p className="text-xs text-emerald-100 max-w-xl leading-relaxed mt-0.5">
+                              Our plant desk analyzed and confirmed your QR code payment. Your packaging run is actively on doing — plates are engraved and rotary die-cutting is running at our Addis Ababa facility.
+                            </p>
+                          </div>
                         </div>
-                        <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
-                          Addis Ababa Production Plant
-                        </span>
+
+                        <div className="text-left sm:text-right shrink-0">
+                          <span className="text-[10px] text-emerald-200 block uppercase font-bold">Plant Location</span>
+                          <span className="text-xs font-bold text-white flex items-center gap-1 sm:justify-end">
+                            <MapPin size={12} className="text-amber-300" />
+                            <span>Bole Plant #2, Addis Ababa</span>
+                          </span>
+                        </div>
                       </div>
 
                       {/* Stepper Pipeline */}
-                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 pt-2">
-                        {MANUFACTURING_STEPS.map((step, idx) => {
-                          const isDone = isPaymentVerified ? idx <= activeStepIdx : idx === 0;
-                          const isCurrent = isPaymentVerified ? idx === activeStepIdx : idx === 1;
+                      <div className="p-6 bg-white rounded-3xl border border-stone-200 shadow-xs space-y-4">
+                        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                          <div className="flex items-center gap-2">
+                            <Layers size={18} className="text-[#1E3B2E]" />
+                            <h4 className="font-serif text-sm font-bold text-stone-900">
+                              Live Manufacturing Progress
+                            </h4>
+                          </div>
+                          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                            Addis Ababa Plant
+                          </span>
+                        </div>
 
-                          return (
-                            <div
-                              key={step.id}
-                              className={`p-3.5 rounded-2xl border transition-all ${
-                                isDone
-                                  ? "bg-emerald-50/70 border-emerald-200 text-emerald-950"
-                                  : isCurrent
-                                  ? "bg-amber-50/70 border-amber-300 text-amber-950 animate-pulse ring-1 ring-amber-300"
-                                  : "bg-[#FAF7F2] border-stone-200 text-stone-400"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-[9px] font-bold uppercase tracking-wider">
-                                  Step 0{idx + 1}
-                                </span>
-                                {isDone ? (
-                                  <CheckCircle2 size={14} className="text-emerald-600" />
-                                ) : isCurrent ? (
-                                  <Clock size={14} className="text-amber-600" />
-                                ) : (
-                                  <div className="w-2.5 h-2.5 rounded-full border border-stone-300" />
-                                )}
+                        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 pt-2">
+                          {MANUFACTURING_STEPS.map((step, idx) => {
+                            const isDone = isPaymentVerified ? idx <= activeStepIdx : idx === 0;
+                            const isCurrent = isPaymentVerified ? idx === activeStepIdx : idx === 1;
+
+                            return (
+                              <div
+                                key={step.id}
+                                className={`p-3.5 rounded-2xl border transition-all ${
+                                  isDone
+                                    ? "bg-emerald-50/70 border-emerald-200 text-emerald-950"
+                                    : isCurrent
+                                    ? "bg-amber-50/70 border-amber-300 text-amber-950 animate-pulse ring-1 ring-amber-300"
+                                    : "bg-[#FAF7F2] border-stone-200 text-stone-400"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <span className="text-[9px] font-bold uppercase tracking-wider">
+                                    Step 0{idx + 1}
+                                  </span>
+                                  {isDone ? (
+                                    <CheckCircle2 size={14} className="text-emerald-600" />
+                                  ) : isCurrent ? (
+                                    <Clock size={14} className="text-amber-600" />
+                                  ) : (
+                                    <div className="w-2.5 h-2.5 rounded-full border border-stone-300" />
+                                  )}
+                                </div>
+                                <h5 className="font-bold text-xs">{step.title}</h5>
+                                <p className="text-[10px] mt-0.5 leading-tight opacity-80">{step.desc}</p>
                               </div>
-                              <h5 className="font-bold text-xs">{step.title}</h5>
-                              <p className="text-[10px] mt-0.5 leading-tight opacity-80">{step.desc}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Latest Engineer Update Note */}
-                      <div className="pt-2 flex items-center justify-between text-xs text-stone-500 border-t border-stone-100">
-                        <span className="flex items-center gap-1.5">
-                          <Truck size={14} className="text-[#1E3B2E]" />
-                          <span>Dispatch Facility: Bole Industrial Zone, Addis Ababa</span>
-                        </span>
-                        {design.linked_order_id && (
-                          <Link
-                            href={`/dashboard/orders/${design.linked_order_id}`}
-                            className="text-[#8C4B31] font-bold hover:underline flex items-center gap-1"
-                          >
-                            <span>View Associated Order #{design.linked_order_id.substring(0, 8)}</span>
-                            <ArrowRight size={12} />
-                          </Link>
-                        )}
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   )}
+
+                  {/* WORKFLOW PHASE 4: FINISHED & DELIVERY OPTION SELECTOR */}
+                  {isFinished && (
+                    <div className="p-6 bg-gradient-to-br from-[#FAF7F2] to-amber-50/40 rounded-3xl border-2 border-[#1E3B2E]/30 shadow-sm space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/60 pb-3">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 size={20} className="text-emerald-700" />
+                          <div>
+                            <h4 className="font-serif text-base font-bold text-stone-900">
+                              Packaging Run Finished & Quality Inspected!
+                            </h4>
+                            <p className="text-[11px] text-stone-600">
+                              Your bags passed optical tensile and adhesive tests. Please confirm how you would like to receive your shipment.
+                            </p>
+                          </div>
+                        </div>
+
+                        {deliveryPref ? (
+                          <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold flex items-center gap-1 self-start sm:self-auto">
+                            <Check size={12} />
+                            <span>Delivery Preference Confirmed</span>
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold animate-pulse self-start sm:self-auto">
+                            Action Required: Select Delivery Option
+                          </span>
+                        )}
+                      </div>
+
+                      {deliveryPref ? (
+                        /* Delivery Preference Already Confirmed */
+                        <div className="p-4 bg-white rounded-2xl border border-stone-200 space-y-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-stone-900 flex items-center gap-1.5">
+                              {deliveryPref.option === "pickup" ? (
+                                <>
+                                  <Building2 size={14} className="text-[#8C4B31]" />
+                                  <span>Plant Pickup at Bole Showroom</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Truck size={14} className="text-[#1E3B2E]" />
+                                  <span>Direct Van Delivery to Your Destination</span>
+                                </>
+                              )}
+                            </span>
+                            <span className="text-[10px] text-stone-400">
+                              Confirmed on {new Date(deliveryPref.confirmed_at).toLocaleDateString()}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-600 pt-1">
+                            {deliveryPref.option === "pickup" ? (
+                              <p className="text-[11px]">
+                                <strong>Pickup Location:</strong> Bole Sub-City, Arenguade Logistics Center, Addis Ababa (Monday - Saturday 8:30 AM - 5:30 PM). Bring Reference #{design.id.substring(0, 8)}.
+                              </p>
+                            ) : (
+                              <>
+                                <p className="text-[11px]">
+                                  <strong>Delivery Address:</strong> {deliveryPref.address}
+                                </p>
+                                <p className="text-[11px]">
+                                  <strong>Contact Phone:</strong> {deliveryPref.phone || "Provided at submission"}
+                                </p>
+                              </>
+                            )}
+                          </div>
+
+                          {deliveryPref.notes && (
+                            <p className="text-[11px] text-stone-500 italic pt-1 border-t border-stone-100">
+                              Delivery Notes: &ldquo;{deliveryPref.notes}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        /* Interactive Delivery Option Form */
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {/* Option A: Pickup */}
+                            <div
+                              onClick={() => {
+                                setDeliverySelections((prev) => ({
+                                  ...prev,
+                                  [design.id]: {
+                                    ...(prev[design.id] || {}),
+                                    option: "pickup",
+                                  },
+                                }));
+                              }}
+                              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                                deliverySelections[design.id]?.option === "pickup"
+                                  ? "bg-white border-[#1E3B2E] shadow-sm ring-1 ring-[#1E3B2E]"
+                                  : "bg-white/60 border-stone-200 hover:border-stone-300"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-bold text-xs text-stone-900 flex items-center gap-1.5">
+                                  <Building2 size={14} className="text-[#8C4B31]" />
+                                  <span>Factory Pickup (Free)</span>
+                                </span>
+                                <input
+                                  type="radio"
+                                  name={`deliv-opt-${design.id}`}
+                                  checked={deliverySelections[design.id]?.option === "pickup"}
+                                  onChange={() => {}}
+                                  className="accent-[#1E3B2E]"
+                                />
+                              </div>
+                              <p className="text-[11px] text-stone-500 leading-snug">
+                                Collect from our Bole Showroom & Logistics Hub (Addis Ababa). Mon-Sat 8:30 AM - 5:30 PM.
+                              </p>
+                            </div>
+
+                            {/* Option B: Direct Delivery */}
+                            <div
+                              onClick={() => {
+                                setDeliverySelections((prev) => ({
+                                  ...prev,
+                                  [design.id]: {
+                                    ...(prev[design.id] || {}),
+                                    option: "direct_delivery",
+                                  },
+                                }));
+                              }}
+                              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                                deliverySelections[design.id]?.option === "direct_delivery"
+                                  ? "bg-white border-[#1E3B2E] shadow-sm ring-1 ring-[#1E3B2E]"
+                                  : "bg-white/60 border-stone-200 hover:border-stone-300"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-bold text-xs text-stone-900 flex items-center gap-1.5">
+                                  <Truck size={14} className="text-[#1E3B2E]" />
+                                  <span>Direct Van Delivery</span>
+                                </span>
+                                <input
+                                  type="radio"
+                                  name={`deliv-opt-${design.id}`}
+                                  checked={deliverySelections[design.id]?.option === "direct_delivery"}
+                                  onChange={() => {}}
+                                  className="accent-[#1E3B2E]"
+                                />
+                              </div>
+                              <p className="text-[11px] text-stone-500 leading-snug">
+                                Palletized dispatch directly to your warehouse, store, or office in Addis Ababa or region.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Conditional Fields for Direct Delivery */}
+                          {deliverySelections[design.id]?.option === "direct_delivery" && (
+                            <div className="p-4 bg-white rounded-2xl border border-stone-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                              <div>
+                                <label className="block text-[10px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                  Delivery Destination Address *
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. Bole Medhanialem, Building 4, Addis Ababa"
+                                  value={deliverySelections[design.id]?.address || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDeliverySelections((prev) => ({
+                                      ...prev,
+                                      [design.id]: { ...prev[design.id], address: val },
+                                    }));
+                                  }}
+                                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-xs focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                  Receiving Contact Phone *
+                                </label>
+                                <input
+                                  type="tel"
+                                  placeholder="e.g. 0911234567"
+                                  value={deliverySelections[design.id]?.phone || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDeliverySelections((prev) => ({
+                                      ...prev,
+                                      [design.id]: { ...prev[design.id], phone: val },
+                                    }));
+                                  }}
+                                  className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-xs focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                                />
+                              </div>
+
+                              <div className="sm:col-span-2">
+                                <label className="block text-[10px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                                  Delivery Instructions / Gate Notes (Optional)
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. Call 30 mins before arrival; loading dock in rear."
+                                  value={deliverySelections[design.id]?.notes || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDeliverySelections((prev) => ({
+                                      ...prev,
+                                      [design.id]: { ...prev[design.id], notes: val },
+                                    }));
+                                  }}
+                                  className="w-full border border-stone-300 rounded-xl p-2 bg-[#FAF7F2] text-xs focus:outline-none"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              disabled={deliverySubmittingId === design.id}
+                              onClick={() => handleConfirmDelivery(design.id)}
+                              className="px-6 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                            >
+                              <CheckCircle2 size={14} />
+                              <span>{deliverySubmittingId === design.id ? "Saving Preference..." : "Confirm Delivery Preference"}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Dispatch facility note & order link */}
+                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-stone-500 border-t border-stone-100 gap-2">
+                    <span className="flex items-center gap-1.5">
+                      <Truck size={14} className="text-[#1E3B2E]" />
+                      <span>Dispatch Facility: Bole Industrial Zone, Addis Ababa</span>
+                    </span>
+                    {design.linked_order_id && (
+                      <Link
+                        href={`/dashboard/orders/${design.linked_order_id}`}
+                        className="text-[#8C4B31] font-bold hover:underline flex items-center gap-1"
+                      >
+                        <span>View Associated Order #{design.linked_order_id.substring(0, 8)}</span>
+                        <ArrowRight size={12} />
+                      </Link>
+                    )}
+                  </div>
 
                 </div>
               );

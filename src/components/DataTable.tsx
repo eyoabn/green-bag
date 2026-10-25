@@ -125,7 +125,7 @@ export default function DataTable<T>({
           <thead className="bg-stone-100/70 border-b border-stone-200/80 text-[11px] font-bold uppercase tracking-wider text-stone-500">
             <tr>
               {columns.map((col, idx) => (
-                <th key={col.id || String(col.accessorKey) || idx} className={`px-5 py-3.5 ${col.className || ""}`}>
+                <th key={col.id || (col.accessorKey ? String(col.accessorKey) : `th-${idx}`)} className={`px-5 py-3.5 ${col.className || ""}`}>
                   {col.header}
                 </th>
               ))}
@@ -186,7 +186,7 @@ export default function DataTable<T>({
                 return (
                   <tr key={key} className="hover:bg-stone-50/80 transition-colors">
                     {columns.map((col, cIdx) => (
-                      <td key={col.id || String(col.accessorKey) || cIdx} className={`px-5 py-4 ${col.className || ""}`}>
+                      <td key={col.id || (col.accessorKey ? String(col.accessorKey) : `td-${cIdx}`)} className={`px-5 py-4 ${col.className || ""}`}>
                         {col.cell
                           ? col.cell(item)
                           : col.accessorKey

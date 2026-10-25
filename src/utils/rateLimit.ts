@@ -35,6 +35,8 @@ export function checkRateLimit(
   // Identify client by IP (or forward header)
   const forwardedFor = request.headers.get("x-forwarded-for");
   const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1";
+  const isLoopback = ip === "127.0.0.1" || ip === "::1" || ip === "localhost";
+  const effectiveLimit = isLoopback ? 10000 : limit;
   const key = `${prefix}:${ip}`;
 
   const now = Date.now();
@@ -42,10 +44,10 @@ export function checkRateLimit(
 
   if (!record || now > record.resetAt) {
     rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: limit - 1, reset: Math.ceil(windowMs / 1000) };
+    return { allowed: true, remaining: effectiveLimit - 1, reset: Math.ceil(windowMs / 1000) };
   }
 
-  if (record.count >= limit) {
+  if (record.count >= effectiveLimit) {
     const retryAfter = Math.max(1, Math.ceil((record.resetAt - now) / 1000));
     const response = NextResponse.json(
       {
@@ -56,7 +58,7 @@ export function checkRateLimit(
         status: 429,
         headers: {
           "Retry-After": String(retryAfter),
-          "X-RateLimit-Limit": String(limit),
+          "X-RateLimit-Limit": String(effectiveLimit),
           "X-RateLimit-Remaining": "0",
           "X-RateLimit-Reset": String(record.resetAt),
         },

@@ -53,14 +53,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     async function loadProduct() {
       setLoading(true);
-      const supabase = createClient();
 
       try {
-        const { data: dbProduct } = await supabase
-          .from("products")
-          .select("*")
-          .eq("id", productId)
-          .maybeSingle();
+        let dbProduct: any = null;
+        const res = await fetch(`/api/products/${productId}`);
+        if (res.ok) {
+          const json = await res.json();
+          dbProduct = json.product;
+        }
+
+        if (!dbProduct) {
+          const supabase = createClient();
+          const { data } = await supabase
+            .from("products")
+            .select("*")
+            .eq("id", productId)
+            .maybeSingle();
+          dbProduct = data;
+        }
 
         if (dbProduct) {
           const detail: ProductDetail = {
@@ -72,10 +82,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             bundleSize: dbProduct.bundle_size || 100,
             gsm: dbProduct.gsm || 220,
             handleType: dbProduct.handle_type || "Twisted Kraft Paper Cord",
-            image: dbProduct.image_url || "/images/photo_6_2026-09-05_00-36-03.jpg",
-            gallery: dbProduct.gallery_urls && dbProduct.gallery_urls.length > 0 
-              ? dbProduct.gallery_urls 
-              : [dbProduct.image_url || "/images/photo_6_2026-09-05_00-36-03.jpg"],
+            image: (dbProduct.images && dbProduct.images[0]) || dbProduct.image_url || "/images/photo_6_2026-09-05_00-36-03.jpg",
+            gallery: (dbProduct.images && dbProduct.images.length > 0)
+              ? dbProduct.images
+              : (dbProduct.gallery_urls && dbProduct.gallery_urls.length > 0 
+                ? dbProduct.gallery_urls 
+                : [dbProduct.image_url || "/images/photo_6_2026-09-05_00-36-03.jpg"]),
             badge: dbProduct.badge || "Client Showcase Deliverable",
             description: dbProduct.description || "Precision engineered sustainable paper packaging manufactured at our Addis Ababa production plant.",
             dimensions: dbProduct.dimensions || "26cm × 32cm + 10cm Gusset",

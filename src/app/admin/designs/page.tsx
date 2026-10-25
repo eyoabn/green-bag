@@ -22,7 +22,11 @@ import {
   ShieldCheck,
   Layers,
   Truck,
-  Building2
+  Building2,
+  User,
+  Phone,
+  MapPin,
+  QrCode
 } from "lucide-react";
 
 interface DesignItem {
@@ -154,8 +158,40 @@ export default function AdminDesignsPage() {
     }
   };
 
+  const handleAcceptAndQuote = async (id: string) => {
+    const rawPrice = quotePrices[id];
+    if (!rawPrice || isNaN(Number(rawPrice)) || Number(rawPrice) <= 0) {
+      alert("Please enter a valid binding quoted price in ETB before accepting.");
+      return;
+    }
+
+    if (!confirm(`Accept this packaging request with "We Can Do It!" and send quotation of ${Number(rawPrice).toLocaleString()} ETB to the customer?`)) return;
+
+    setActionLoadingId(id);
+    try {
+      const res = await fetch(`/api/designs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "accept_and_quote",
+          quoted_price: Number(rawPrice),
+          admin_reply: adminReplies[id] || "We can do it! Custom dieline approved by our plant engineering desk.",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to accept and quote design.");
+
+      await loadDesigns();
+      alert("Design accepted ('We Can Do It!') and notification dispatched to customer to send payment!");
+    } catch (err: any) {
+      alert(err.message || "Failed to accept design.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleVerifyPayment = async (id: string) => {
-    if (!confirm("Confirm and verify this customer bank transfer deposit?")) return;
+    if (!confirm("Confirm and verify this customer bank deposit & QR code proof? This will dispatch confirmation to the client: 'It Is On Doing'.")) return;
     setActionLoadingId(id);
     try {
       const res = await fetch(`/api/designs/${id}`, {
@@ -167,9 +203,30 @@ export default function AdminDesignsPage() {
       if (!res.ok) throw new Error(data.error || "Failed to verify deposit.");
 
       await loadDesigns();
-      alert("Payment deposit successfully verified! Customer notified and production stage set to Verified.");
+      alert("Payment & QR code confirmed! Customer notified: 'It is on doing / now in active production'.");
     } catch (err: any) {
       alert(err.message || "Failed to verify payment deposit.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleMarkFinished = async (id: string) => {
+    if (!confirm("Mark this custom packaging order as Finished & QC Approved? This will notify the customer to select their delivery option.")) return;
+    setActionLoadingId(id);
+    try {
+      const res = await fetch(`/api/designs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark_finished" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to mark as finished.");
+
+      await loadDesigns();
+      alert("Order marked finished! Customer notified to select plant pickup or direct address delivery.");
+    } catch (err: any) {
+      alert(err.message || "Failed to mark finished.");
     } finally {
       setActionLoadingId(null);
     }
@@ -383,8 +440,32 @@ export default function AdminDesignsPage() {
                       {design.title || parsedSpec.clientCompany || "Custom Packaging Request"}
                     </h3>
                     <p className="text-xs text-stone-500 mt-0.5">
-                      Customer: <strong>{design.profiles?.full_name || "Valued Client"}</strong> ({design.profiles?.email} • {design.profiles?.phone || "No phone"})
+                      Customer: <strong>{specsObj.customerName || design.profiles?.full_name || "Valued Client"}</strong> ({design.profiles?.email} • {specsObj.contactPhone || design.profiles?.phone || "No phone"})
                     </p>
+
+                    {/* Customer Contact & Delivery Destination Pills */}
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-800 font-semibold border border-stone-200">
+                        <User size={13} className="text-[#1E3B2E]" />
+                        <span>Contact: <strong>{specsObj.customerName || design.profiles?.full_name || "Client"}</strong></span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-800 font-semibold border border-stone-200">
+                        <Phone size={13} className="text-[#1E3B2E]" />
+                        <a href={`tel:${specsObj.contactPhone || design.profiles?.phone || ""}`} className="font-mono hover:underline font-bold">
+                          {specsObj.contactPhone || design.profiles?.phone || "No phone"}
+                        </a>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-800 font-semibold border border-stone-200">
+                        <MapPin size={13} className="text-[#8C4B31]" />
+                        <span>Destination: <strong>{specsObj.deliveryAddress || "Addis Ababa Plant Collection"}</strong></span>
+                      </span>
+                      {specsObj.companyBrand && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] font-bold">
+                          <Building2 size={13} />
+                          <span>Brand: {specsObj.companyBrand}</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="text-right">
@@ -491,11 +572,18 @@ export default function AdminDesignsPage() {
                           <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                             isPaymentVerified ? "bg-emerald-600 text-white" : "bg-amber-200 text-amber-900 animate-pulse"
                           }`}>
-                            {isPaymentVerified ? "Deposit Verified" : "Verification Required"}
+                            {isPaymentVerified ? "Deposit & QR Verified" : "QR & Deposit Verification Required"}
                           </span>
                         </div>
-                        <p className="text-[11px] text-amber-900 mt-1">
-                          Reference: <strong className="font-mono">{specsObj.payment_ref || "None specified"}</strong> • Submitted: {specsObj.payment_submitted_at ? new Date(specsObj.payment_submitted_at).toLocaleString() : "Recently"}
+                        <p className="text-[11px] text-amber-900 mt-1 flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1 font-bold">
+                            <QrCode size={13} className="text-[#1E3B2E]" />
+                            <span>QR / Slip Reference:</span>
+                          </span>
+                          <strong className="font-mono bg-white px-2 py-0.5 rounded border border-amber-300">
+                            {specsObj.qr_code_ref || specsObj.payment_ref || "None specified"}
+                          </strong>
+                          <span>• Submitted: {specsObj.payment_submitted_at ? new Date(specsObj.payment_submitted_at).toLocaleString() : "Recently"}</span>
                         </p>
                       </div>
 
@@ -507,7 +595,7 @@ export default function AdminDesignsPage() {
                             className="px-3.5 py-2 rounded-xl bg-white hover:bg-stone-100 border border-amber-300 text-xs font-bold text-stone-800 flex items-center gap-1.5 cursor-pointer"
                           >
                             <Eye size={13} className="text-[#8C4B31]" />
-                            <span>{paymentProofUrl ? "Hide Slip" : "View Bank Screenshot"}</span>
+                            <span>{paymentProofUrl ? "Hide Slip" : "View Bank / QR Slip"}</span>
                           </button>
                         )}
 
@@ -519,7 +607,7 @@ export default function AdminDesignsPage() {
                             className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                           >
                             <CheckCircle2 size={14} />
-                            <span>Confirm & Approve Deposit</span>
+                            <span>Confirm QR & Start Production (&ldquo;It Is On Doing&rdquo;)</span>
                           </button>
                         )}
                       </div>
@@ -573,6 +661,29 @@ export default function AdminDesignsPage() {
                           {st.label}
                         </button>
                       ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-stone-100">
+                      {currentStage !== "ready_for_delivery" && currentStage !== "delivered" && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkFinished(design.id)}
+                          disabled={actionLoadingId === design.id}
+                          className="px-4 py-2 rounded-xl bg-[#8C4B31] hover:bg-[#6D3823] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Truck size={14} />
+                          <span>Mark Finished & Request Delivery Option</span>
+                        </button>
+                      )}
+
+                      {specsObj.delivery_preference && (
+                        <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 flex flex-wrap items-center gap-2">
+                          <Truck size={14} className="text-emerald-700" />
+                          <span>
+                            Client Delivery Preference: <strong>{specsObj.delivery_preference.option === "pickup" ? "Factory Pickup at Bole Showroom" : `Direct Van Delivery to ${specsObj.delivery_preference.address}`}</strong> (Phone: {specsObj.delivery_preference.phone})
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -637,14 +748,25 @@ export default function AdminDesignsPage() {
 
                   {/* Actions Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-stone-200">
-                    <button
-                      onClick={() => handleUpdateStatusAndQuote(design.id)}
-                      disabled={actionLoadingId === design.id}
-                      className="px-5 py-2.5 rounded-xl bg-[#8C4B31] hover:bg-[#6D3823] text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Check size={14} />
-                      <span>Save Quote & Notify Customer</span>
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => handleAcceptAndQuote(design.id)}
+                        disabled={actionLoadingId === design.id || !quotePrices[design.id]}
+                        className="px-5 py-2.5 rounded-xl bg-[#1E3B2E] hover:bg-[#152a21] disabled:opacity-40 text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <CheckCircle2 size={14} />
+                        <span>Accept Design (&ldquo;We Can Do It!&rdquo;) & Send Quote</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleUpdateStatusAndQuote(design.id)}
+                        disabled={actionLoadingId === design.id}
+                        className="px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Check size={14} />
+                        <span>Save Status / Reply Only</span>
+                      </button>
+                    </div>
 
                     {/* Create Order From Design Button */}
                     <div className="flex items-center gap-2">

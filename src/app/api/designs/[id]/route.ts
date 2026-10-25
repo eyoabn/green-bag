@@ -82,8 +82,39 @@ export async function PATCH(
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
 
     if (user.role === "admin") {
-      // 1. Advance Manufacturing Production Stage
-      if (body.action === "advance_stage") {
+      // 1. Accept Design & Send Quotation ("We Can Do It!")
+      if (body.action === "accept_and_quote") {
+        const p = Number(body.quoted_price);
+        if (isNaN(p) || p <= 0) {
+          return NextResponse.json({ error: "Quoted price must be a positive number in ETB." }, { status: 400 });
+        }
+        updates.status = "quoted";
+        updates.quoted_price = p;
+        if (body.admin_reply !== undefined) {
+          updates.admin_reply = String(body.admin_reply).trim();
+        }
+
+        const updatedSpecs = {
+          ...currentSpecs,
+          workflow_stage: "quoted",
+          accepted_by_admin: true,
+          accepted_by_admin_at: new Date().toISOString(),
+        };
+        updates.specs_json = JSON.stringify(updatedSpecs);
+
+        await pool.query(
+          `INSERT INTO public.notifications (user_id, title, body, link)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            existing.submitted_by,
+            "We Can Do It! Custom Design Accepted",
+            `We can do it! Our plant engineers have analyzed and accepted your custom packaging design "${existing.title}". Quoted Total: ${p.toLocaleString()} ETB. Please accept the quote and send your deposit via CBE or Telebirr to initiate manufacturing.`,
+            "/dashboard/designs",
+          ]
+        );
+      }
+      // 2. Advance Manufacturing Production Stage
+      else if (body.action === "advance_stage") {
         const validStages = [
           "quote_accepted",
           "payment_submitted",
@@ -100,17 +131,18 @@ export async function PATCH(
         }
 
         const stageNotes: Record<string, string> = {
-          payment_verified: "Deposit verified. Pre-press files sent to flexographic platemaker.",
+          payment_verified: "Deposit & QR verified. Pre-press files sent to flexographic platemaker.",
           plate_engraving: "Laser plate engraving in progress. Ink pigments calibrated to brand standard.",
-          printing_and_cutting: "High-speed flexographic printing and rotary die-cutting underway at Addis Ababa plant.",
+          printing_and_cutting: "It is on doing: High-speed flexographic printing and rotary die-cutting underway.",
           assembly_and_qc: "Handle stringing, gusset gluing, and optical tensile testing complete.",
-          ready_for_delivery: "Packaging bundled, palletized, and prepared for dispatch.",
+          ready_for_delivery: "Packaging bundled, palletized, and prepared for dispatch. Select delivery option.",
           delivered: "Consignment successfully delivered to client destination.",
         };
 
         const updatedSpecs = {
           ...currentSpecs,
           production_stage: newStage,
+          workflow_stage: newStage === "ready_for_delivery" ? "finished" : (newStage === "delivered" ? "delivered" : "in_production"),
           last_stage_update: new Date().toISOString(),
           stage_history: [
             ...(currentSpecs.stage_history || []),
@@ -142,25 +174,28 @@ export async function PATCH(
            VALUES ($1, $2, $3, $4)`,
           [
             existing.submitted_by,
-            `Packaging Production Update: ${existing.title || "Custom Run"}`,
+            newStage === "ready_for_delivery"
+              ? "Packaging Finished & Inspected! Choose Delivery Option"
+              : `Packaging Production: ${existing.title || "Custom Run"}`,
             clientMsg,
             "/dashboard/designs",
           ]
         );
       }
-      // 2. Verify Bank Deposit Payment Directly
+      // 3. Verify Bank Deposit Payment Directly -> Confirm "It Is On Doing"
       else if (body.action === "verify_payment") {
         const updatedSpecs = {
           ...currentSpecs,
           payment_verified: true,
           payment_verified_at: new Date().toISOString(),
-          production_stage: "payment_verified",
+          production_stage: "printing_and_cutting",
+          workflow_stage: "in_production",
         };
         updates.specs_json = JSON.stringify(updatedSpecs);
 
         if (existing.linked_order_id) {
           await pool.query(
-            "UPDATE public.orders SET status = 'approved', updated_at = NOW() WHERE id = $1",
+            "UPDATE public.orders SET status = 'in_production', updated_at = NOW() WHERE id = $1",
             [existing.linked_order_id]
           );
         }
@@ -170,8 +205,36 @@ export async function PATCH(
            VALUES ($1, $2, $3, $4)`,
           [
             existing.submitted_by,
-            "Bank Transfer Verified — Manufacturing Initiated!",
-            `Your payment for "${existing.title}" has been confirmed by our finance desk. Tooling & printing are now scheduled.`,
+            "Payment Confirmed — It Is On Doing!",
+            `Your payment and QR code proof for "${existing.title}" have been verified by our plant desk! It is on doing — your custom packaging is now in active production at our Addis Ababa facility!`,
+            "/dashboard/designs",
+          ]
+        );
+      }
+      // 4. Mark Finished & Request Delivery Option
+      else if (body.action === "mark_finished") {
+        const updatedSpecs = {
+          ...currentSpecs,
+          production_stage: "ready_for_delivery",
+          workflow_stage: "finished",
+          finished_at: new Date().toISOString(),
+        };
+        updates.specs_json = JSON.stringify(updatedSpecs);
+
+        if (existing.linked_order_id) {
+          await pool.query(
+            "UPDATE public.orders SET status = 'ready', updated_at = NOW() WHERE id = $1",
+            [existing.linked_order_id]
+          );
+        }
+
+        await pool.query(
+          `INSERT INTO public.notifications (user_id, title, body, link)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            existing.submitted_by,
+            "Packaging Finished & Quality Inspected!",
+            `Your custom packaging order for "${existing.title}" is finished and passed optical tensile & quality control. Please select your delivery option (Plant Pickup in Bole or Direct Van Delivery).`,
             "/dashboard/designs",
           ]
         );
@@ -297,9 +360,11 @@ export async function PATCH(
           payment_submitted: true,
           payment_proof_url: body.payment_proof_url,
           payment_ref: body.payment_ref || "",
+          qr_code_ref: body.qr_code_ref || body.payment_ref || "",
           bank_account_id: body.bank_account_id || null,
           payment_submitted_at: new Date().toISOString(),
           production_stage: "payment_submitted",
+          workflow_stage: "payment_submitted",
         };
         updates.specs_json = JSON.stringify(updatedSpecs);
 
@@ -445,8 +510,44 @@ export async function PATCH(
             ]
           );
         }
+      }
+      // Customer confirming delivery option (Plant Pickup or Direct Delivery)
+      else if (body.action === "confirm_delivery") {
+        const { delivery_option, delivery_address, delivery_phone, delivery_notes } = body;
+        if (!delivery_option) {
+          return NextResponse.json({ error: "Delivery option is required ('pickup' or 'direct_delivery')." }, { status: 400 });
+        }
+
+        const updatedSpecs = {
+          ...currentSpecs,
+          delivery_preference: {
+            option: delivery_option,
+            address: delivery_address || currentSpecs.deliveryAddress || "Addis Ababa Plant Dispatch",
+            phone: delivery_phone || currentSpecs.contactPhone || "",
+            notes: delivery_notes || "",
+            confirmed_at: new Date().toISOString(),
+          },
+          workflow_stage: "delivery_confirmed",
+        };
+        updates.specs_json = JSON.stringify(updatedSpecs);
+
+        const { rows: admins } = await pool.query(
+          "SELECT id FROM public.profiles WHERE role = 'admin'"
+        );
+        for (const adm of admins) {
+          await pool.query(
+            `INSERT INTO public.notifications (user_id, title, body, link)
+             VALUES ($1, $2, $3, $4)`,
+            [
+              adm.id,
+              "Client Selected Delivery Option",
+              `Client for "${existing.title}" confirmed: ${delivery_option === "pickup" ? "Factory Pickup at Bole Showroom" : `Direct Van Delivery to ${delivery_address || currentSpecs.deliveryAddress}`}.`,
+              "/admin/designs",
+            ]
+          );
+        }
       } else {
-        return NextResponse.json({ error: "Customers can accept, decline quotes, or submit payment proofs." }, { status: 403 });
+        return NextResponse.json({ error: "Customers can accept, decline quotes, submit payment proofs, or choose delivery options." }, { status: 403 });
       }
     }
 

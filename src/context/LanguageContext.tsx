@@ -64,7 +64,7 @@ export interface Translations {
 }
 
 const EN: Translations = {
-  nav_portfolio: "Portfolio",
+  nav_portfolio: "Packaging Catalog",
   nav_design_studio: "Design Studio",
   nav_academy: "Craft Academy",
   nav_workshops: "Workshops",
@@ -114,7 +114,7 @@ const EN: Translations = {
 };
 
 const AM: Translations = {
-  nav_portfolio: "ፖርትፎሊዮ",
+  nav_portfolio: "የማሸጊያ ካታሎግ",
   nav_design_studio: "ዲዛይን ስቱዲዮ",
   nav_academy: "የዕደ ጥበብ አካዳሚ",
   nav_workshops: "ወርክሾፖች",

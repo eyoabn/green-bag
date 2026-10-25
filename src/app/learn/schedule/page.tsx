@@ -243,7 +243,7 @@ export default function SchedulePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
+    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-28 sm:pb-20 bg-[#F9F6F0]">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full">
         
         {/* Header Section */}
@@ -260,7 +260,7 @@ export default function SchedulePage() {
         </div>
 
         {/* Filter Navigation */}
-        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar">
+        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar touch-scroll">
           {[
             { id: "all", label: "All Workshops" },
             { id: "in_person", label: "In-Person Studio (Addis Ababa)" },
@@ -300,7 +300,7 @@ export default function SchedulePage() {
               filteredSessions.map((session) => (
                 <div 
                   key={session.id} 
-                  className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                  className="bg-white p-5 sm:p-8 rounded-3xl border border-stone-200/90 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-3">

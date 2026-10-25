@@ -15,17 +15,27 @@ const settingsSchema = z.object({
       instagram: z.string().optional(),
       telegram: z.string().optional(),
       linkedin: z.string().optional(),
+      tiktok: z.string().optional(),
+      youtube: z.string().optional(),
     })
     .optional(),
   tax_id: z.string().optional(),
   settlement_days: z.number().int().min(1).max(30).optional(),
+  homepage_content: z
+    .object({
+      hero_headline: z.string().optional(),
+      hero_subline: z.string().optional(),
+      announcement_text: z.string().optional(),
+      announcement_visible: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 // GET /api/admin/settings - Read company configuration
 export async function GET() {
   try {
     const res = await pool.query(`
-      SELECT id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, updated_at
+      SELECT id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, updated_at
       FROM public.settings
       WHERE id = 'default' OR id = 'company'
       ORDER BY updated_at DESC
@@ -38,9 +48,17 @@ export async function GET() {
       contact_phone: "+251 911 223 344",
       contact_email: "info@arenguadepaper.com",
       address: "Bole Sub-City, Woreda 03, Addis Ababa, Ethiopia",
-      social_links: { facebook: "", instagram: "", telegram: "", linkedin: "" },
+      social_links: { 
+        facebook: "", 
+        instagram: "", 
+        telegram: "https://t.me/arenguadepaper", 
+        linkedin: "",
+        tiktok: "https://www.tiktok.com/@arenguadepaper",
+        youtube: "https://www.youtube.com/@arenguadepaper"
+      },
       tax_id: "ETH-TIN-2024-001",
       settlement_days: 3,
+      homepage_content: {},
     };
 
     return NextResponse.json({
@@ -64,12 +82,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: msg }, { status: 400 });
     }
 
-    const { company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days } = parsed.data;
+    const { company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content } = parsed.data;
 
     const res = await pool.query(
       `
-      INSERT INTO public.settings (id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, updated_at)
-      VALUES ('default', $1, $2, $3, $4, $5::jsonb, $6, $7, NOW())
+      INSERT INTO public.settings (id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, updated_at)
+      VALUES ('default', $1, $2, $3, $4, $5::jsonb, $6, $7, $8::jsonb, NOW())
       ON CONFLICT (id) DO UPDATE SET
         company_name = EXCLUDED.company_name,
         contact_phone = EXCLUDED.contact_phone,
@@ -78,8 +96,9 @@ export async function PATCH(request: NextRequest) {
         social_links = EXCLUDED.social_links,
         tax_id = COALESCE(EXCLUDED.tax_id, public.settings.tax_id),
         settlement_days = COALESCE(EXCLUDED.settlement_days, public.settings.settlement_days),
+        homepage_content = COALESCE(EXCLUDED.homepage_content, public.settings.homepage_content),
         updated_at = NOW()
-      RETURNING id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, updated_at;
+      RETURNING id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, updated_at;
     `,
       [
         company_name.trim(),
@@ -89,6 +108,7 @@ export async function PATCH(request: NextRequest) {
         JSON.stringify(social_links || {}),
         tax_id?.trim() || "",
         settlement_days ?? 3,
+        JSON.stringify(homepage_content || {}),
       ]
     );
 
@@ -98,10 +118,17 @@ export async function PATCH(request: NextRequest) {
     await pool.query(
       `
       UPDATE public.settings
-      SET company_name = $1, contact_phone = $2, contact_email = $3, address = $4, social_links = $5::jsonb, updated_at = NOW()
+      SET company_name = $1, contact_phone = $2, contact_email = $3, address = $4, social_links = $5::jsonb, homepage_content = $6::jsonb, updated_at = NOW()
       WHERE id = 'company';
     `,
-      [company_name.trim(), contact_phone.trim(), contact_email.trim(), address.trim(), JSON.stringify(social_links || {})]
+      [
+        company_name.trim(), 
+        contact_phone.trim(), 
+        contact_email.trim(), 
+        address.trim(), 
+        JSON.stringify(social_links || {}),
+        JSON.stringify(homepage_content || {})
+      ]
     );
 
     // Central audit log event

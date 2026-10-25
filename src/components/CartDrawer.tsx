@@ -64,13 +64,13 @@ export default function CartDrawer() {
         onClick={() => setIsCartOpen(false)}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+      <div className="fixed inset-y-0 right-0 max-w-full flex sm:pl-10 pl-0">
         <div 
           ref={drawerRef}
-          className="w-screen max-w-md bg-[#FAF7F2] border-l border-stone-200 shadow-2xl flex flex-col transform transition-transform ease-out duration-300"
+          className="w-screen max-w-md bg-[#FAF7F2] sm:border-l border-stone-200 shadow-2xl flex flex-col transform transition-transform ease-out duration-300"
         >
           {/* Header */}
-          <div className="p-6 border-b border-stone-200/80 bg-white flex items-center justify-between">
+          <div className="p-4 sm:p-6 border-b border-stone-200/80 bg-white flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-[#1E3B2E]/10 flex items-center justify-center text-[#1E3B2E]">
                 <ShoppingBag size={18} />
@@ -93,7 +93,7 @@ export default function CartDrawer() {
           </div>
 
           {/* Cart Items List */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5">
             {items.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center py-16">
                 <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 mb-4">
@@ -188,7 +188,7 @@ export default function CartDrawer() {
 
           {/* Footer with Checkout Actions */}
           {items.length > 0 && (
-            <div className="p-5 sm:p-6 border-t border-stone-200 bg-white space-y-4 pb-safe">
+            <div className="p-4 sm:p-6 border-t border-stone-200 bg-white space-y-4 pb-[max(env(safe-area-inset-bottom),20px)]">
               {/* Delivery and Guarantee Badges */}
               <div className="flex items-center justify-between text-xs text-stone-500 px-1">
                 <span className="flex items-center gap-1.5">

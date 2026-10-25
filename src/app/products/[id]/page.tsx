@@ -263,8 +263,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full animate-pulse">
+      <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-32 sm:pb-20 bg-[#F9F6F0]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full animate-pulse">
           <div className="h-6 w-32 bg-stone-200 rounded-full mb-8" />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             <div className="lg:col-span-7 h-[480px] bg-stone-200 rounded-3xl" />
@@ -293,8 +293,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full">
+    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-32 sm:pb-20 bg-[#F9F6F0]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full">
         
         {/* Back navigation */}
         <Link 
@@ -442,97 +442,67 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {/* Right: Order Form & Bank Checkout */}
             <div className="lg:col-span-6 flex flex-col gap-6">
               
-              {product.is_client_work ? (
-                /* Client Portfolio Showcase Card */
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-lg space-y-6">
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider">
-                    <ShieldCheck size={14} />
-                    <span>Portfolio Showcase</span>
-                  </div>
-
+                              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-lg space-y-6">
                   <div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider mb-2">
+                      <Sparkles size={13} className="text-[#8C4B31]" />
+                      <span>Factory Showcase • Manufactured in Addis Ababa</span>
+                    </span>
                     <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
                       {product.name}
                     </h1>
                     {product.client && (
-                      <p className="text-xs text-stone-500 mt-1 font-medium">
-                        Designed &amp; manufactured for <strong className="text-[#8C4B31]">{product.client}</strong>
+                      <p className="text-xs text-stone-600 mt-1.5 font-medium flex items-center gap-1.5">
+                        <span>Manufactured for:</span>
+                        <strong className="text-[#8C4B31] font-bold">{product.client}</strong>
                       </p>
                     )}
                   </div>
 
                   <p className="text-stone-600 text-sm leading-relaxed">
-                    {product.description || "Crafted in Addis Ababa using heavy-duty biodegradable Ethiopian kraft."}
+                    {product.description || "Authentic heavy-duty biodegradable packaging manufactured at our Addis Ababa facility using 100% recyclable Ethiopian kraft."}
                   </p>
 
-                  <div className="grid grid-cols-2 gap-3 text-xs">
+                  {/* Engineering Highlights Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                     <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                      <span className="text-stone-500 block text-[10px]">Paper Weight</span>
+                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Paper</span>
                       <span className="font-bold text-stone-900">{product.gsm} GSM Kraft</span>
                     </div>
                     <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                      <span className="text-stone-500 block text-[10px]">Handle Style</span>
-                      <span className="font-bold text-stone-900">{product.handleType}</span>
+                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Handle</span>
+                      <span className="font-bold text-stone-900 truncate">{product.handleType}</span>
                     </div>
                     <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                      <span className="text-stone-500 block text-[10px]">Min. Batch</span>
+                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Min. Batch</span>
                       <span className="font-bold text-stone-900">500 pcs</span>
                     </div>
                     <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
-                      <span className="text-stone-500 block text-[10px]">Lead Time</span>
-                      <span className="font-bold text-stone-900">7-10 Days</span>
+                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Turnaround</span>
+                      <span className="font-bold text-stone-900">5-7 Days</span>
                     </div>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-[#1E3B2E] space-y-3">
+                  {/* Primary CTA Box: Commission Custom Logo Batch */}
+                  <div className="p-5 rounded-2xl bg-[#1E3B2E] text-white space-y-3 shadow-sm">
                     <div className="flex items-center gap-2">
                       <Sparkles size={16} className="text-[#E0B382]" />
-                      <h3 className="font-serif text-base font-bold text-white">Want a similar design for your brand?</h3>
+                      <h3 className="font-serif text-base font-bold text-white">
+                        Commission Your Brand&apos;s Custom Batch
+                      </h3>
                     </div>
-                    <p className="text-xs text-stone-400 leading-relaxed">
-                      We manufacture fully custom packaging batches with your logo, colors, and dimensions.
+                    <p className="text-xs text-emerald-100/90 leading-relaxed">
+                      Want this exact packaging structure custom-branded with your company logo, pantone colors, and tailored dimensions? We manufacture custom runs for cafés, roasters, fashion boutiques, and hotels.
                     </p>
                     <Link
                       href={`/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm}&dimensions=${encodeURIComponent(product.dimensions || "")}&handle=${encodeURIComponent(product.handleType || "")}`}
-                      className="w-full py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 bg-[#8C4B31] hover:bg-[#A3593B] text-white rounded-xl transition-all"
+                      className="w-full py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 bg-[#8C4B31] hover:bg-[#A3593B] text-white rounded-xl transition-all shadow-sm"
                     >
                       <PenTool size={14} />
-                      <span>Commission This Style</span>
+                      <span>Commission This Custom Design &rarr;</span>
                     </Link>
                   </div>
 
-                  <Link href="/products" className="hover:text-[#1E3B2E] font-medium flex items-center gap-1 text-xs text-stone-500">
-                    <ArrowLeft size={13} />
-                    <span>Back to Portfolio</span>
-                  </Link>
-                </div>
-              ) : (
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-lg">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31] block mb-1">
-                    Product #{product.id} • Manufactured in Addis Ababa
-                  </span>
-                  <div className="flex flex-wrap items-center gap-3 mb-2">
-                    <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900">
-                      {product.name}
-                    </h1>
-                    {product.is_available === false ? (
-                      <span className="bg-rose-100 text-rose-800 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-rose-200">
-                        Unavailable
-                      </span>
-                    ) : (
-                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-emerald-200">
-                        In Stock
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-emerald-800 font-semibold bg-emerald-50 px-2.5 py-1 rounded-md inline-block mb-4">
-                    Produced for: {product.client}
-                  </p>
-
-                  <p className="text-stone-600 text-sm leading-relaxed mb-6">
-                    {product.description}
-                  </p>
-                  
                   {/* Pricing & Quantity Selector */}
                   <div className="pb-6 border-b border-stone-200">
                     <div className="flex items-baseline gap-3 mb-4">
@@ -835,35 +805,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   </div>
 
                 </div>
-              )}
-
+              </div>
             </div>
-
-          </div>
-        )}
+          )}
 
         {/* Mobile Sticky Action Bar */}
-        {!orderConfirmed && (
-          product.is_client_work ? (
-            <StickyBottomBar>
-              <div>
-                <span className="text-[10px] text-stone-500 block uppercase font-bold">Client Showcase</span>
-                <span className="text-xs font-bold text-stone-900 truncate max-w-[180px] block">{product.client}</span>
-              </div>
+        {!orderConfirmed && product && (
+          <StickyBottomBar>
+            <div>
+              <span className="text-[10px] text-stone-500 block uppercase font-bold">Batch Pricing</span>
+              <span className="text-base font-bold text-[#8C4B31]">{totalPrice} ETB</span>
+            </div>
+            <div className="flex items-center gap-2">
               <Link
                 href={`/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm}&dimensions=${encodeURIComponent(product.dimensions || '')}&handle=${encodeURIComponent(product.handleType || '')}`}
-                className="btn-primary touch-target text-xs px-6 py-2.5 flex items-center gap-1.5"
+                className="px-3 py-2 rounded-xl bg-stone-200 text-stone-800 text-xs font-bold"
               >
-                <PenTool size={14} />
-                <span>Design Yours</span>
+                Customize
               </Link>
-            </StickyBottomBar>
-          ) : product.is_available !== false ? (
-            <StickyBottomBar>
-              <div>
-                <span className="text-[10px] text-stone-500 block uppercase font-bold">Estimated</span>
-                <span className="text-base font-bold text-[#8C4B31]">Total: {totalPrice} ETB</span>
-              </div>
               <button
                 onClick={() => {
                   const formEl = document.querySelector("form");
@@ -871,12 +830,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     formEl.scrollIntoView({ behavior: "smooth" });
                   }
                 }}
-                className="btn-primary touch-target text-xs px-6"
+                className="btn-primary touch-target text-xs px-5"
               >
-                Order Now
+                Order
               </button>
-            </StickyBottomBar>
-          ) : null
+            </div>
+          </StickyBottomBar>
         )}
       </div>
     </div>

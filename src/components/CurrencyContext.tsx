@@ -32,10 +32,6 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   };
 
   const formatPrice = (priceInETB: number) => {
-    if (currency === "USD") {
-      const priceInUSD = priceInETB / EXCHANGE_RATE;
-      return `$${priceInUSD.toFixed(2)}`;
-    }
     return `${priceInETB.toLocaleString()} ETB`;
   };
 

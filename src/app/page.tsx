@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -129,7 +129,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen pt-16 sm:pt-20">
+    <div className="flex flex-col min-h-screen pt-16 sm:pt-20 pb-20 md:pb-0">
 
       {/* Admin Announcement Banner */}
       {announcement?.visible && announcement.text && (
@@ -152,11 +152,11 @@ export default function Home() {
                 </span>
               </div>
 
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] text-stone-900 tracking-tight">
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.12] text-stone-900 tracking-tight">
                 {heroContent.headline || "Artisanal Kraft Packaging & Craft Academy"}
               </h1>
 
-              <p className="text-stone-600 text-base sm:text-lg max-w-xl leading-relaxed">
+              <p className="text-stone-600 text-sm sm:text-lg max-w-xl leading-relaxed">
                 {heroContent.subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses."}
               </p>
 
@@ -180,27 +180,27 @@ export default function Home() {
                 </Link>
               </div>
 
-              {/* Trust Badges */}
-              <div className="pt-4 mt-2 border-t border-stone-200 flex flex-wrap items-center gap-4 text-xs font-semibold text-stone-600">
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 size={16} className="text-[#1E3B2E]" /> 100% Recyclable Kraft
+              {/* Trust Badges Chips */}
+              <div className="pt-4 mt-2 border-t border-stone-200/90 flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold text-stone-700">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> 100% Recyclable Kraft
                 </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 size={16} className="text-[#1E3B2E]" /> CBE, Telebirr & Awash
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> CBE, Telebirr & Awash
                 </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 size={16} className="text-[#1E3B2E]" /> Live WebRTC Video
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> LiveKit WebRTC Video
                 </span>
               </div>
             </div>
 
             {/* Right: 3D Studio Bag (Desktop) or Fast Optimized Static Image (Mobile) */}
             <div className="md:col-span-5">
-              <div className="relative aspect-square w-full rounded-2xl bg-white border border-stone-200 shadow-sm flex items-center justify-center overflow-hidden">
+              <div className="relative aspect-square w-full rounded-3xl bg-white border border-stone-200/90 shadow-lg flex items-center justify-center overflow-hidden">
                 {canRender3D ? (
                   <>
                     <ThreeBagScene />
-                    <div className="absolute bottom-3 right-3 bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold text-stone-600 border border-stone-200 shadow-xs pointer-events-none">
+                    <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-xs px-3 py-1 rounded-full text-[10px] font-bold text-stone-700 border border-stone-200 shadow-xs pointer-events-none">
                       360° Interactive Bag
                     </div>
                   </>
@@ -214,8 +214,14 @@ export default function Home() {
                       sizes="(max-width: 768px) 100vw, 500px"
                       className="object-cover"
                     />
-                    <div className="absolute bottom-3 left-3 bg-stone-900/80 backdrop-blur-xs text-white px-3 py-1 rounded-full text-[10px] font-medium">
-                      Bespoke Ethiopian Kraft
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-[11px] font-semibold">
+                      <span className="bg-stone-900/80 backdrop-blur-md px-3 py-1 rounded-full shadow-xs">
+                        Bespoke Ethiopian Kraft
+                      </span>
+                      <span className="bg-[#8C4B31]/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        Addis Ababa
+                      </span>
                     </div>
                   </div>
                 )}
@@ -248,7 +254,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {productsLoading ? (
               Array.from({ length: 3 }).map((_, idx) => (
                 <div key={idx} className="app-card animate-pulse h-80 flex flex-col justify-between">

@@ -112,7 +112,7 @@ export default function ProductsPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
+    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-28 sm:pb-20 bg-[#F9F6F0]">
       
       {/* Header Banner */}
       <section className="bg-gradient-to-b from-[#F2ECE1] to-[#F9F6F0] border-b border-stone-200/80 py-16">
@@ -156,7 +156,7 @@ export default function ProductsPage() {
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 pb-6 border-b border-stone-200">
           
           {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar touch-scroll -mx-4 px-4 sm:mx-0 sm:px-0">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -176,7 +176,7 @@ export default function ProductsPage() {
           </div>
 
           {/* Search Input */}
-          <div className="relative flex-1 sm:w-64 max-w-xs">
+          <div className="relative w-full sm:w-64 max-w-full sm:max-w-xs">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
             <input
               type="text"
@@ -266,7 +266,7 @@ export default function ProductsPage() {
                   {/* Quick Preview */}
                   <button
                     onClick={() => setLightboxProduct(product)}
-                    className="absolute top-3 right-3 p-2 rounded-full bg-white/90 text-stone-800 hover:bg-white hover:text-[#8C4B31] transition-all opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
+                    className="absolute top-3 right-3 p-2 rounded-full bg-white/90 text-stone-800 hover:bg-white hover:text-[#8C4B31] transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 shadow-md cursor-pointer touch-target flex items-center justify-center"
                     title="Quick preview"
                   >
                     <Eye size={15} />

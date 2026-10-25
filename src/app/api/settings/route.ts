@@ -5,7 +5,7 @@ import { pool } from "@/utils/db";
 export async function GET() {
   try {
     const res = await pool.query(`
-      SELECT id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, updated_at
+      SELECT id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, updated_at
       FROM public.settings
       WHERE id = 'default' OR id = 'company'
       ORDER BY updated_at DESC

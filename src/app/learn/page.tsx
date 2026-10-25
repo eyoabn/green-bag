@@ -19,7 +19,7 @@ import {
 
 export default function LearnPage() {
   return (
-    <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
+    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-28 sm:pb-20 bg-[#F9F6F0]">
       
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 sm:px-8 py-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">

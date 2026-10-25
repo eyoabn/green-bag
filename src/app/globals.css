@@ -142,3 +142,27 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Mobile Polish Utilities */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 16px);
+}
+
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top), 16px);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth Touch Momentum */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+

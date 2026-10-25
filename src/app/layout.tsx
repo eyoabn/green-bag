@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { CurrencyProvider } from "@/components/CurrencyContext";
 import { CartProvider } from "@/context/CartContext";
 import CartDrawer from "@/components/CartDrawer";
+import PublicMobileNav from "@/components/PublicMobileNav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -54,6 +55,7 @@ export default function RootLayout({
             <CartProvider>
               <Navbar />
               <CartDrawer />
+              <PublicMobileNav />
               <main className="flex-1">{children}</main>
               <Footer />
             </CartProvider>

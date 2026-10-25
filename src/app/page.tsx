@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -55,6 +55,8 @@ export default function Home() {
   });
   const [productsLoading, setProductsLoading] = useState(true);
   const [workshopsLoading, setWorkshopsLoading] = useState(true);
+  const [announcement, setAnnouncement] = useState<{ text: string; visible: boolean } | null>(null);
+  const [heroContent, setHeroContent] = useState<{ headline?: string; subline?: string }>({});
 
   useEffect(() => {
     // 1. Device check for 3D hero
@@ -106,6 +108,17 @@ export default function Home() {
             contact_email: json.settings.contact_email || "support@arenguadepaper.com",
             contact_phone: json.settings.contact_phone || "+251 911 741618",
           });
+          // Load admin-controlled homepage content
+          const content = json.settings.homepage_content || {};
+          if (content.announcement_visible && content.announcement_text) {
+            setAnnouncement({ text: content.announcement_text, visible: true });
+          }
+          if (content.hero_headline || content.hero_subline) {
+            setHeroContent({
+              headline: content.hero_headline || undefined,
+              subline: content.hero_subline || undefined,
+            });
+          }
         }
       } catch {
         // Fallback handled safely
@@ -117,6 +130,13 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen pt-16 sm:pt-20">
+
+      {/* Admin Announcement Banner */}
+      {announcement?.visible && announcement.text && (
+        <div className="bg-[#1E3B2E] text-[#E0B382] text-center text-xs font-semibold py-2 px-4 tracking-wide">
+          {announcement.text}
+        </div>
+      )}
       
       {/* 1. HERO SECTION */}
       <section className="relative w-full py-12 md:py-20 border-b border-stone-200 bg-[#F9F6F0]">
@@ -133,12 +153,11 @@ export default function Home() {
               </div>
 
               <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] text-stone-900 tracking-tight">
-                Artisanal Kraft Packaging & Craft Academy
+                {heroContent.headline || "Artisanal Kraft Packaging & Craft Academy"}
               </h1>
 
               <p className="text-stone-600 text-base sm:text-lg max-w-xl leading-relaxed">
-                100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. 
-                Learn the trade in our Addis Ababa workshops or join live online masterclasses.
+                {heroContent.subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses."}
               </p>
 
               {/* One primary action, one secondary */}

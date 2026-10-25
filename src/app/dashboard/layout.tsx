@@ -53,10 +53,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       : "Packaging Customer";
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#F9F6F0] pt-20">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#F9F6F0]">
       
       {/* Mobile Top App Bar */}
-      <div className="md:hidden bg-white px-6 py-3 border-b border-stone-200 flex items-center justify-between sticky top-20 z-30 shadow-sm">
+      <div className="md:hidden bg-white px-6 py-3 border-b border-stone-200 flex items-center justify-between sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-2">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-serif font-bold text-xs ${
             user?.role === "admin" ? "bg-red-900 text-white" : user?.role === "teacher" ? "bg-[#8C4B31] text-white" : "bg-[#1E3B2E] text-[#E0B382]"
@@ -80,7 +80,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar (Desktop Fixed + Mobile Collapsible Drawer) */}
       <aside className={`
-        fixed md:fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-stone-200 flex flex-col pt-20 transition-transform duration-300
+        fixed md:fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-stone-200 flex flex-col pt-4 transition-transform duration-300
         ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
         {/* User Card */}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { 
@@ -55,6 +55,8 @@ export default function AdminProductsPage() {
   const [formDescription, setFormDescription] = useState("");
   const [formAvailable, setFormAvailable] = useState(true);
   const [formFeatured, setFormFeatured] = useState(false);
+  const [formClientWork, setFormClientWork] = useState(false);
+  const [formClient, setFormClient] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,6 +93,8 @@ export default function AdminProductsPage() {
     setFormDescription("");
     setFormAvailable(true);
     setFormFeatured(false);
+    setFormClientWork(false);
+    setFormClient("");
     setUploadedImages(["/images/photo_6_2026-09-05_00-36-03.jpg"]);
     setFormError("");
     setModalOpen(true);
@@ -105,6 +109,8 @@ export default function AdminProductsPage() {
     setFormDescription(product.description || "");
     setFormAvailable(product.is_available);
     setFormFeatured(Boolean(product.is_featured));
+    setFormClientWork(Boolean((product as any).is_client_work));
+    setFormClient((product as any).client || "");
     setUploadedImages(product.images && product.images.length > 0 ? [...product.images] : ["/images/photo_6_2026-09-05_00-36-03.jpg"]);
     setFormError("");
     setModalOpen(true);
@@ -277,6 +283,8 @@ export default function AdminProductsPage() {
             description: formDescription.trim(),
             is_available: formAvailable,
             is_featured: formFeatured,
+            is_client_work: formClientWork,
+            client: formClient.trim() || undefined,
             images: uploadedImages,
           }),
         });
@@ -718,6 +726,32 @@ export default function AdminProductsPage() {
               </div>
 
               {/* Checkbox Options */}
+
+              {/* Client Portfolio Section */}
+              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formClientWork}
+                    onChange={(e) => setFormClientWork(e.target.checked)}
+                    className="w-4 h-4 rounded border-stone-300"
+                  />
+                  <span className="text-xs font-bold text-amber-900">Mark as Client Portfolio Piece (showcase only, not orderable)</span>
+                </label>
+                {formClientWork && (
+                  <div>
+                    <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">Client / Brand Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Tomoca Coffee, Sheba Hotel"
+                      value={formClient}
+                      onChange={(e) => setFormClient(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 focus:ring-2 focus:ring-amber-400/30 outline-none text-xs"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2">
                 <label className="flex items-center gap-2 cursor-pointer font-medium text-stone-800">
                   <input

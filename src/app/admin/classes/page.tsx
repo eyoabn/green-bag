@@ -97,11 +97,6 @@ export default function AdminClassesPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadClasses();
-    loadTeachers();
-  }, []);
-
   const loadClasses = async () => {
     setLoading(true);
     setErrorMsg(null);
@@ -131,6 +126,11 @@ export default function AdminClassesPage() {
       console.warn("Failed to load teacher list:", err);
     }
   };
+
+  useEffect(() => {
+    loadClasses();
+    loadTeachers();
+  }, []);
 
   const openCreateModal = () => {
     // Default dates in ISO format with UTC+3 awareness

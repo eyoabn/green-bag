@@ -10,21 +10,22 @@ import {
   Menu, 
   X, 
   ArrowRight, 
-  Award,
   User,
   LogOut,
   ChevronDown,
-  Languages
+  Languages,
+  Award
 } from "lucide-react";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import { useCart } from "@/context/CartContext";
 import NotificationBell from "@/components/NotificationBell";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [lang, setLang] = useState<"EN" | "AM">("EN");
+  const { t, toggleLang, lang } = useLanguage();
   const { setIsCartOpen, totalItems } = useCart();
   const [user, setUser] = useState<AppUser | null>(null);
 
@@ -45,10 +46,10 @@ export default function Navbar() {
   }
 
   const navLinks = [
-    { href: "/products", label: "Portfolio", icon: ShoppingBag },
-    { href: "/design-submission", label: "Design Studio", icon: Sparkles },
-    { href: "/learn", label: "Craft Academy", icon: BookOpen },
-    { href: "/learn/schedule", label: "Workshops", badge: "LiveKit" },
+    { href: "/products", label: t.nav_portfolio, icon: ShoppingBag },
+    { href: "/design-submission", label: t.nav_design_studio, icon: Sparkles },
+    { href: "/learn", label: t.nav_academy, icon: BookOpen },
+    { href: "/learn/schedule", label: t.nav_workshops, badge: "LiveKit" },
   ];
 
   return (
@@ -100,13 +101,13 @@ export default function Navbar() {
           <div className="hidden sm:flex items-center gap-3">
             {/* Language Switcher: English / Amharic */}
             <button
-              onClick={() => setLang(lang === "EN" ? "AM" : "EN")}
+              onClick={toggleLang}
               className="text-xs font-semibold px-3 py-1.5 rounded-full bg-stone-200/60 hover:bg-stone-300/70 text-stone-700 border border-stone-300/40 transition-all flex items-center gap-1.5"
-              title="Toggle English / Amharic language"
+              title={lang === "en" ? "Switch to Amharic / አማርኛ" : "Switch to English"}
               aria-label="Toggle language"
             >
               <Languages size={13} className="text-[#1E3B2E]" />
-              <span className="font-bold text-[#1E3B2E]">{lang === "EN" ? "አማ" : "EN"}</span>
+              <span className="font-bold text-[#1E3B2E]">{t.nav_language_toggle}</span>
             </button>
 
             {/* Shopping Cart Button */}

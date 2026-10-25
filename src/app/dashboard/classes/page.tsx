@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -53,13 +53,20 @@ export default function MyClassesPage() {
   const [enrollments, setEnrollments] = useState<EnrollmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+
+  useEffect(() => {
+    setCurrentTime(Date.now());
+    const interval = setInterval(() => setCurrentTime(Date.now()), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Re-upload proof state
   const [reuploadingId, setReuploadingId] = useState<string | null>(null);
   const [reuploadFile, setReuploadFile] = useState<File | null>(null);
   const [isSubmittingProof, setIsSubmittingProof] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const fetchEnrollments = async () => {
     setLoading(true);
@@ -283,7 +290,7 @@ export default function MyClassesPage() {
             // - If approved: enabled if session is live or within 10-minute start window
             const isSessionLive = session?.status === "live";
             const sessionStart = session?.starts_at ? new Date(session.starts_at) : null;
-            const diffMinutes = sessionStart ? (sessionStart.getTime() - Date.now()) / (1000 * 60) : 999;
+            const diffMinutes = sessionStart && currentTime ? (sessionStart.getTime() - currentTime) / (1000 * 60) : 999;
             const canJoinLive = isApproved && (isSessionLive || diffMinutes <= 10) && !isEnded && !isCancelled;
 
             return (

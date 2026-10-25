@@ -163,9 +163,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Selected settlement bank account is currently not active." }, { status: 400 });
     }
 
-    // 3. Generate human-friendly order number (e.g. ARN-2026-XXXX)
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const orderNumber = `ARN-2026-${randomSuffix}`;
+    // 3. Generate human-friendly order number (e.g. ARN-2026-NNNN) using database sequence
+    let orderNumber: string;
+    try {
+      const { rows: seqRows } = await pool.query("SELECT nextval('order_number_seq') as seq");
+      const seqVal = seqRows[0]?.seq;
+      orderNumber = `ARN-2026-${String(seqVal).padStart(4, "0")}`;
+    } catch {
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      orderNumber = `ARN-2026-${randomSuffix}`;
+    }
 
     const initialStatus = paymentProofPath ? "pending_verification" : "pending_payment";
 

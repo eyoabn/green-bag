@@ -37,13 +37,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isVerifying, setIsVerifying] = useState(true);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
 
-  useEffect(() => {
-    verifyAdminRole();
-    const handleAuthChange = () => verifyAdminRole();
-    window.addEventListener("arenguade_auth_change", handleAuthChange);
-    return () => window.removeEventListener("arenguade_auth_change", handleAuthChange);
-  }, []);
-
   const verifyAdminRole = async () => {
     setIsVerifying(true);
     try {
@@ -61,6 +54,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setIsVerifying(false);
     }
   };
+
+  useEffect(() => {
+    verifyAdminRole();
+    const handleAuthChange = () => verifyAdminRole();
+    window.addEventListener("arenguade_auth_change", handleAuthChange);
+    return () => window.removeEventListener("arenguade_auth_change", handleAuthChange);
+  }, []);
 
   const handleSignOut = async () => {
     try {

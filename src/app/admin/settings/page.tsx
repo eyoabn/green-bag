@@ -31,14 +31,16 @@ export default function AdminSettingsPage() {
   const [tiktok, setTiktok] = useState("");
   const [youtube, setYoutube] = useState("");
 
+  // Homepage Content (editable by admin)
+  const [heroHeadline, setHeroHeadline] = useState("");
+  const [heroSubline, setHeroSubline] = useState("");
+  const [announcementText, setAnnouncementText] = useState("");
+  const [announcementVisible, setAnnouncementVisible] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
 
   const fetchSettings = async () => {
     setIsLoading(true);
@@ -62,6 +64,13 @@ export default function AdminSettingsPage() {
         setLinkedin(socials.linkedin || "");
         setTiktok(socials.tiktok || "");
         setYoutube(socials.youtube || "");
+
+        // Homepage content
+        const content = s.homepage_content || {};
+        setHeroHeadline(content.hero_headline || "");
+        setHeroSubline(content.hero_subline || "");
+        setAnnouncementText(content.announcement_text || "");
+        setAnnouncementVisible(Boolean(content.announcement_visible));
       }
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to load factory settings");
@@ -69,6 +78,10 @@ export default function AdminSettingsPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +107,12 @@ export default function AdminSettingsPage() {
             linkedin: linkedin.trim(),
             tiktok: tiktok.trim(),
             youtube: youtube.trim(),
+          },
+          homepage_content: {
+            hero_headline: heroHeadline.trim(),
+            hero_subline: heroSubline.trim(),
+            announcement_text: announcementText.trim(),
+            announcement_visible: announcementVisible,
           },
         }),
       });
@@ -339,6 +358,66 @@ export default function AdminSettingsPage() {
                     onChange={(e) => setLinkedin(e.target.value)}
                     className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4: Homepage Content Editor */}
+            <div className="space-y-4 pt-4 border-t border-stone-100">
+              <h3 className="font-serif text-base font-bold text-stone-900 pb-2 flex items-center gap-2">
+                <span className="text-lg">🏠</span>
+                <span>Homepage Content Editor</span>
+              </h3>
+              <p className="text-[11px] text-stone-500 -mt-2">
+                Edit the hero headline and subline visible on the public homepage. Leave blank to use the default text.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    Hero Headline (Public Homepage)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Artisan Paper Packaging, Crafted in Addis Ababa"
+                    value={heroHeadline}
+                    onChange={(e) => setHeroHeadline(e.target.value)}
+                    className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    Hero Subline / Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g. We manufacture premium kraft bags and custom packaging for Ethiopia's finest cafés..."
+                    value={heroSubline}
+                    onChange={(e) => setHeroSubline(e.target.value)}
+                    className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 resize-none"
+                  />
+                </div>
+
+                <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={announcementVisible}
+                      onChange={(e) => setAnnouncementVisible(e.target.checked)}
+                      className="w-4 h-4 rounded border-stone-300"
+                    />
+                    <span className="font-bold text-amber-900 text-xs">Show Announcement Banner on Homepage</span>
+                  </label>
+                  {announcementVisible && (
+                    <input
+                      type="text"
+                      placeholder="e.g. 🎉 New: Premium Eucalyptus Collection Now Available"
+                      value={announcementText}
+                      onChange={(e) => setAnnouncementText(e.target.value)}
+                      className="w-full border border-amber-300 rounded-xl p-3 bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-400/30 text-xs"
+                    />
+                  )}
                 </div>
               </div>
             </div>

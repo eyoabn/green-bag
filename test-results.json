@@ -4,9 +4,7 @@
       "C:\\Program Files\\nodejs\\node.exe",
       "C:\\Users\\us\\greenwork\\node_modules\\@playwright\\test\\cli.js",
       "test",
-      "tests/e2e/master-flows.spec.ts",
-      "-g",
-      "10. LiveKit token generation privileges by role"
+      "tests/e2e/master-flows.spec.ts"
     ],
     "configFile": "C:\\Users\\us\\greenwork\\playwright.config.ts",
     "rootDir": "C:/Users/us/greenwork/tests/e2e",
@@ -125,8 +123,8 @@
           "column": 6,
           "specs": [
             {
-              "title": "10. LiveKit token generation privileges by role",
-              "ok": false,
+              "title": "1. Visitor can browse /products and view single product",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -139,45 +137,363 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "timedOut",
-                      "duration": 60013,
-                      "error": {
-                        "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
-                        "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
-                      },
-                      "errors": [
-                        {
-                          "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
-                        },
-                        {
-                          "location": {
-                            "file": "C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts",
-                            "column": 36,
-                            "line": 288
-                          },
-                          "message": "Error: apiRequestContext.post: Request context disposed.\nCall log:\n\u001b[2m  - → POST http://localhost:3000/api/live/7e4628c4-3498-494e-9c0d-d74327340a10/start\u001b[22m\n\u001b[2m    - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36\u001b[22m\n\u001b[2m    - accept: */*\u001b[22m\n\u001b[2m    - accept-encoding: gzip,deflate,br\u001b[22m\n\u001b[2m    - cookie: sb-heslqxyonklerdcxjohf-auth-token=base64-eyJhY2Nlc3NfdG9rZW4iOiJleUpoYkdjaU9pSkZVekkxTmlJc0ltdHBaQ0k2SWpGa1lqSXhORGszTFdZMVpXSXROREJrTkMwNU5XRmhMVEEyTW1Oa09EZGpNVFF5WmlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUpvZEhSd2N6b3ZMMmhsYzJ4eGVIbHZibXRzWlhKa1kzaHFiMmhtTG5OMWNHRmlZWE5sTG1OdkwyRjFkR2d2ZGpFaUxDSnpkV0lpT2lJME1qaG1Nakk0T0MxaU5XRm1MVFJtT0RNdE9UWTVPQzB6TVRWa1ltSmtOREZtT0RRaUxDSmhkV1FpT2lKaGRYUm9aVzUwYVdOaGRHVmtJaXdpWlhod0lqb3hOemt5TXpVMU56RTRMQ0pwWVhRaU9qRTNPVEl6TlRJeE1UZ3NJbVZ0WVdsc0lqb2lkR1ZoWTJobGNpNTBhV2RwYzNSQVlYSmxibWQxWVdSbExtTnZiU0lzSW5Cb2IyNWxJam9pSWl3aVlYQndYMjFsZEdGa1lYUmhJanA3SW5CeWIzWnBaR1Z5SWpvaVpXMWhhV3dpTENKd2NtOTJhV1JsY25NaU9sc2laVzFoYVd3aVhYMHNJblZ6WlhKZmJXVjBZV1JoZEdFaU9uc2lablZzYkY5dVlXMWxJam9pVkdsbmFYTjBJRlJoWkdWemMyVWlMQ0p3YUc5dVpTSTZJaXN5TlRFNU1URXdNREF3TURJaUxDSnliMnhsSWpvaWRHVmhZMmhsY2lKOUxDSnliMnhsSWpvaVlYVjBhR1Z1ZEdsallYUmxaQ0lzSW1GaGJDSTZJbUZoYkRFaUxDSmhiWElpT2x0N0ltMWxkR2h2WkNJNkluQmhjM04zYjNKa0lpd2lkR2x0WlhOMFlXMXdJam94TnpreU16VXlNVEU0ZlYwc0luTmxjM05wYjI1ZmFXUWlPaUkyTmpKbU1EWTRaUzAwTWpabExUUm1PRGN0T1dFek9TMWhORGd4TnpNNU5EazJOMkVpTENKcGMxOWhibTl1ZVcxdmRYTWlPbVpoYkhObGZRLnRIVlNMT3QxNkVpdnBYenB5MWdhR2NDWmFJRmlzM3NkM056c25WWFZBdkdyQnJjMEVnNlNza2Vzc1BJWWZsVFVfUExiQlB0YzBnd0NKS2ZfcjNqZWN3IiwidG9rZW5fdHlwZSI6ImJlYXJlciIsImV4cGlyZXNfaW4iOjM2MDAsImV4cGlyZXNfYXQiOjE3OTIzNTU3MTgsInJlZnJlc2hfdG9rZW4iOiJna3diZHVndWx5eGciLCJ1c2VyIjp7ImlkIjoiNDI4ZjIyODgtYjVhZi00ZjgzLTk2OTgtMzE1ZGJiZDQxZjg0IiwiYXVkIjoiYXV0aGVudGljYXRlZCIsInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiZW1haWwiOiJ0ZWFjaGVyLnRpZ2lzdEBhcmVuZ3VhZGUuY29tIiwiZW1haWxfY29uZmlybWVkX2F0IjoiMjAyNi0xMC0xN1QwOTo1OTowOC4xMjAwMDNaIiwicGhvbmUiOiIiLCJjb25maXJtZWRfYXQiOiIyMDI2LTEwLTE3VDA5OjU5OjA4LjEyMDAwM1oiLCJsYXN0X3NpZ25faW5fYXQiOiIyMDI2LTEwLTE4VDE5OjM1OjE4LjE4MDIwNDE3M1oiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJmdWxsX25hbWUiOiJUaWdpc3QgVGFkZXNzZSIsInBob25lIjoiKzI1MTkxMTAwMDAwMiIsInJvbGUiOiJ0ZWFjaGVyIn0sImlkZW50aXRpZXMiOltdLCJjcmVhdGVkX2F0IjoiMjAyNi0xMC0xN1QwODowNToyMi4zMTg4NDhaIiwidXBkYXRlZF9hdCI6IjIwMjYtMTAtMThUMTk6MzU6MTguMjI2MDU3WiIsImlzX2Fub255bW91cyI6ZmFsc2V9LCJ3ZWFrX3Bhc3N3b3JkIjpudWxsfQ\u001b[22m\n\n\n  286 |     });\n  287 |\n> 288 |     const startRes = await request.post(`/api/live/${liveSession.id}/start`);\n      |                                    ^\n  289 |     expect(startRes.ok()).toBeTruthy();\n  290 |\n  291 |     // 3. Teacher gets token -> isHost = true, canPublish = true\n    at C:\\Users\\us\\greenwork\\tests\\e2e\\master-flows.spec.ts:288:36"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 13033,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-18T19:34:47.057Z",
+                      "startTime": "2026-10-25T09:49:29.010Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\us\\greenwork\\test-results\\master-flows-Ethiopia-Aren-bc1cc-neration-privileges-by-role-chromium\\error-context.md"
-                        }
-                      ]
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-c2d715954a790e67bb74",
+              "file": "master-flows.spec.ts",
+              "line": 25,
+              "column": 7
+            },
+            {
+              "title": "2. Visitor is redirected from protected routes to login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1828,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:49:42.261Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-60f1af4f6202de05fd58",
+              "file": "master-flows.spec.ts",
+              "line": 44,
+              "column": 7
+            },
+            {
+              "title": "3. Customer sign-up creates profile with customer role",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5706,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:49:44.120Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-e1cf1570d1532f617398",
+              "file": "master-flows.spec.ts",
+              "line": 59,
+              "column": 7
+            },
+            {
+              "title": "4. Customer places order with payment proof and snapshots recorded",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6194,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:49:49.854Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-37785745100aad36665f",
+              "file": "master-flows.spec.ts",
+              "line": 86,
+              "column": 7
+            },
+            {
+              "title": "5. Class session atomic registration and overcapacity protection",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4563,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:49:56.091Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-be60260733554d0202b6",
+              "file": "master-flows.spec.ts",
+              "line": 126,
+              "column": 7
+            },
+            {
+              "title": "6. Admin portal navigation and management modules",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12705,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:50:00.678Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-35b6ed3f299780fdcd65",
+              "file": "master-flows.spec.ts",
+              "line": 159,
+              "column": 7
+            },
+            {
+              "title": "7. Admin approves payment proof in unified queue",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8042,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:50:13.410Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-7abda45c19e5e8403bcf",
+              "file": "master-flows.spec.ts",
+              "line": 186,
+              "column": 7
+            },
+            {
+              "title": "8. Order lifecycle advancement to completed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12979,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:50:21.492Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-fa77cefb5c0e5eee681b",
+              "file": "master-flows.spec.ts",
+              "line": 213,
+              "column": 7
+            },
+            {
+              "title": "9. Teacher portal access and assigned workshops",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3279,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:50:34.496Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-23fb11a7430419cc57a7",
+              "file": "master-flows.spec.ts",
+              "line": 250,
+              "column": 7
+            },
+            {
+              "title": "10. LiveKit token generation privileges by role",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 20656,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:50:37.799Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
                 }
               ],
               "id": "7d9eaf825ac121dedd69-c4190752a0315c3a5bf8",
               "file": "master-flows.spec.ts",
               "line": 264,
+              "column": 7
+            },
+            {
+              "title": "11. Role enforcement and tenant isolation (RLS / API Guard)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3227,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-25T09:50:58.473Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7d9eaf825ac121dedd69-4a6a9435155fdef0e89e",
+              "file": "master-flows.spec.ts",
+              "line": 322,
               "column": 7
             }
           ]
@@ -187,11 +503,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-18T19:34:45.450Z",
-    "duration": 61771.907,
-    "expected": 0,
+    "startTime": "2026-10-25T09:49:16.307Z",
+    "duration": 105845.683,
+    "expected": 11,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }

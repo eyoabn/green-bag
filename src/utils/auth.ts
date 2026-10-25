@@ -1,4 +1,4 @@
-// Shared auth utility — usable in both Client Components and Server contexts.
+﻿// Shared auth utility — usable in both Client Components and Server contexts.
 // Do NOT add "use client" here; this file is imported from both sides.
 
 import { createClient } from "@/utils/supabase/client";
@@ -25,22 +25,9 @@ export { isValidUUID, toValidUUID };
  * Ensures the returned user has a valid UUID format id.
  */
 export async function getCurrentUser(): Promise<AppUser | null> {
-  // 1. Instant client hydration from localStorage
-  if (typeof window !== "undefined") {
-    try {
-      const stored = localStorage.getItem("arenguade_user");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && (parsed.id || parsed.email)) {
-          return parsed as AppUser;
-        }
-      }
-    } catch {}
-  }
-
   const supabase = createClient();
 
-  // 2. Try Supabase Auth getUser()
+  // 1. Always try Supabase Auth getUser() first — authoritative source of truth
   try {
     const { data } = await supabase.auth.getUser();
     if (data?.user) {
@@ -49,14 +36,12 @@ export async function getCurrentUser(): Promise<AppUser | null> {
       let fullName = u.user_metadata?.full_name || u.email?.split("@")[0] || "Valued User";
       let phone = u.user_metadata?.phone || "";
 
-      // Try fetching profile
       try {
         const { data: profile } = await supabase
           .from("profiles")
           .select("role, full_name, phone")
           .eq("id", u.id)
           .maybeSingle();
-
         if (profile) {
           if (profile.role) role = profile.role as AppUser["role"];
           if (profile.full_name) fullName = profile.full_name;
@@ -64,21 +49,14 @@ export async function getCurrentUser(): Promise<AppUser | null> {
         }
       } catch {}
 
-      const appUser: AppUser = {
-        id: u.id,
-        email: u.email || "",
-        full_name: fullName,
-        phone,
-        role,
-      };
-
+      const appUser: AppUser = { id: u.id, email: u.email || "", full_name: fullName, phone, role };
       if (typeof window !== "undefined") {
         localStorage.setItem("arenguade_user", JSON.stringify(appUser));
       }
       return appUser;
     }
   } catch (err) {
-    console.warn("Supabase auth.getUser() check skipped:", err);
+    console.warn("Supabase auth.getUser() skipped:", err);
   }
 
   // 2. Try Supabase Auth getSession()
@@ -99,10 +77,10 @@ export async function getCurrentUser(): Promise<AppUser | null> {
       return appUser;
     }
   } catch (err) {
-    console.warn("Supabase auth.getSession() check skipped:", err);
+    console.warn("Supabase auth.getSession() skipped:", err);
   }
 
-  // 3. Fallback to localStorage session
+  // 3. Last resort: stale localStorage (network unavailable)
   if (typeof window !== "undefined") {
     try {
       const stored = localStorage.getItem("arenguade_user");
@@ -110,14 +88,13 @@ export async function getCurrentUser(): Promise<AppUser | null> {
         const parsed = JSON.parse(stored);
         if (parsed && (parsed.id || parsed.email)) {
           const validId = isValidUUID(parsed.id) ? parsed.id : toValidUUID(parsed.email || parsed.id);
-          const appUser: AppUser = {
+          return {
             id: validId,
             email: parsed.email || "user@arenguade.et",
             full_name: parsed.full_name || parsed.fullName || parsed.email?.split("@")[0] || "Valued Customer",
             phone: parsed.phone || "",
             role: parsed.role || "customer",
           };
-          return appUser;
         }
       }
     } catch {}

@@ -15,6 +15,7 @@ import {
   PenTool,
   ImageOff
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export interface Product {
   id: string;
@@ -38,6 +39,7 @@ export interface Product {
 }
 
 export default function ProductsPage() {
+  const { t } = useLanguage();
   const [productsList, setProductsList] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(["All"]);
   const [loading, setLoading] = useState(true);
@@ -117,13 +119,13 @@ export default function ProductsPage() {
         <div className="max-w-7xl mx-auto px-6 sm:px-8">
           <div className="max-w-3xl">
             <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase flex items-center gap-1.5 mb-2">
-              <Sparkles size={14} /> Real Production Batches • Made in Addis Ababa
+              <Sparkles size={14} /> {t.catalog_badge}
             </span>
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 tracking-tight">
-              Our Packaging Portfolio
+              {t.catalog_heading}
             </h1>
             <p className="text-stone-600 text-lg mt-4 leading-relaxed">
-              Authentic paper bags and packaging manufactured at our Addis Ababa facility for Ethiopian coffee roasters, boutique fashion houses, hotels, and bakeries. Browse our work — then commission your own custom design.
+              {t.catalog_subheading}
             </p>
           </div>
 
@@ -134,7 +136,7 @@ export default function ProductsPage() {
                 <PenTool size={22} />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#1E3B2E]">Commission Your Own Branded Packaging</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#1E3B2E]">{t.catalog_cta_label}</p>
                 <p className="text-xs text-stone-600">Inspired by what you see? Submit your design or describe your vision — we manufacture your custom batch.</p>
               </div>
             </div>
@@ -142,7 +144,7 @@ export default function ProductsPage() {
               href="/design-submission" 
               className="bg-[#1E3B2E] text-white text-xs font-bold px-6 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors shrink-0 flex items-center gap-1.5"
             >
-              <span>Start Your Design</span>
+              <span>{t.catalog_cta_btn}</span>
               <ArrowRight size={13} />
             </Link>
           </div>
@@ -178,7 +180,7 @@ export default function ProductsPage() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
             <input
               type="text"
-              placeholder="Search portfolio..."
+              placeholder={t.catalog_search_placeholder}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -217,7 +219,7 @@ export default function ProductsPage() {
           ) : productsList.length === 0 ? (
             <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-stone-200 p-8">
               <Package size={40} className="mx-auto text-stone-300 mb-3" />
-              <h3 className="font-serif text-xl font-bold text-stone-800 mb-1">No portfolio items found</h3>
+              <h3 className="font-serif text-xl font-bold text-stone-800 mb-1">{t.catalog_empty}</h3>
               <p className="text-xs text-stone-500 max-w-sm mx-auto mb-4">
                 Try selecting &ldquo;All&rdquo; or clearing your search term.
               </p>
@@ -228,7 +230,7 @@ export default function ProductsPage() {
                 }}
                 className="px-5 py-2 rounded-full bg-[#1E3B2E] text-[#E0B382] text-xs font-bold cursor-pointer"
               >
-                Reset Filters
+                {t.catalog_reset}
               </button>
             </div>
           ) : (
@@ -353,10 +355,10 @@ export default function ProductsPage() {
         <div className="mt-16 bg-[#1E3B2E] rounded-3xl p-8 sm:p-10 text-center">
           <span className="text-xs font-bold tracking-widest text-[#E0B382] uppercase">Ready to Order?</span>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white mt-2 mb-3">
-            Get Your Own Custom Packaging
+            {t.catalog_bottom_heading}
           </h2>
           <p className="text-stone-400 text-sm max-w-xl mx-auto mb-6 leading-relaxed">
-            Every piece you see above was made for a specific client. We can manufacture the same quality — with your own brand, logo, and specifications.
+            {t.catalog_bottom_sub}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
@@ -364,13 +366,13 @@ export default function ProductsPage() {
               className="px-8 py-3.5 rounded-full bg-[#8C4B31] hover:bg-[#A3593B] text-white text-xs font-bold transition-all shadow-lg flex items-center gap-2"
             >
               <PenTool size={15} />
-              <span>Submit Your Design</span>
+              <span>{t.catalog_submit_design}</span>
             </Link>
             <Link
               href="/learn/schedule"
               className="px-8 py-3.5 rounded-full border border-stone-600 hover:border-stone-400 text-stone-300 hover:text-white text-xs font-bold transition-all flex items-center gap-2"
             >
-              <span>Explore Workshops</span>
+              <span>{t.catalog_workshops}</span>
               <ArrowRight size={14} />
             </Link>
           </div>

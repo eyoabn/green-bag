@@ -377,59 +377,68 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Upcoming Class Sessions */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">
-              Upcoming Classes Ready for Registration
-            </h4>
-
-            {workshopsLoading ? (
-              <div className="space-y-3">
-                <div className="app-card animate-pulse h-24" />
-                <div className="app-card animate-pulse h-24" />
+          {/* Upcoming Class Sessions (Configurable by Admin in Settings) */}
+          {(cmsContent?.classes_section_visible !== false) && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                  {cmsContent?.classes_section_title || "Upcoming Classes Ready for Registration"}
+                </h4>
+                {cmsContent?.classes_section_sub && (
+                  <p className="text-xs text-stone-500 mt-1">
+                    {cmsContent.classes_section_sub}
+                  </p>
+                )}
               </div>
-            ) : workshops.length > 0 ? (
-              workshops.map((session) => {
-                const isLive = session.type === "live";
-                const dateStr = session.starts_at 
-                  ? new Date(session.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                  : "Upcoming";
 
-                return (
-                  <div key={session.id} className="app-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          isLive ? "bg-[#1E3B2E] text-white" : "bg-[#8C4B31] text-white"
-                        }`}>
-                          {isLive ? "LiveKit Online" : "In-Person Studio"}
-                        </span>
-                        <span className="text-[11px] text-stone-500 flex items-center gap-1 font-medium">
-                          <Calendar size={12} /> {dateStr}
-                        </span>
+              {workshopsLoading ? (
+                <div className="space-y-3">
+                  <div className="app-card animate-pulse h-24" />
+                  <div className="app-card animate-pulse h-24" />
+                </div>
+              ) : workshops.length > 0 ? (
+                workshops.map((session) => {
+                  const isLive = session.type === "live";
+                  const dateStr = session.starts_at 
+                    ? new Date(session.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                    : "Upcoming";
+
+                  return (
+                    <div key={session.id} className="app-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            isLive ? "bg-[#1E3B2E] text-white" : "bg-[#8C4B31] text-white"
+                          }`}>
+                            {isLive ? "LiveKit Online" : "In-Person Studio"}
+                          </span>
+                          <span className="text-[11px] text-stone-500 flex items-center gap-1 font-medium">
+                            <Calendar size={12} /> {dateStr}
+                          </span>
+                        </div>
+                        <h4 className="font-serif text-base font-bold text-stone-900">{session.title}</h4>
+                        <p className="text-xs text-stone-500 mt-0.5">{session.location || "Addis Ababa"}</p>
                       </div>
-                      <h4 className="font-serif text-base font-bold text-stone-900">{session.title}</h4>
-                      <p className="text-xs text-stone-500 mt-0.5">{session.location || "Addis Ababa"}</p>
-                    </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0">
-                      <span className="font-bold text-[#8C4B31] text-sm">{formatPrice(session.price || 0)}</span>
-                      <Link 
-                        href="/learn/schedule"
-                        className="btn-primary touch-target text-xs py-2 px-5"
-                      >
-                        Register
-                      </Link>
+                      <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0">
+                        <span className="font-bold text-[#8C4B31] text-sm">{formatPrice(session.price || 0)}</span>
+                        <Link 
+                          href="/learn/schedule"
+                          className="btn-primary touch-target text-xs py-2 px-5"
+                        >
+                          Register
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="app-card text-center py-6 text-xs text-stone-500">
-                New sessions will be announced soon.
-              </div>
-            )}
-          </div>
+                  );
+                })
+              ) : (
+                <div className="app-card text-center py-6 text-xs text-stone-500">
+                  New sessions will be announced soon.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

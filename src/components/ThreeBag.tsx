@@ -20,7 +20,7 @@ function RealisticPaperBag() {
   return (
     <group
       ref={groupRef}
-      scale={1.05}
+      scale={0.90}
       position={[0, -0.05, 0]}
     >
       {/* Main Bag Body - Slimmer, realistic shopping bag proportions */}
@@ -169,7 +169,7 @@ export default function ThreeBagScene() {
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
         dpr={[1, 2]}
-        camera={{ position: [0, 0.2, 4.7], fov: 36 }}
+        camera={{ position: [0, 0.1, 5.0], fov: 35 }}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         style={{ width: "100%", height: "100%" }}
       >

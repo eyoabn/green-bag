@@ -19,15 +19,22 @@ function LoginFormContent() {
   const completeLogin = (user: AppUser) => {
     setLocalUser(user);
     const role = user.role;
+    let target = "/dashboard";
 
     if (returnTo) {
-      router.push(returnTo);
+      target = returnTo;
     } else if (role === "admin") {
-      router.push("/admin");
+      target = "/admin";
     } else if (role === "teacher") {
-      router.push("/teacher");
+      target = "/teacher";
     } else {
-      router.push("/dashboard");
+      target = "/dashboard";
+    }
+
+    if (typeof window !== "undefined") {
+      window.location.href = target;
+    } else {
+      router.push(target);
     }
   };
 

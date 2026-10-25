@@ -45,6 +45,9 @@ export default function AdminSettingsPage() {
   const [stat3Label, setStat3Label] = useState("Biodegradable Kraft");
   const [announcementText, setAnnouncementText] = useState("");
   const [announcementVisible, setAnnouncementVisible] = useState(false);
+  const [classesSectionTitle, setClassesSectionTitle] = useState("Upcoming Classes Ready for Registration");
+  const [classesSectionSub, setClassesSectionSub] = useState("Join our hands-on packaging and artisan print workshops");
+  const [classesSectionVisible, setClassesSectionVisible] = useState(true);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -89,6 +92,9 @@ export default function AdminSettingsPage() {
         setStat3Label(content.stat_3_label || "Biodegradable Kraft");
         setAnnouncementText(content.announcement_text || "");
         setAnnouncementVisible(Boolean(content.announcement_visible));
+        setClassesSectionTitle(content.classes_section_title ?? "Upcoming Classes Ready for Registration");
+        setClassesSectionSub(content.classes_section_sub ?? "Join our hands-on packaging and artisan print workshops");
+        setClassesSectionVisible(content.classes_section_visible !== false);
       }
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to load factory settings");
@@ -140,6 +146,9 @@ export default function AdminSettingsPage() {
             stat_3_label: stat3Label.trim(),
             announcement_text: announcementText.trim(),
             announcement_visible: announcementVisible,
+            classes_section_title: classesSectionTitle.trim(),
+            classes_section_sub: classesSectionSub.trim(),
+            classes_section_visible: classesSectionVisible,
           },
         }),
       });
@@ -540,6 +549,58 @@ export default function AdminSettingsPage() {
                       onChange={(e) => setAnnouncementText(e.target.value)}
                       className="w-full border border-amber-300 rounded-xl p-3 bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-400/30 text-xs"
                     />
+                  )}
+                </div>
+
+                {/* Admin Control for "Upcoming Classes Ready for Registration" Section */}
+                <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider">
+                        Homepage &quot;Upcoming Classes&quot; Section Control
+                      </h4>
+                      <p className="text-[11px] text-stone-500">
+                        Customize or toggle the public masterclasses registration banner on the homepage.
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-stone-700">
+                      <input
+                        type="checkbox"
+                        checked={classesSectionVisible}
+                        onChange={(e) => setClassesSectionVisible(e.target.checked)}
+                        className="w-4 h-4 rounded border-stone-300 text-[#1E3B2E]"
+                      />
+                      <span>Visible on Home</span>
+                    </label>
+                  </div>
+
+                  {classesSectionVisible && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
+                          Section Headline
+                        </label>
+                        <input
+                          type="text"
+                          value={classesSectionTitle}
+                          onChange={(e) => setClassesSectionTitle(e.target.value)}
+                          placeholder="Upcoming Classes Ready for Registration"
+                          className="w-full border border-stone-300 rounded-xl p-2.5 bg-white text-xs text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">
+                          Section Subtitle / Description
+                        </label>
+                        <input
+                          type="text"
+                          value={classesSectionSub}
+                          onChange={(e) => setClassesSectionSub(e.target.value)}
+                          placeholder="Join our hands-on packaging and artisan print workshops"
+                          className="w-full border border-stone-300 rounded-xl p-2.5 bg-white text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

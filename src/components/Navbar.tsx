@@ -19,7 +19,6 @@ import {
   Calendar
 } from "lucide-react";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
-import { useCart } from "@/context/CartContext";
 import NotificationBell from "@/components/NotificationBell";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -28,7 +27,6 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { t, toggleLang, lang } = useLanguage();
-  const { setIsCartOpen, totalItems } = useCart();
   const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
@@ -117,21 +115,6 @@ export default function Navbar() {
             >
               <Languages size={13} className="text-[#1E3B2E]" />
               <span className="font-bold text-[#1E3B2E]">{lang === "en" ? "አማርኛ" : "English"}</span>
-            </button>
-
-            {/* Shopping Cart Button */}
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="relative p-2 rounded-full bg-stone-200/60 hover:bg-stone-300/70 text-stone-700 border border-stone-300/40 transition-all flex items-center justify-center cursor-pointer"
-              aria-label="View Cart"
-              title="View Packaging Cart"
-            >
-              <ShoppingBag size={16} className="text-[#1E3B2E]" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#8C4B31] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
-                  {totalItems > 99 ? "99+" : totalItems}
-                </span>
-              )}
             </button>
 
             {/* Notification Bell for logged-in user */}
@@ -229,19 +212,9 @@ export default function Navbar() {
                 </Link>
               </div>
             )}
-
-            {/* Primary CTA: Custom Commission Studio */}
-            <Link
-              href="/design-submission"
-              className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 group"
-            >
-              <Sparkles size={13} className="text-[#E0B382]" />
-              <span>Commission Custom Bags</span>
-              <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-            </Link>
           </div>
 
-          {/* Mobile Right Controls: Language Toggle + Cart + Hamburger */}
+          {/* Mobile Right Controls: Language Toggle + Notification + Hamburger */}
           <div className="flex lg:hidden items-center gap-1.5 sm:gap-2">
             {/* Quick Language Toggle on Mobile Header */}
             <button
@@ -255,19 +228,6 @@ export default function Navbar() {
             </button>
 
             {user && <NotificationBell />}
-
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="relative p-2 rounded-full text-stone-700 hover:bg-stone-200/60 transition-colors cursor-pointer"
-              aria-label="View Cart"
-            >
-              <ShoppingBag size={19} className="text-[#1E3B2E]" />
-              {totalItems > 0 && (
-                <span className="absolute top-0 right-0 bg-[#8C4B31] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {totalItems > 99 ? "99+" : totalItems}
-                </span>
-              )}
-            </button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -414,16 +374,6 @@ export default function Navbar() {
                 </Link>
               </div>
             )}
-
-            <div className="pt-1">
-              <Link
-                href="/products"
-                onClick={() => setMobileMenuOpen(false)}
-                className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold px-4 py-2.5 rounded-xl block text-center transition-colors shadow-sm"
-              >
-                Order Custom Bags
-              </Link>
-            </div>
           </div>
         )}
       </div>

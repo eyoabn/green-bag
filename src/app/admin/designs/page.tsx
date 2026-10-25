@@ -18,7 +18,11 @@ import {
   AlertCircle,
   MessageSquare,
   DollarSign,
-  Filter
+  Filter,
+  ShieldCheck,
+  Layers,
+  Truck,
+  Building2
 } from "lucide-react";
 
 interface DesignItem {
@@ -27,6 +31,12 @@ interface DesignItem {
   title: string;
   file_path: string;
   description: string;
+  quantity?: string;
+  dimensions?: string;
+  gsm?: number;
+  handle_type?: string;
+  print_finish?: string;
+  specs_json?: any;
   admin_reply?: string | null;
   quoted_price: number | null;
   status: "new" | "reviewing" | "quoted" | "accepted" | "declined";
@@ -50,6 +60,15 @@ const STATUS_FILTERS = [
   { id: "declined", label: "Declined" },
 ] as const;
 
+const MANUFACTURING_STAGES = [
+  { id: "payment_verified", label: "1. Deposit Verified", badge: "Payment Confirmed" },
+  { id: "plate_engraving", label: "2. Platemaking & Inks", badge: "Engraving Plates" },
+  { id: "printing_and_cutting", label: "3. Printing & Die-Cut", badge: "Rotary Press" },
+  { id: "assembly_and_qc", label: "4. Assembly & QC", badge: "Bag Stringing & QC" },
+  { id: "ready_for_delivery", label: "5. Ready / Dispatched", badge: "Ready for Delivery" },
+  { id: "delivered", label: "6. Consignment Delivered", badge: "Fulfillment Complete" },
+];
+
 export default function AdminDesignsPage() {
   const [designs, setDesigns] = useState<DesignItem[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
@@ -65,6 +84,9 @@ export default function AdminDesignsPage() {
   const [inlineFiles, setInlineFiles] = useState<Record<string, string>>({});
   const [loadingFileId, setLoadingFileId] = useState<string | null>(null);
 
+  // Payment proof viewer state
+  const [paymentProofUrls, setPaymentProofUrls] = useState<Record<string, string>>({});
+
   const loadDesigns = async () => {
     setLoading(true);
     setErrorMsg(null);
@@ -77,7 +99,6 @@ export default function AdminDesignsPage() {
       const loadedDesigns: DesignItem[] = data.designs || [];
       setDesigns(loadedDesigns);
 
-      // Initialize inputs
       const quotes: Record<string, string> = {};
       const replies: Record<string, string> = {};
       loadedDesigns.forEach((d) => {
@@ -133,6 +154,47 @@ export default function AdminDesignsPage() {
     }
   };
 
+  const handleVerifyPayment = async (id: string) => {
+    if (!confirm("Confirm and verify this customer bank transfer deposit?")) return;
+    setActionLoadingId(id);
+    try {
+      const res = await fetch(`/api/designs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify_payment" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to verify deposit.");
+
+      await loadDesigns();
+      alert("Payment deposit successfully verified! Customer notified and production stage set to Verified.");
+    } catch (err: any) {
+      alert(err.message || "Failed to verify payment deposit.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleAdvanceStage = async (id: string, stage: string) => {
+    setActionLoadingId(id);
+    try {
+      const res = await fetch(`/api/designs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "advance_stage", stage }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to advance stage.");
+
+      await loadDesigns();
+      alert(`Manufacturing stage advanced to "${stage}"! Customer notified.`);
+    } catch (err: any) {
+      alert(err.message || "Failed to advance manufacturing stage.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleCreateOrderFromDesign = async (id: string) => {
     if (!confirm("Create a pre-filled factory manufacturing order from this design quote?")) return;
     setActionLoadingId(id);
@@ -158,7 +220,6 @@ export default function AdminDesignsPage() {
 
   const toggleInlineFile = async (designId: string, path: string) => {
     if (inlineFiles[designId]) {
-      // Toggle off
       setInlineFiles((prev) => {
         const next = { ...prev };
         delete next[designId];
@@ -183,6 +244,29 @@ export default function AdminDesignsPage() {
     }
   };
 
+  const togglePaymentProof = async (designId: string, path: string) => {
+    if (paymentProofUrls[designId]) {
+      setPaymentProofUrls((prev) => {
+        const next = { ...prev };
+        delete next[designId];
+        return next;
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/storage/signed-url?bucket=payment-proofs&path=${encodeURIComponent(path)}`);
+      const data = await res.json();
+      if (res.ok && data.signedUrl) {
+        setPaymentProofUrls((prev) => ({ ...prev, [designId]: data.signedUrl }));
+      } else {
+        alert(data.error || "Could not retrieve payment proof screenshot.");
+      }
+    } catch (err: any) {
+      alert("Error loading payment slip: " + err.message);
+    }
+  };
+
   return (
     <div className="flex flex-col max-w-6xl mx-auto space-y-8 pb-12">
       
@@ -192,10 +276,10 @@ export default function AdminDesignsPage() {
           Bespoke Production & Quotations
         </span>
         <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
-          Customer Design Submissions
+          Customer Design Submissions & B2B Orders
         </h1>
         <p className="text-xs text-stone-500 mt-1">
-          Inspect client dielines inline, provide quotes, communicate technical notes, and convert approved designs into active factory orders.
+          Inspect client CAD artwork, quote binding prices in ETB, verify bank deposit screenshots, and advance live factory manufacturing stages.
         </p>
       </div>
 
@@ -205,7 +289,7 @@ export default function AdminDesignsPage() {
           <button
             key={f.id}
             onClick={() => setSelectedFilter(f.id)}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
               selectedFilter === f.id
                 ? "bg-[#1E3B2E] text-white shadow-sm"
                 : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
@@ -248,8 +332,17 @@ export default function AdminDesignsPage() {
               parsedSpec = { notes: design.description };
             }
 
+            let specsObj: any = {};
+            if (design.specs_json) {
+              specsObj = typeof design.specs_json === "string" ? JSON.parse(design.specs_json) : design.specs_json;
+            }
+
             const isPdf = design.file_path?.toLowerCase().endsWith(".pdf");
             const fileUrl = inlineFiles[design.id];
+            const paymentProofUrl = paymentProofUrls[design.id];
+            const isPaymentSubmitted = Boolean(specsObj.payment_submitted);
+            const isPaymentVerified = Boolean(specsObj.payment_verified);
+            const currentStage = specsObj.production_stage || (design.status === "accepted" ? "quote_accepted" : "new");
 
             return (
               <div
@@ -278,6 +371,12 @@ export default function AdminDesignsPage() {
                       >
                         {design.status}
                       </span>
+                      {isPaymentVerified && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1E3B2E] text-white flex items-center gap-1">
+                          <ShieldCheck size={11} />
+                          <span>Deposit Confirmed</span>
+                        </span>
+                      )}
                     </div>
 
                     <h3 className="font-serif text-2xl font-bold text-stone-900">
@@ -291,7 +390,7 @@ export default function AdminDesignsPage() {
                   <div className="text-right">
                     <span className="text-xs text-stone-500 block">Target Quantity</span>
                     <span className="font-serif text-2xl font-bold text-[#8C4B31]">
-                      {parsedSpec.quantity ? Number(parsedSpec.quantity).toLocaleString() : "Custom"} Units
+                      {design.quantity || (parsedSpec.quantity ? Number(parsedSpec.quantity).toLocaleString() : "Custom")} Units
                     </span>
                     <span className="text-[10px] text-stone-400 block mt-0.5">
                       Submitted on {new Date(design.created_at).toLocaleDateString()}
@@ -303,19 +402,19 @@ export default function AdminDesignsPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200">
                     <span className="text-stone-400 text-[10px] uppercase font-bold block">Dimensions</span>
-                    <span className="font-bold text-stone-900">{parsedSpec.dimensions || "Standard"}</span>
+                    <span className="font-bold text-stone-900">{design.dimensions || parsedSpec.dimensions || "Standard"}</span>
                   </div>
                   <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200">
                     <span className="text-stone-400 text-[10px] uppercase font-bold block">Paper Weight</span>
-                    <span className="font-bold text-stone-900">{parsedSpec.paperWeight || "220 GSM"}</span>
-                  </div>
-                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200">
-                    <span className="text-stone-400 text-[10px] uppercase font-bold block">Paper Shade</span>
-                    <span className="font-bold text-stone-900">{parsedSpec.paperShade || "Artisan Kraft"}</span>
+                    <span className="font-bold text-stone-900">{design.gsm ? `${design.gsm} GSM` : parsedSpec.paperWeight || "220 GSM"}</span>
                   </div>
                   <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200">
                     <span className="text-stone-400 text-[10px] uppercase font-bold block">Handle Type</span>
-                    <span className="font-bold text-stone-900">{parsedSpec.handleType || "Twisted Cord"}</span>
+                    <span className="font-bold text-stone-900">{design.handle_type || parsedSpec.handleType || "Twisted Cord"}</span>
+                  </div>
+                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200">
+                    <span className="text-stone-400 text-[10px] uppercase font-bold block">Print Finish</span>
+                    <span className="font-bold text-stone-900">{design.print_finish || parsedSpec.printFinish || "Soy Screenprint"}</span>
                   </div>
                 </div>
 
@@ -323,7 +422,7 @@ export default function AdminDesignsPage() {
                 <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex-1">
                     <p className="font-bold text-stone-900 mb-0.5">Customer Instructions:</p>
-                    <p className="text-stone-600 italic leading-relaxed">&ldquo;{parsedSpec.notes || design.description}&rdquo;</p>
+                    <p className="text-stone-600 italic leading-relaxed">&ldquo;{parsedSpec.notes || design.description || "Specifications provided."}&rdquo;</p>
                   </div>
 
                   {design.file_path && (
@@ -331,16 +430,16 @@ export default function AdminDesignsPage() {
                       <button
                         onClick={() => toggleInlineFile(design.id, design.file_path)}
                         disabled={loadingFileId === design.id}
-                        className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 text-xs font-bold transition-colors flex items-center gap-1.5"
+                        className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
                       >
                         {fileUrl ? <EyeOff size={14} className="text-stone-600" /> : <Eye size={14} className="text-[#1E3B2E]" />}
-                        <span>{fileUrl ? "Hide Inline File" : "Show File Inline"}</span>
+                        <span>{fileUrl ? "Hide Dieline File" : "Inspect Dieline"}</span>
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Inline File Viewer */}
+                {/* Inline Dieline File Viewer */}
                 {fileUrl && (
                   <div className="p-4 bg-stone-900 rounded-2xl border border-stone-800 space-y-3">
                     <div className="flex items-center justify-between text-xs text-stone-300">
@@ -356,7 +455,7 @@ export default function AdminDesignsPage() {
                         className="text-emerald-400 hover:underline flex items-center gap-1 font-bold"
                       >
                         <Download size={13} />
-                        <span>Open Raw File</span>
+                        <span>Open Raw Asset</span>
                       </a>
                     </div>
 
@@ -379,6 +478,105 @@ export default function AdminDesignsPage() {
                   </div>
                 )}
 
+                {/* B2B BANK PAYMENT VERIFICATION MODULE */}
+                {isPaymentSubmitted && (
+                  <div className="p-5 bg-amber-50/80 rounded-2xl border border-amber-300 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Building2 size={16} className="text-[#8C4B31]" />
+                          <h4 className="font-bold text-xs text-amber-950 uppercase tracking-wider">
+                            Customer Bank Transfer Payment Slip
+                          </h4>
+                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                            isPaymentVerified ? "bg-emerald-600 text-white" : "bg-amber-200 text-amber-900 animate-pulse"
+                          }`}>
+                            {isPaymentVerified ? "Deposit Verified" : "Verification Required"}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-amber-900 mt-1">
+                          Reference: <strong className="font-mono">{specsObj.payment_ref || "None specified"}</strong> • Submitted: {specsObj.payment_submitted_at ? new Date(specsObj.payment_submitted_at).toLocaleString() : "Recently"}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {specsObj.payment_proof_url && (
+                          <button
+                            type="button"
+                            onClick={() => togglePaymentProof(design.id, specsObj.payment_proof_url)}
+                            className="px-3.5 py-2 rounded-xl bg-white hover:bg-stone-100 border border-amber-300 text-xs font-bold text-stone-800 flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Eye size={13} className="text-[#8C4B31]" />
+                            <span>{paymentProofUrl ? "Hide Slip" : "View Bank Screenshot"}</span>
+                          </button>
+                        )}
+
+                        {!isPaymentVerified && (
+                          <button
+                            type="button"
+                            disabled={actionLoadingId === design.id}
+                            onClick={() => handleVerifyPayment(design.id)}
+                            className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <CheckCircle2 size={14} />
+                            <span>Confirm & Approve Deposit</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Inline Payment Screenshot Preview */}
+                    {paymentProofUrl && (
+                      <div className="p-3 bg-stone-900 rounded-xl border border-stone-800 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] text-stone-300">
+                          <span className="font-bold">Bank Payment Confirmation Slip</span>
+                          <a href={paymentProofUrl} target="_blank" rel="noreferrer" download className="text-emerald-400 hover:underline">
+                            Open Full Resolution
+                          </a>
+                        </div>
+                        <div className="max-h-72 overflow-hidden flex items-center justify-center bg-black/60 rounded-lg p-2">
+                          <img src={paymentProofUrl} alt="Bank Deposit Slip" className="max-h-68 w-auto object-contain rounded" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* MANUFACTURING STAGES ADVANCEMENT CONTROLS */}
+                {design.status === "accepted" && (
+                  <div className="p-5 bg-white rounded-2xl border border-stone-200 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Layers size={16} className="text-[#1E3B2E]" />
+                        <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider">
+                          Advance Live Factory Production Stage
+                        </h4>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#8C4B31] bg-[#8C4B31]/10 px-2.5 py-0.5 rounded-full">
+                        Current: {currentStage}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {MANUFACTURING_STAGES.map((st) => (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => handleAdvanceStage(design.id, st.id)}
+                          disabled={actionLoadingId === design.id}
+                          className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                            currentStage === st.id
+                              ? "bg-[#1E3B2E] text-white shadow-xs"
+                              : "bg-[#FAF7F2] text-stone-700 hover:bg-stone-200 border border-stone-300"
+                          }`}
+                        >
+                          {st.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Admin Quotation, Feedback, and Status Controls */}
                 <div className="p-5 bg-[#FAF7F2] rounded-2xl border border-stone-200 space-y-4">
                   
@@ -386,7 +584,7 @@ export default function AdminDesignsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
-                        Quoted Price (ETB):
+                        Binding Quoted Price (ETB):
                       </label>
                       <div className="relative">
                         <input
@@ -401,7 +599,7 @@ export default function AdminDesignsPage() {
 
                     <div>
                       <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
-                        Change Workflow Status:
+                        Workflow State:
                       </label>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {(["new", "reviewing", "quoted", "accepted", "declined"] as const).map((st) => (
@@ -410,7 +608,7 @@ export default function AdminDesignsPage() {
                             type="button"
                             onClick={() => handleUpdateStatusAndQuote(design.id, st)}
                             disabled={actionLoadingId === design.id}
-                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all uppercase ${
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all uppercase cursor-pointer ${
                               design.status === st
                                 ? "bg-stone-900 text-white shadow-xs"
                                 : "bg-white text-stone-700 border border-stone-300 hover:bg-stone-100"
@@ -442,7 +640,7 @@ export default function AdminDesignsPage() {
                     <button
                       onClick={() => handleUpdateStatusAndQuote(design.id)}
                       disabled={actionLoadingId === design.id}
-                      className="px-5 py-2.5 rounded-xl bg-[#8C4B31] hover:bg-[#6D3823] text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5"
+                      className="px-5 py-2.5 rounded-xl bg-[#8C4B31] hover:bg-[#6D3823] text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
                     >
                       <Check size={14} />
                       <span>Save Quote & Notify Customer</span>
@@ -462,7 +660,7 @@ export default function AdminDesignsPage() {
                         <button
                           onClick={() => handleCreateOrderFromDesign(design.id)}
                           disabled={actionLoadingId === design.id || !design.quoted_price}
-                          className="px-5 py-2.5 rounded-xl bg-[#1E3B2E] hover:bg-emerald-900 disabled:opacity-40 text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5"
+                          className="px-5 py-2.5 rounded-xl bg-[#1E3B2E] hover:bg-emerald-900 disabled:opacity-40 text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
                           title={!design.quoted_price ? "Enter a quoted price before converting to order" : ""}
                         >
                           <ShoppingBag size={14} />

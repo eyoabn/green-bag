@@ -1163,14 +1163,14 @@ function DesignSubmissionForm() {
               </div>
 
               {/* Mockup Canvas */}
-              <div className="relative w-full h-80 rounded-2xl bg-stone-100 border border-stone-200/80 flex flex-col items-center justify-center p-6 overflow-hidden shadow-inner">
+              <div className="relative w-full h-96 rounded-2xl bg-gradient-to-b from-stone-100 to-stone-200/70 border border-stone-200/80 flex flex-col items-center justify-center p-6 overflow-hidden shadow-inner">
                 
                 {/* Background Shadow */}
-                <div className="absolute bottom-4 w-48 h-4 bg-black/15 blur-md rounded-full" />
+                <div className="absolute bottom-6 w-52 h-4 bg-black/20 blur-md rounded-full pointer-events-none" />
 
                 {/* Bag Body Simulation */}
                 <div
-                  className="relative w-44 h-56 rounded-md shadow-lg border flex flex-col items-center justify-between p-4 transition-all duration-300"
+                  className="relative w-48 sm:w-52 h-68 rounded-md shadow-2xl border flex flex-col items-center justify-between p-4 transition-all duration-300"
                   style={{
                     backgroundColor: selectedColorMeta.bgHex,
                     borderColor: selectedColorMeta.borderHex,
@@ -1178,7 +1178,8 @@ function DesignSubmissionForm() {
                 >
                   {/* Handle Graphic */}
                   {handleType !== "No Handles (Fold-Over)" && (
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-14 border-4 rounded-t-full transition-all pointer-events-none"
+                    <div 
+                      className="absolute -top-11 left-1/2 -translate-x-1/2 w-24 h-16 border-4 rounded-t-full transition-all pointer-events-none drop-shadow-xs"
                       style={{
                         borderColor: handleType.includes("Cotton")
                           ? "#E8E2D9"
@@ -1191,35 +1192,48 @@ function DesignSubmissionForm() {
                   )}
 
                   {/* Top Fold / Gusset Line */}
-                  <div className="w-full h-2 border-b border-black/15 opacity-50" />
+                  <div className="w-full h-2 border-b border-black/15 opacity-60" />
 
-                  {/* Logo or Brand Placement Preview */}
-                  <div className="text-center w-full px-2">
-                    {filePreview ? (
-                      <img
-                        src={filePreview}
-                        alt="Logo"
-                        className="max-h-16 max-w-full mx-auto object-contain drop-shadow-xs"
-                      />
-                    ) : (
-                      <div className="border border-dashed border-black/20 rounded-lg p-2.5 bg-black/5">
-                        <span className={`font-serif text-xs font-bold block truncate drop-shadow-xs ${selectedColorMeta.textClass}`}>
-                          {title.trim() || "Your Brand Logo"}
-                        </span>
-                        <span className="text-[9px] uppercase tracking-wider block opacity-70">
-                          {printFinish.split(" ")[0]}
-                        </span>
+                  {/* Complete Center Brand & Typography Placement (Logo + Brand Name + Finish) */}
+                  <div className="text-center w-full px-2 my-auto flex flex-col items-center justify-center gap-1.5">
+                    {filePreview && (
+                      <div className="p-1 rounded-md bg-white/40 backdrop-blur-xs border border-white/40 shadow-xs max-w-full">
+                        <img
+                          src={filePreview}
+                          alt="Brand Logo"
+                          className="max-h-14 max-w-full mx-auto object-contain drop-shadow-xs"
+                        />
                       </div>
                     )}
+
+                    <div className="w-full">
+                      <span className={`font-serif text-sm font-black block tracking-wide truncate drop-shadow-xs ${selectedColorMeta.textClass}`}>
+                        {title.trim() || "Brand Name Here"}
+                      </span>
+                      <span className={`text-[10px] uppercase font-bold tracking-widest block opacity-75 mt-0.5 ${selectedColorMeta.textClass}`}>
+                        {printFinish.split(" ")[0]} Finish
+                      </span>
+                    </div>
+
+                    <div className="mt-1 px-2 py-0.5 rounded-full bg-black/10 text-[9px] font-semibold tracking-wider text-black/70 flex items-center gap-1">
+                      <span>Addis Ababa Plant</span>
+                      <span>•</span>
+                      <span>100% Recyclable</span>
+                    </div>
                   </div>
 
-                  {/* Bottom Gusset Indicator */}
-                  <div className="w-full flex justify-between items-center text-[9px] text-black/50 font-mono pt-2 border-t border-black/10">
+                  {/* Bottom Gusset & Technical Specs Indicator */}
+                  <div className="w-full flex justify-between items-center text-[10px] text-black/60 font-mono font-bold pt-2 border-t border-black/15">
                     <span>{gsm} GSM</span>
                     <span>{activeDimensions.split(" ")[0]}</span>
                   </div>
                 </div>
 
+                {/* Technical Floating Badge Details */}
+                <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between text-[10px] text-stone-500 font-medium px-2">
+                  <span className="truncate max-w-[120px]">{selectedColorMeta.name}</span>
+                  <span className="truncate max-w-[140px]">{handleType.split(" ")[0]}</span>
+                </div>
               </div>
 
               {/* Dynamic Quotation Card */}

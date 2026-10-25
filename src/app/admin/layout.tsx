@@ -21,7 +21,8 @@ import {
   CheckCircle2,
   Settings,
   User,
-  History
+  History,
+  Database
 } from "lucide-react";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import { createClient } from "@/utils/supabase/client";
@@ -164,8 +165,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/users", label: "Users & Staff", icon: Users },
     { href: "/admin/designs", label: "Design Submissions", icon: PenTool },
     { href: "/admin/bank-accounts", label: "Banking & Settlement", icon: CreditCard },
+    { href: "/admin/database", label: "Database Monitor", icon: Database },
     { href: "/admin/audit", label: "Audit Log & History", icon: History },
-    { href: "/admin/settings", label: "Factory Settings", icon: Settings },
+    { href: "/admin/settings", label: "Factory & CMS Settings", icon: Settings },
   ];
 
   return (

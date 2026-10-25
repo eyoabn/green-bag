@@ -204,6 +204,28 @@ export default function ProductsPage() {
           )}
         </div>
 
+        {/* B2B Client Deliverable Notice */}
+        <div className="bg-[#1E3B2E]/5 border border-[#1E3B2E]/20 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <span className="block font-bold text-xs text-stone-900">Factory Deliverables & Client Showcase</span>
+              <p className="text-xs text-stone-600 mt-0.5 leading-relaxed">
+                Every packaging model shown below was custom-manufactured for specific Ethiopian businesses and coffee brands. Want this packaging structure branded with <em>your company&apos;s logo and custom dimensions</em>?
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/design-submission"
+            className="whitespace-nowrap px-5 py-2.5 rounded-xl bg-[#8C4B31] hover:bg-[#A3593B] text-white text-xs font-bold transition-all shadow-xs shrink-0 self-start sm:self-auto flex items-center gap-1.5"
+          >
+            <span>Commission Custom Batch</span>
+            <ArrowRight size={13} />
+          </Link>
+        </div>
+
         {/* Portfolio Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-2">
           {loading ? (
@@ -312,7 +334,7 @@ export default function ProductsPage() {
                       href={`/products/${product.id}`}
                       className="px-4 py-2 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all flex items-center gap-1.5"
                     >
-                      <span>View Details</span>
+                      <span>View Showcase</span>
                       <ArrowRight size={12} />
                     </Link>
                   </div>

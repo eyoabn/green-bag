@@ -147,8 +147,8 @@ export async function PATCH(
         .select("role")
         .eq("id", body.teacher_id)
         .single();
-      if (!newTeacher || newTeacher.role !== "teacher") {
-        return NextResponse.json({ error: "Assigned teacher must have the role 'teacher'." }, { status: 400 });
+      if (!newTeacher || (newTeacher.role !== "teacher" && newTeacher.role !== "admin")) {
+        return NextResponse.json({ error: "Assigned teacher must have the role 'teacher' or 'admin'." }, { status: 400 });
       }
     }
 

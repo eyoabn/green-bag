@@ -9,7 +9,8 @@ import {
   Check, 
   AlertCircle, 
   Lock,
-  Power
+  Power,
+  Trash2
 } from "lucide-react";
 import { getCurrentUser, AppUser } from "@/utils/auth";
 import DataTable, { DataTableColumn } from "@/components/DataTable";
@@ -145,6 +146,33 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleDeleteUser = async (user: PlatformUser) => {
+    if (currentUser?.id === user.id) {
+      alert("Administrators cannot delete their own account.");
+      return;
+    }
+
+    const confirmMsg = `Are you sure you want to permanently delete user "${user.full_name}" (${user.email})? This will unassign them from any teaching sessions and remove their profile.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setActionSuccess("");
+    try {
+      const res = await fetch(`/api/admin/users?userId=${encodeURIComponent(user.id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionSuccess(`User ${user.full_name} (${user.email}) deleted successfully.`);
+        setTimeout(() => setActionSuccess(""), 4000);
+        fetchUsers();
+      } else {
+        alert(data.error || "Failed to delete user account.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to delete user account.");
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -274,6 +302,29 @@ export default function AdminUsersPage() {
           {user.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}
         </span>
       ),
+    },
+    {
+      header: "Actions",
+      cell: (user) => {
+        const isSelf = currentUser?.id === user.id;
+        return (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleDeleteUser(user)}
+              disabled={isSelf}
+              title={isSelf ? "You cannot delete your own admin account" : `Permanently delete user ${user.full_name}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                isSelf
+                  ? "text-stone-300 opacity-40 cursor-not-allowed"
+                  : "text-red-600 hover:text-white bg-red-50 hover:bg-red-600 border border-red-200 hover:border-red-600 cursor-pointer"
+              }`}
+            >
+              <Trash2 size={13} />
+              <span>Delete</span>
+            </button>
+          </div>
+        );
+      },
     },
   ];
 

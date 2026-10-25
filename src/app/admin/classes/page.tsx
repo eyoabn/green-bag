@@ -117,11 +117,23 @@ export default function AdminClassesPage() {
 
   const loadTeachers = async () => {
     try {
-      const res = await fetch("/api/admin/users?role=teacher&pageSize=100");
-      const data = await res.json();
-      if (res.ok && data.users) {
-        setTeachers(data.users);
-      }
+      const [teacherRes, adminRes] = await Promise.all([
+        fetch("/api/admin/users?role=teacher&pageSize=100"),
+        fetch("/api/admin/users?role=admin&pageSize=100")
+      ]);
+      const teacherData = await teacherRes.json();
+      const adminData = await adminRes.json();
+      const combined = [
+        ...(teacherData.users || []),
+        ...(adminData.users || [])
+      ];
+      // Deduplicate by id
+      const unique: TeacherOption[] = Array.from(new Map(combined.map(u => [u.id, u])).values()).map((u: any) => ({
+        id: u.id,
+        full_name: u.full_name,
+        email: u.email,
+      }));
+      setTeachers(unique);
     } catch (err) {
       console.warn("Failed to load teacher list:", err);
     }
@@ -468,10 +480,42 @@ export default function AdminClassesPage() {
                         <Clock size={13} className="text-stone-400" />
                         <span>{formatSchedule(session.starts_at, session.ends_at)}</span>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Users size={13} className="text-stone-400" />
-                        <span>Teacher: <strong className="text-stone-800">{teacherName}</strong></span>
-                      </span>
+                      <div className="inline-flex items-center gap-1.5 bg-stone-100/90 px-2.5 py-1 rounded-xl">
+                        <Users size={12} className="text-[#1E3B2E]" />
+                        <span className="text-[11px] font-semibold text-stone-500">Instructor:</span>
+                        <select
+                          value={session.teacher_id || session.teacher?.id || ""}
+                          onChange={async (e) => {
+                            const newTeacherId = e.target.value;
+                            if (!newTeacherId) return;
+                            try {
+                              const res = await fetch(`/api/classes/${session.id}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ teacher_id: newTeacherId }),
+                              });
+                              if (res.ok) {
+                                setSuccessMsg(`Assigned instructor updated for "${session.title}"!`);
+                                setTimeout(() => setSuccessMsg(null), 3000);
+                                loadClasses();
+                              } else {
+                                const d = await res.json();
+                                alert(d.error || "Failed to assign teacher");
+                              }
+                            } catch (err: any) {
+                              alert(err.message || "Failed to update teacher");
+                            }
+                          }}
+                          className="bg-transparent font-bold text-xs text-stone-900 border-none focus:outline-none cursor-pointer"
+                        >
+                          <option value="">{teacherName}</option>
+                          {teachers.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.full_name} ({t.email})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                       <span>
                         Location: <strong className="text-stone-800">{session.location}</strong>
                       </span>

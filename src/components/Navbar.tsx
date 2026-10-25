@@ -230,12 +230,13 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Primary CTA */}
+            {/* Primary CTA: Custom Commission Studio */}
             <Link
-              href="/products"
+              href="/design-submission"
               className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-semibold px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 group"
             >
-              <span>Order Bags</span>
+              <Sparkles size={13} className="text-[#E0B382]" />
+              <span>Commission Custom Bags</span>
               <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>

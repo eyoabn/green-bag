@@ -252,3 +252,64 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: err.message || "Failed to provision user" }, { status });
   }
 }
+
+// DELETE /api/admin/users - Permanently delete / remove a user from the platform
+export async function DELETE(request: NextRequest) {
+  try {
+    const admin = await requireRole(["admin"]);
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return NextResponse.json({ error: "User ID is required." }, { status: 400 });
+    }
+
+    if (userId === admin.id) {
+      return NextResponse.json(
+        { error: "Administrators cannot delete their own account." },
+        { status: 403 }
+      );
+    }
+
+    // 1. Check if user exists
+    const userRes = await pool.query("SELECT id, email, full_name, role FROM public.profiles WHERE id = $1", [userId]);
+    if (userRes.rows.length === 0) {
+      return NextResponse.json({ error: "User not found in system." }, { status: 404 });
+    }
+    const targetUser = userRes.rows[0];
+
+    // 2. Unassign from any class sessions where they are the instructor
+    await pool.query("UPDATE public.class_sessions SET teacher_id = NULL WHERE teacher_id = $1", [userId]);
+
+    // 3. Clean up notifications for this user
+    await pool.query("DELETE FROM public.notifications WHERE user_id = $1", [userId]);
+
+    // 4. Delete profile
+    await pool.query("DELETE FROM public.profiles WHERE id = $1", [userId]);
+
+    // 5. Delete from auth.users (if present)
+    await pool.query("DELETE FROM auth.users WHERE id = $1", [userId]);
+
+    // 6. Log audit event
+    await logAuditEvent({
+      actorId: admin.id,
+      action: "DELETE_USER",
+      entity: "profiles",
+      entityId: userId,
+      metadata: {
+        email: targetUser.email,
+        fullName: targetUser.full_name,
+        role: targetUser.role,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `User ${targetUser.full_name} (${targetUser.email}) removed successfully.`,
+    });
+  } catch (err: any) {
+    console.error("Delete user error:", err);
+    const status = err.status || 500;
+    return NextResponse.json({ error: err.message || "Failed to delete user." }, { status });
+  }
+}

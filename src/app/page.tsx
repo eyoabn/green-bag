@@ -57,6 +57,7 @@ export default function Home() {
   const [workshopsLoading, setWorkshopsLoading] = useState(true);
   const [announcement, setAnnouncement] = useState<{ text: string; visible: boolean } | null>(null);
   const [heroContent, setHeroContent] = useState<{ headline?: string; subline?: string }>({});
+  const [cmsContent, setCmsContent] = useState<any>({});
 
   useEffect(() => {
     // 1. Device check for 3D hero
@@ -110,6 +111,7 @@ export default function Home() {
           });
           // Load admin-controlled homepage content
           const content = json.settings.homepage_content || {};
+          setCmsContent(content);
           if (content.announcement_visible && content.announcement_text) {
             setAnnouncement({ text: content.announcement_text, visible: true });
           }
@@ -148,16 +150,16 @@ export default function Home() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-200/70 border border-stone-300 w-fit">
                 <span className="w-2 h-2 rounded-full bg-[#1E3B2E]" />
                 <span className="text-[11px] font-bold tracking-wider text-stone-700 uppercase">
-                  Addis Ababa • Eco-Packaging
+                  {cmsContent.hero_badge || "Addis Ababa • Eco-Packaging"}
                 </span>
               </div>
 
               <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.12] text-stone-900 tracking-tight">
-                {heroContent.headline || "Artisanal Kraft Packaging & Craft Academy"}
+                {cmsContent.hero_headline || heroContent.headline || "Artisanal Kraft Packaging & Craft Academy"}
               </h1>
 
               <p className="text-stone-600 text-sm sm:text-lg max-w-xl leading-relaxed">
-                {heroContent.subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses."}
+                {cmsContent.hero_subline || heroContent.subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses."}
               </p>
 
               {/* One primary action, one secondary */}
@@ -167,7 +169,7 @@ export default function Home() {
                   className="btn-primary touch-target text-center"
                 >
                   <ShoppingBag size={18} />
-                  <span>View Our Portfolio</span>
+                  <span>View Packaging Showcase</span>
                   <ArrowRight size={16} />
                 </Link>
 
@@ -180,16 +182,16 @@ export default function Home() {
                 </Link>
               </div>
 
-              {/* Trust Badges Chips */}
+              {/* Trust Badges Chips (Driven by Admin CMS stats or defaults) */}
               <div className="pt-4 mt-2 border-t border-stone-200/90 flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold text-stone-700">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
-                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> 100% Recyclable Kraft
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {cmsContent.stat_1_val ? `${cmsContent.stat_1_val} ${cmsContent.stat_1_label}` : "1.2M+ Bags Produced"}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
-                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> CBE, Telebirr & Awash
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {cmsContent.stat_2_val ? `${cmsContent.stat_2_val} ${cmsContent.stat_2_label}` : "50+ Enterprise Clients"}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
-                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> LiveKit WebRTC Video
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {cmsContent.stat_3_val ? `${cmsContent.stat_3_val} ${cmsContent.stat_3_label}` : "100% Recyclable Kraft"}
                 </span>
               </div>
             </div>
@@ -232,24 +234,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. SIGNATURE PRODUCTS */}
+      {/* 2. FACTORY CLIENT SHOWCASES */}
       <section className="py-16 bg-[#F9F6F0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
             <div>
               <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase">
-                Featured Collections
+                Factory Deliverables • Bespoke Client Works
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
-                Our Packaging Portfolio
+                {cmsContent.showcase_title || "Custom Packaging Showcase"}
               </h2>
+              <p className="text-stone-600 text-xs sm:text-sm mt-1 max-w-2xl">
+                {cmsContent.showcase_sub || "Real production runs manufactured exclusively for Ethiopian roasters, boutiques, and corporate clients. Every piece is tailor-made to brand specifications."}
+              </p>
             </div>
 
             <Link 
               href="/products" 
               className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
             >
-              <span>View All Products</span>
+              <span>Explore Full Packaging Showcase</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -278,28 +283,33 @@ export default function Home() {
                           className="object-cover" 
                         />
                         <span className="absolute top-2.5 left-2.5 bg-[#1E3B2E] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                          {product.category || "Kraft"}
+                          Factory Showcase
                         </span>
+                        {product.client && (
+                          <span className="absolute bottom-2.5 left-2.5 bg-white/95 backdrop-blur-xs text-stone-900 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs">
+                            Client: {product.client}
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="font-serif text-lg font-bold text-stone-900 line-clamp-1">
                         {product.name}
                       </h3>
                       <p className="text-xs text-stone-600 mt-1 line-clamp-2">
-                        {product.description || "Artisanal biodegradable packaging manufactured in Addis Ababa."}
+                        {product.description || "Custom biodegradable packaging manufactured for client branding in Addis Ababa."}
                       </p>
                     </div>
 
-                    <div className="pt-4 mt-4 border-t border-stone-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-stone-400 block uppercase">Price</span>
-                        <span className="text-base font-bold text-[#8C4B31]">{formatPrice(product.price)}</span>
+                    <div className="pt-4 mt-4 border-t border-stone-100 flex items-center justify-between gap-2">
+                      <div className="text-[11px] text-stone-500">
+                        <span className="font-bold text-stone-800 block">{product.gsm || 220} GSM Kraft</span>
+                        <span>{product.handle_type || product.handleType || "Twisted Handle"}</span>
                       </div>
                       <Link 
                         href={`/products/${product.id}`}
-                        className="btn-primary touch-target text-xs py-2 px-4"
+                        className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-[#E0B382] hover:text-white transition-all text-xs font-bold py-2 px-4 rounded-xl shadow-xs"
                       >
-                        Order Now
+                        View Showcase
                       </Link>
                     </div>
                   </div>

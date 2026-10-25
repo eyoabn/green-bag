@@ -192,6 +192,9 @@ function DesignSubmissionForm() {
   const [hasFoodLining, setHasFoodLining] = useState<boolean>(false);
   const [urgency, setUrgency] = useState<string>("Standard (7-10 Days)");
 
+  // Submission Mode: Visual Builder vs Ready Artwork Upload
+  const [studioMode, setStudioMode] = useState<"visual_builder" | "ready_upload">("visual_builder");
+
   // Artwork & File State
   const [artworkMode, setArtworkMode] = useState<"upload" | "need-draft">("upload");
   const [file, setFile] = useState<File | null>(null);
@@ -522,6 +525,77 @@ function DesignSubmissionForm() {
           </div>
         )}
 
+        {/* Two Design Submission Options */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <button
+            type="button"
+            onClick={() => {
+              setStudioMode("visual_builder");
+              setArtworkMode("need-draft");
+            }}
+            className={`p-6 rounded-3xl border-2 text-left transition-all cursor-pointer flex items-start gap-4 ${
+              studioMode === "visual_builder"
+                ? "border-[#1E3B2E] bg-white ring-4 ring-[#1E3B2E]/10 shadow-md"
+                : "border-stone-200 bg-white/70 hover:bg-white hover:border-stone-300 opacity-80"
+            }`}
+          >
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+              studioMode === "visual_builder" ? "bg-[#1E3B2E] text-[#E0B382]" : "bg-stone-100 text-stone-600"
+            }`}>
+              <Palette size={24} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-serif text-lg font-bold text-stone-900">
+                  Option 1: Design Bag Online
+                </span>
+                {studioMode === "visual_builder" && (
+                  <span className="bg-[#1E3B2E] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Selected
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                Design right here in your browser! Pick bag size, paper color, handle style, enter your brand title, and visually preview your bag in real-time.
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setStudioMode("ready_upload");
+              setArtworkMode("upload");
+            }}
+            className={`p-6 rounded-3xl border-2 text-left transition-all cursor-pointer flex items-start gap-4 ${
+              studioMode === "ready_upload"
+                ? "border-[#8C4B31] bg-white ring-4 ring-[#8C4B31]/10 shadow-md"
+                : "border-stone-200 bg-white/70 hover:bg-white hover:border-stone-300 opacity-80"
+            }`}
+          >
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+              studioMode === "ready_upload" ? "bg-[#8C4B31] text-white" : "bg-stone-100 text-stone-600"
+            }`}>
+              <Upload size={24} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-serif text-lg font-bold text-stone-900">
+                  Option 2: Upload Ready Artwork & CAD Dieline
+                </span>
+                {studioMode === "ready_upload" && (
+                  <span className="bg-[#8C4B31] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Selected
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                Already have vector files prepared by your graphic designer? Upload your AI, PDF, CDR, or SVG dielines directly for factory verification and fast-track quote.
+              </p>
+            </div>
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column: Interactive Options Picker (7 Cols) */}
@@ -544,6 +618,53 @@ function DesignSubmissionForm() {
                 Enter your company or campaign name to identify your production batch.
               </p>
             </div>
+
+            {/* If in Ready Upload Mode, showcase file uploader right up front */}
+            {studioMode === "ready_upload" && (
+              <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-[#8C4B31]/30 shadow-sm space-y-4 animate-in fade-in">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#8C4B31] flex items-center gap-1.5">
+                    <Upload size={14} />
+                    <span>Upload Ready Artwork / CAD Dieline File *</span>
+                  </h3>
+                  <p className="text-[11px] text-stone-500 mt-0.5">
+                    Upload your completed artwork or technical dieline file (.AI, .PDF, .CDR, .EPS, .SVG, .PNG, .PSD).
+                  </p>
+                </div>
+
+                <label className="border-2 border-dashed border-[#8C4B31]/40 hover:border-[#8C4B31] bg-amber-50/20 hover:bg-white rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors text-center">
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf,application/illustrator,application/postscript,.cdr,.ai,.eps,.psd,.zip"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <div className="w-14 h-14 rounded-2xl bg-[#8C4B31]/10 text-[#8C4B31] flex items-center justify-center mb-3">
+                    <Upload size={28} />
+                  </div>
+                  {file ? (
+                    <div>
+                      <p className="text-sm font-bold text-emerald-800 flex items-center justify-center gap-1.5">
+                        <FileCheck size={18} />
+                        <span>{file.name}</span>
+                      </p>
+                      <p className="text-xs text-stone-500 mt-1">
+                        {(file.size / 1024).toFixed(1)} KB • File loaded for technical verification
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm font-bold text-stone-800">
+                        Drag and drop your ready artwork or click to browse
+                      </p>
+                      <p className="text-xs text-stone-500 mt-1">
+                        Supported: Adobe Illustrator (.AI), PDF, CorelDraw (.CDR), Vector EPS, High-Res PNG (up to 50 MB)
+                      </p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            )}
 
             {/* 2. Order Quantity ("How much they want") */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-stone-200/90 shadow-sm space-y-4">

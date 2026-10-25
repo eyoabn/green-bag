@@ -32,8 +32,17 @@ export default function AdminSettingsPage() {
   const [youtube, setYoutube] = useState("");
 
   // Homepage Content (editable by admin)
+  const [heroBadge, setHeroBadge] = useState("");
   const [heroHeadline, setHeroHeadline] = useState("");
   const [heroSubline, setHeroSubline] = useState("");
+  const [showcaseTitle, setShowcaseTitle] = useState("");
+  const [showcaseSub, setShowcaseSub] = useState("");
+  const [stat1Val, setStat1Val] = useState("1.2M+");
+  const [stat1Label, setStat1Label] = useState("Bags Manufactured");
+  const [stat2Val, setStat2Val] = useState("50+");
+  const [stat2Label, setStat2Label] = useState("Enterprise Clients");
+  const [stat3Val, setStat3Val] = useState("100%");
+  const [stat3Label, setStat3Label] = useState("Biodegradable Kraft");
   const [announcementText, setAnnouncementText] = useState("");
   const [announcementVisible, setAnnouncementVisible] = useState(false);
 
@@ -67,8 +76,17 @@ export default function AdminSettingsPage() {
 
         // Homepage content
         const content = s.homepage_content || {};
+        setHeroBadge(content.hero_badge || "");
         setHeroHeadline(content.hero_headline || "");
         setHeroSubline(content.hero_subline || "");
+        setShowcaseTitle(content.showcase_title || "");
+        setShowcaseSub(content.showcase_sub || "");
+        setStat1Val(content.stat_1_val || "1.2M+");
+        setStat1Label(content.stat_1_label || "Bags Manufactured");
+        setStat2Val(content.stat_2_val || "50+");
+        setStat2Label(content.stat_2_label || "Enterprise Clients");
+        setStat3Val(content.stat_3_val || "100%");
+        setStat3Label(content.stat_3_label || "Biodegradable Kraft");
         setAnnouncementText(content.announcement_text || "");
         setAnnouncementVisible(Boolean(content.announcement_visible));
       }
@@ -109,8 +127,17 @@ export default function AdminSettingsPage() {
             youtube: youtube.trim(),
           },
           homepage_content: {
+            hero_badge: heroBadge.trim(),
             hero_headline: heroHeadline.trim(),
             hero_subline: heroSubline.trim(),
+            showcase_title: showcaseTitle.trim(),
+            showcase_sub: showcaseSub.trim(),
+            stat_1_val: stat1Val.trim(),
+            stat_1_label: stat1Label.trim(),
+            stat_2_val: stat2Val.trim(),
+            stat_2_label: stat2Label.trim(),
+            stat_3_val: stat3Val.trim(),
+            stat_3_label: stat3Label.trim(),
             announcement_text: announcementText.trim(),
             announcement_visible: announcementVisible,
           },
@@ -362,20 +389,33 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* Section 4: Homepage Content Editor */}
+            {/* Section 4: Front-End CMS & Content Management */}
             <div className="space-y-4 pt-4 border-t border-stone-100">
               <h3 className="font-serif text-base font-bold text-stone-900 pb-2 flex items-center gap-2">
-                <span className="text-lg">🏠</span>
-                <span>Homepage Content Editor</span>
+                <span className="text-lg">🎨</span>
+                <span>Front-End CMS & Homepage Content</span>
               </h3>
               <p className="text-[11px] text-stone-500 -mt-2">
-                Edit the hero headline and subline visible on the public homepage. Leave blank to use the default text.
+                Control the headlines, announcement banners, showcase descriptions, and statistics on the public website. Changes take effect instantly without needing any coder.
               </p>
 
               <div className="space-y-4">
                 <div>
                   <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
-                    Hero Headline (Public Homepage)
+                    Hero Badge / Tagline
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sustainable Paper Packaging • Addis Ababa"
+                    value={heroBadge}
+                    onChange={(e) => setHeroBadge(e.target.value)}
+                    className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 text-xs font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    Hero Main Headline
                   </label>
                   <input
                     type="text"
@@ -391,12 +431,95 @@ export default function AdminSettingsPage() {
                     Hero Subline / Description
                   </label>
                   <textarea
-                    rows={3}
+                    rows={2}
                     placeholder="e.g. We manufacture premium kraft bags and custom packaging for Ethiopia's finest cafés..."
                     value={heroSubline}
                     onChange={(e) => setHeroSubline(e.target.value)}
-                    className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 resize-none"
+                    className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 resize-none text-xs"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-stone-100">
+                  <div>
+                    <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                      Showcase Section Title
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Custom Packaging Showcase"
+                      value={showcaseTitle}
+                      onChange={(e) => setShowcaseTitle(e.target.value)}
+                      className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                      Showcase Subtext
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Real production runs manufactured for Ethiopian roasters..."
+                      value={showcaseSub}
+                      onChange={(e) => setShowcaseSub(e.target.value)}
+                      className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Factory Statistics Counters */}
+                <div className="pt-2 border-t border-stone-100 space-y-2">
+                  <span className="block font-bold text-xs uppercase text-stone-700 tracking-wider">
+                    Factory Trust Statistics (Homepage Counter Badges)
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-200">
+                      <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Stat 1 (Value & Label)</label>
+                      <input
+                        type="text"
+                        value={stat1Val}
+                        onChange={(e) => setStat1Val(e.target.value)}
+                        className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xs font-bold text-stone-900 mb-1"
+                      />
+                      <input
+                        type="text"
+                        value={stat1Label}
+                        onChange={(e) => setStat1Label(e.target.value)}
+                        className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-[11px] text-stone-600"
+                      />
+                    </div>
+
+                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-200">
+                      <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Stat 2 (Value & Label)</label>
+                      <input
+                        type="text"
+                        value={stat2Val}
+                        onChange={(e) => setStat2Val(e.target.value)}
+                        className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xs font-bold text-stone-900 mb-1"
+                      />
+                      <input
+                        type="text"
+                        value={stat2Label}
+                        onChange={(e) => setStat2Label(e.target.value)}
+                        className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-[11px] text-stone-600"
+                      />
+                    </div>
+
+                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-200">
+                      <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">Stat 3 (Value & Label)</label>
+                      <input
+                        type="text"
+                        value={stat3Val}
+                        onChange={(e) => setStat3Val(e.target.value)}
+                        className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-xs font-bold text-stone-900 mb-1"
+                      />
+                      <input
+                        type="text"
+                        value={stat3Label}
+                        onChange={(e) => setStat3Label(e.target.value)}
+                        className="w-full border border-stone-200 rounded-lg p-1.5 bg-white text-[11px] text-stone-600"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3">

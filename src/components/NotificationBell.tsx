@@ -173,10 +173,15 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div
-          data-testid="notification-dropdown"
-          className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-3xl border border-stone-200 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95"
-        >
+        <>
+          <div
+            className="fixed inset-0 z-[90] sm:hidden bg-black/20 backdrop-blur-xs"
+            onClick={() => setIsOpen(false)}
+          />
+          <div
+            data-testid="notification-dropdown"
+            className="fixed left-3 right-3 top-16 sm:top-auto sm:inset-x-auto sm:absolute sm:right-0 sm:mt-2 w-auto sm:w-96 bg-white rounded-3xl border border-stone-200 shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95"
+          >
           <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-[#FAF7F2]">
             <div className="flex items-center gap-2">
               <span className="font-serif text-sm font-bold text-stone-900">Notifications</span>
@@ -240,6 +245,7 @@ export default function NotificationBell() {
             </Link>
           </div>
         </div>
+        </>
       )}
     </div>
   );

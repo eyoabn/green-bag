@@ -21,14 +21,7 @@ const settingsSchema = z.object({
     .optional(),
   tax_id: z.string().optional(),
   settlement_days: z.number().int().min(1).max(30).optional(),
-  homepage_content: z
-    .object({
-      hero_headline: z.string().optional(),
-      hero_subline: z.string().optional(),
-      announcement_text: z.string().optional(),
-      announcement_visible: z.boolean().optional(),
-    })
-    .optional(),
+  homepage_content: z.record(z.string(), z.any()).optional(),
 });
 
 // GET /api/admin/settings - Read company configuration

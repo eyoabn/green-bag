@@ -148,7 +148,7 @@ export default function Home() {
                   className="btn-primary touch-target text-center"
                 >
                   <ShoppingBag size={18} />
-                  <span>Browse Packaging Catalog</span>
+                  <span>View Our Portfolio</span>
                   <ArrowRight size={16} />
                 </Link>
 
@@ -216,7 +216,7 @@ export default function Home() {
                 Featured Collections
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
-                Standard & Custom Packaging
+                Our Packaging Portfolio
               </h2>
             </div>
 

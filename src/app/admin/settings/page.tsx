@@ -28,6 +28,8 @@ export default function AdminSettingsPage() {
   const [instagram, setInstagram] = useState("");
   const [telegram, setTelegram] = useState("");
   const [linkedin, setLinkedin] = useState("");
+  const [tiktok, setTiktok] = useState("");
+  const [youtube, setYoutube] = useState("");
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -58,6 +60,8 @@ export default function AdminSettingsPage() {
         setInstagram(socials.instagram || "");
         setTelegram(socials.telegram || "");
         setLinkedin(socials.linkedin || "");
+        setTiktok(socials.tiktok || "");
+        setYoutube(socials.youtube || "");
       }
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to load factory settings");
@@ -88,6 +92,8 @@ export default function AdminSettingsPage() {
             instagram: instagram.trim(),
             telegram: telegram.trim(),
             linkedin: linkedin.trim(),
+            tiktok: tiktok.trim(),
+            youtube: youtube.trim(),
           },
         }),
       });
@@ -266,6 +272,32 @@ export default function AdminSettingsPage() {
                     placeholder="https://t.me/arenguadepaper or @arenguadepaper"
                     value={telegram}
                     onChange={(e) => setTelegram(e.target.value)}
+                    className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    TikTok Channel
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://tiktok.com/@arenguadepaper"
+                    value={tiktok}
+                    onChange={(e) => setTiktok(e.target.value)}
+                    className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 uppercase tracking-wider mb-1">
+                    YouTube Channel
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://youtube.com/@arenguadepaper"
+                    value={youtube}
+                    onChange={(e) => setYoutube(e.target.value)}
                     className="w-full border border-stone-300 rounded-xl p-3 bg-[#FAF7F2] text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
                   />
                 </div>

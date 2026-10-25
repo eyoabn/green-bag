@@ -25,6 +25,8 @@ interface SiteSettings {
     instagram?: string;
     telegram?: string;
     linkedin?: string;
+    tiktok?: string;
+    youtube?: string;
   };
 }
 
@@ -94,23 +96,47 @@ export default function Footer() {
               </span>
             </div>
 
-            {/* Social Links */}
-            {settings.social_links && (settings.social_links.telegram || settings.social_links.instagram || settings.social_links.facebook || settings.social_links.linkedin) && (
-              <div className="flex items-center gap-3 pt-1">
-                {settings.social_links.telegram && (
+              {/* Social Links */}
+            {settings.social_links && (
+              (settings.social_links.telegram || settings.social_links.instagram || settings.social_links.facebook || settings.social_links.linkedin || settings.social_links.tiktok || settings.social_links.youtube)
+            ) && (
+              <div className="flex items-center gap-3 pt-1 flex-wrap">
+                {settings.social_links!.telegram && (
                   <a
-                    href={settings.social_links.telegram.startsWith("http") ? settings.social_links.telegram : `https://t.me/${settings.social_links.telegram.replace("@", "")}`}
+                    href={settings.social_links!.telegram.startsWith("http") ? settings.social_links!.telegram : `https://t.me/${settings.social_links!.telegram.replace("@", "")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#8C4B31] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#0088cc] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
                     title="Telegram"
                   >
                     <Send size={14} />
                   </a>
                 )}
-                {settings.social_links.instagram && (
+                {settings.social_links!.tiktok && (
                   <a
-                    href={settings.social_links.instagram}
+                    href={settings.social_links!.tiktok}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-black text-stone-300 hover:text-white flex items-center justify-center transition-colors text-[10px] font-black"
+                    title="TikTok"
+                  >
+                    TT
+                  </a>
+                )}
+                {settings.social_links!.youtube && (
+                  <a
+                    href={settings.social_links!.youtube}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-red-600 text-stone-300 hover:text-white flex items-center justify-center transition-colors text-[10px] font-black"
+                    title="YouTube"
+                  >
+                    YT
+                  </a>
+                )}
+                {settings.social_links!.instagram && (
+                  <a
+                    href={settings.social_links!.instagram}
                     target="_blank"
                     rel="noreferrer"
                     className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#8C4B31] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
@@ -119,23 +145,23 @@ export default function Footer() {
                     IG
                   </a>
                 )}
-                {settings.social_links.facebook && (
+                {settings.social_links!.facebook && (
                   <a
-                    href={settings.social_links.facebook}
+                    href={settings.social_links!.facebook}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#8C4B31] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#1877F2] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
                     title="Facebook"
                   >
                     FB
                   </a>
                 )}
-                {settings.social_links.linkedin && (
+                {settings.social_links!.linkedin && (
                   <a
-                    href={settings.social_links.linkedin}
+                    href={settings.social_links!.linkedin}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#8C4B31] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-[#0A66C2] text-stone-300 hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
                     title="LinkedIn"
                   >
                     IN

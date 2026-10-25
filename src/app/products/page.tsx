@@ -9,14 +9,12 @@ import {
   ShieldCheck,
   Eye,
   X,
-  ShoppingBag,
   Package,
   ChevronLeft,
   ChevronRight,
-  Filter
+  PenTool,
+  ImageOff
 } from "lucide-react";
-import { useCurrency } from "@/components/CurrencyContext";
-import { useCart } from "@/context/CartContext";
 
 export interface Product {
   id: string;
@@ -40,8 +38,6 @@ export interface Product {
 }
 
 export default function ProductsPage() {
-  const { formatPrice } = useCurrency();
-  const { addItem } = useCart();
   const [productsList, setProductsList] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(["All"]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +47,6 @@ export default function ProductsPage() {
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"featured" | "price-low" | "price-high">("featured");
   const [lightboxProduct, setLightboxProduct] = useState<Product | null>(null);
 
   const fetchProducts = useCallback(async () => {
@@ -71,7 +66,7 @@ export default function ProductsPage() {
           return {
             id: p.id,
             name: p.name,
-            client: p.client || "Arenguade Standard Catalog",
+            client: p.client || undefined,
             category: p.category || "Packaging",
             price: Number(p.price),
             bundleSize: p.bundle_size || 100,
@@ -79,9 +74,9 @@ export default function ProductsPage() {
             handleType: p.handle_type || "Twisted Kraft Cord",
             image: gallery[0],
             gallery,
-            badge: p.is_client_work ? "Client Showcase" : (p.is_featured ? "Featured Selection" : (p.is_available ? "In Stock" : "Made-to-Order")),
+            badge: p.is_client_work ? "Client Portfolio" : (p.is_featured ? "Featured" : "Catalog"),
             description: p.description || "",
-            dimensions: p.dimensions || "Standard Retail Dimensions",
+            dimensions: p.dimensions || "Standard Dimensions",
             material: p.material || "100% Ethiopian Virgin Kraft",
             is_available: p.is_available,
             is_featured: p.is_featured,
@@ -89,13 +84,6 @@ export default function ProductsPage() {
             stock_quantity: p.stock_quantity,
           };
         });
-
-        // Client sort within the page if needed
-        if (sortBy === "price-low") {
-          mappedProducts.sort((a, b) => a.price - b.price);
-        } else if (sortBy === "price-high") {
-          mappedProducts.sort((a, b) => b.price - a.price);
-        }
 
         if (resJson.categories && Array.isArray(resJson.categories) && resJson.categories.length > 0) {
           setCategories(resJson.categories);
@@ -113,7 +101,7 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, selectedCategory, searchQuery, sortBy]);
+  }, [page, pageSize, selectedCategory, searchQuery]);
 
   useEffect(() => {
     fetchProducts();
@@ -129,32 +117,32 @@ export default function ProductsPage() {
         <div className="max-w-7xl mx-auto px-6 sm:px-8">
           <div className="max-w-3xl">
             <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase flex items-center gap-1.5 mb-2">
-              <Sparkles size={14} /> 100% Real Production Batches • Made in Ethiopia
+              <Sparkles size={14} /> Real Production Batches • Made in Addis Ababa
             </span>
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 tracking-tight">
-              Our Packaging Catalog & Factory Portfolio
+              Our Packaging Portfolio
             </h1>
             <p className="text-stone-600 text-lg mt-4 leading-relaxed">
-              Explore authentic paper bags and packaging manufactured at our Addis Ababa facility for top Ethiopian coffee roasters, boutique fashion houses, hotels, and bakeries.
+              Authentic paper bags and packaging manufactured at our Addis Ababa facility for Ethiopian coffee roasters, boutique fashion houses, hotels, and bakeries. Browse our work — then commission your own custom design.
             </p>
           </div>
 
-          {/* Wholesale & Custom Notice Banner */}
+          {/* Custom Order CTA */}
           <div className="mt-8 bg-white p-5 rounded-2xl border border-stone-300/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-[#1E3B2E]/10 text-[#1E3B2E]">
-                <ShieldCheck size={22} />
+                <PenTool size={22} />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#1E3B2E]">Custom Brand Printing Available</p>
-                <p className="text-xs text-stone-600">Want your own logo and colors? Use our interactive Design Studio or upload your vector artwork.</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#1E3B2E]">Commission Your Own Branded Packaging</p>
+                <p className="text-xs text-stone-600">Inspired by what you see? Submit your design or describe your vision — we manufacture your custom batch.</p>
               </div>
             </div>
             <Link 
               href="/design-submission" 
               className="bg-[#1E3B2E] text-white text-xs font-bold px-6 py-2.5 rounded-full hover:bg-[#8C4B31] transition-colors shrink-0 flex items-center gap-1.5"
             >
-              <span>Design Your Own Bag</span>
+              <span>Start Your Design</span>
               <ArrowRight size={13} />
             </Link>
           </div>
@@ -185,31 +173,19 @@ export default function ProductsPage() {
             ))}
           </div>
 
-          {/* Search Input & Sort Dropdown */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
-              <input
-                type="text"
-                placeholder="Search catalog..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full bg-white border border-stone-200 rounded-full pl-9 pr-4 py-2 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]/20"
-              />
-            </div>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-white border border-stone-200 rounded-full px-4 py-2 text-xs font-semibold text-stone-700 cursor-pointer focus:outline-none"
-            >
-              <option value="featured">Featured First</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-            </select>
+          {/* Search Input */}
+          <div className="relative flex-1 sm:w-64 max-w-xs">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
+            <input
+              type="text"
+              placeholder="Search portfolio..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+              className="w-full bg-white border border-stone-200 rounded-full pl-9 pr-4 py-2 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1E3B2E]/20"
+            />
           </div>
         </div>
 
@@ -217,39 +193,33 @@ export default function ProductsPage() {
         <div className="py-4 text-xs font-medium text-stone-500 flex items-center justify-between">
           <span>
             Showing <strong className="text-stone-900">{productsList.length}</strong> of{" "}
-            <strong className="text-stone-900">{totalCount}</strong> products in catalog
+            <strong className="text-stone-900">{totalCount}</strong> portfolio pieces
           </span>
           {selectedCategory !== "All" && (
-            <span className="text-[11px] bg-stone-100 text-stone-600 px-2.5 py-0.5 rounded-full font-bold">
-              Filtered by: {selectedCategory}
+            <span className="text-[11px] bg-stone-100 text-stone-600 px-2.5 py-1 rounded-full font-bold">
+              {selectedCategory}
             </span>
           )}
         </div>
 
-        {/* Products Grid */}
+        {/* Portfolio Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-2">
           {loading ? (
             Array.from({ length: 6 }).map((_, idx) => (
-              <div key={idx} className="bg-white rounded-3xl p-6 border border-stone-200 animate-pulse flex flex-col justify-between">
-                <div>
-                  <div className="h-64 bg-stone-200 rounded-2xl mb-5" />
-                  <div className="h-4 bg-stone-200 rounded w-1/3 mb-2" />
-                  <div className="h-6 bg-stone-200 rounded w-3/4 mb-3" />
-                  <div className="h-4 bg-stone-200 rounded w-full mb-1" />
-                  <div className="h-4 bg-stone-200 rounded w-2/3" />
-                </div>
-                <div className="pt-6 mt-6 border-t border-stone-100 flex justify-between items-center">
-                  <div className="h-6 bg-stone-200 rounded w-20" />
-                  <div className="h-8 bg-stone-200 rounded-full w-24" />
-                </div>
+              <div key={idx} className="bg-white rounded-3xl p-6 border border-stone-200 animate-pulse flex flex-col">
+                <div className="h-64 bg-stone-200 rounded-2xl mb-5" />
+                <div className="h-4 bg-stone-200 rounded w-1/3 mb-2" />
+                <div className="h-6 bg-stone-200 rounded w-3/4 mb-3" />
+                <div className="h-4 bg-stone-200 rounded w-full mb-1" />
+                <div className="h-4 bg-stone-200 rounded w-2/3" />
               </div>
             ))
           ) : productsList.length === 0 ? (
             <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-stone-200 p-8">
               <Package size={40} className="mx-auto text-stone-300 mb-3" />
-              <h3 className="font-serif text-xl font-bold text-stone-800 mb-1">No products found</h3>
+              <h3 className="font-serif text-xl font-bold text-stone-800 mb-1">No portfolio items found</h3>
               <p className="text-xs text-stone-500 max-w-sm mx-auto mb-4">
-                We couldn&apos;t find any packaging matching your filters. Try selecting &ldquo;All&rdquo; or clearing your search term.
+                Try selecting &ldquo;All&rdquo; or clearing your search term.
               </p>
               <button
                 onClick={() => {
@@ -265,130 +235,92 @@ export default function ProductsPage() {
             productsList.map((product) => (
               <div 
                 key={product.id}
-                className="group bg-white rounded-3xl p-6 border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden"
+                className="group bg-white rounded-3xl overflow-hidden border border-stone-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
               >
-                <div>
-                  {/* Image Container with Preview Button */}
-                  <div className="h-64 rounded-2xl bg-stone-100 relative overflow-hidden mb-5 group-hover:scale-[1.01] transition-transform duration-300">
+                {/* Image */}
+                <div className="h-64 bg-stone-100 relative overflow-hidden">
+                  {product.image ? (
                     <img 
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
-                    
-                    {/* Badge */}
-                    <span className={`absolute top-3 left-3 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm ${
-                      product.is_client_work ? "bg-[#8C4B31]" : "bg-[#1E3B2E]"
-                    }`}>
-                      {product.badge}
-                    </span>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ImageOff size={40} className="text-stone-300" />
+                    </div>
+                  )}
+                  
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  
+                  {/* Badge */}
+                  <span className={`absolute top-3 left-3 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm ${
+                    product.is_client_work ? "bg-[#8C4B31]" : "bg-[#1E3B2E]"
+                  }`}>
+                    {product.badge}
+                  </span>
 
-                    {/* Quick Lightbox Preview Trigger */}
-                    <button
-                      onClick={() => setLightboxProduct(product)}
-                      className="absolute top-3 right-3 p-2 rounded-full bg-white/90 text-stone-800 hover:bg-white hover:text-[#8C4B31] transition-all opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
-                      title="Inspect Product Gallery"
-                    >
-                      <Eye size={15} />
-                    </button>
+                  {/* Quick Preview */}
+                  <button
+                    onClick={() => setLightboxProduct(product)}
+                    className="absolute top-3 right-3 p-2 rounded-full bg-white/90 text-stone-800 hover:bg-white hover:text-[#8C4B31] transition-all opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
+                    title="Quick preview"
+                  >
+                    <Eye size={15} />
+                  </button>
 
+                  {/* Client name at bottom */}
+                  {product.client && (
                     <span className="absolute bottom-3 left-3 text-white text-xs font-semibold drop-shadow-sm truncate max-w-[85%]">
-                      {product.client || product.category}
+                      {product.client}
                     </span>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Specifications & Title */}
+                {/* Card Body */}
+                <div className="p-6 flex flex-col flex-1">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wide">
                       {product.category}
                     </span>
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                      product.is_client_work 
-                        ? "text-amber-800 bg-amber-50 border border-amber-200" 
-                        : (product.is_available ? "text-emerald-700 bg-emerald-50" : "text-rose-700 bg-rose-50")
-                    }`}>
-                      {product.is_client_work ? "Client Showcase" : (product.is_available ? "In Stock" : "Unavailable")}
-                    </span>
+                    {product.gsm && (
+                      <span className="text-[11px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md">
+                        {product.gsm} GSM
+                      </span>
+                    )}
                   </div>
 
-                  <h3 className="font-serif text-xl font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors line-clamp-1">
+                  <h3 className="font-serif text-xl font-bold text-stone-900 group-hover:text-[#8C4B31] transition-colors line-clamp-1 mb-2">
                     {product.name}
                   </h3>
 
-                  <p className="text-stone-600 text-xs mt-2 line-clamp-2 leading-relaxed">
+                  <p className="text-stone-600 text-xs line-clamp-2 leading-relaxed flex-1">
                     {product.description || "Premium Ethiopian recycled kraft packaging crafted with durability and precision."}
                   </p>
-                </div>
 
-                {/* Card Action Footer */}
-                {product.is_client_work ? (
-                  <div className="pt-5 mt-5 border-t border-stone-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded">
-                        Portfolio Piece
-                      </span>
-                      <span className="text-[11px] text-stone-500 block mt-0.5 font-medium">
-                        Custom Client Work
-                      </span>
+                  {/* Specs row */}
+                  <div className="mt-4 pt-4 border-t border-stone-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[11px] text-stone-500">
+                      <ShieldCheck size={13} className="text-[#1E3B2E]" />
+                      <span>{product.material?.split(" ").slice(0, 3).join(" ") || "Ethiopian Kraft"}</span>
                     </div>
 
                     <Link 
                       href={`/products/${product.id}`}
-                      className="px-4 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all flex items-center gap-1.5"
                     >
-                      <span>View Showcase</span>
-                      <ArrowRight size={13} />
+                      <span>View Details</span>
+                      <ArrowRight size={12} />
                     </Link>
                   </div>
-                ) : (
-                  <div className="pt-5 mt-5 border-t border-stone-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[11px] text-stone-500 block">Single Batch</span>
-                      <span className="text-lg font-bold text-[#8C4B31] font-mono">
-                        {formatPrice(product.price)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={!product.is_available}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          addItem({
-                            id: product.id,
-                            productId: product.id,
-                            name: product.name,
-                            price: product.price,
-                            image: product.image,
-                            category: product.category,
-                            bundleSize: product.bundleSize,
-                          }, 1);
-                        }}
-                        className="p-2.5 rounded-full border border-stone-300 hover:border-[#1E3B2E] text-stone-700 hover:text-[#1E3B2E] bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                        title="Add to Cart"
-                        aria-label="Add to Cart"
-                      >
-                        <ShoppingBag size={14} />
-                      </button>
-
-                      <Link 
-                        href={`/products/${product.id}`}
-                        className="px-4 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-                      >
-                        <span>View & Order</span>
-                        <ArrowRight size={13} />
-                      </Link>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Pagination Controls */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-12 pt-6 border-t border-stone-200 flex items-center justify-between text-xs text-stone-600">
             <div>
@@ -417,12 +349,38 @@ export default function ProductsPage() {
           </div>
         )}
 
+        {/* Bottom CTA */}
+        <div className="mt-16 bg-[#1E3B2E] rounded-3xl p-8 sm:p-10 text-center">
+          <span className="text-xs font-bold tracking-widest text-[#E0B382] uppercase">Ready to Order?</span>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white mt-2 mb-3">
+            Get Your Own Custom Packaging
+          </h2>
+          <p className="text-stone-400 text-sm max-w-xl mx-auto mb-6 leading-relaxed">
+            Every piece you see above was made for a specific client. We can manufacture the same quality — with your own brand, logo, and specifications.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/design-submission"
+              className="px-8 py-3.5 rounded-full bg-[#8C4B31] hover:bg-[#A3593B] text-white text-xs font-bold transition-all shadow-lg flex items-center gap-2"
+            >
+              <PenTool size={15} />
+              <span>Submit Your Design</span>
+            </Link>
+            <Link
+              href="/learn/schedule"
+              className="px-8 py-3.5 rounded-full border border-stone-600 hover:border-stone-400 text-stone-300 hover:text-white text-xs font-bold transition-all flex items-center gap-2"
+            >
+              <span>Explore Workshops</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* Lightbox Modal */}
       {lightboxProduct && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 relative animate-in zoom-in-95">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 relative shadow-2xl">
             <button
               onClick={() => setLightboxProduct(null)}
               className="absolute top-4 right-4 p-1.5 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 cursor-pointer"
@@ -442,31 +400,33 @@ export default function ProductsPage() {
               <div className="w-full sm:w-1/2 flex flex-col justify-between">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C4B31] bg-amber-50 px-2 py-0.5 rounded-md inline-block mb-2">
-                    {lightboxProduct.is_client_work ? "Exclusive Client Work" : lightboxProduct.category}
+                    {lightboxProduct.category}
                   </span>
                   <h3 className="font-serif text-2xl font-bold text-stone-900 leading-tight">
                     {lightboxProduct.name}
                   </h3>
+                  {lightboxProduct.client && (
+                    <p className="text-xs text-stone-500 mt-1">Made for: <strong className="text-stone-700">{lightboxProduct.client}</strong></p>
+                  )}
                   <p className="text-stone-600 text-xs mt-3 leading-relaxed">
                     {lightboxProduct.description || "Manufactured with pride in Addis Ababa, Ethiopia using heavy-duty biodegradable kraft."}
                   </p>
-                  
-                  {lightboxProduct.is_client_work ? (
-                    <div className="mt-4 p-3 bg-amber-50/70 rounded-xl border border-amber-200/60">
-                      <p className="text-xs font-semibold text-stone-800">
-                        Manufactured exclusively for <span className="text-[#8C4B31] font-bold">{lightboxProduct.client}</span>.
-                      </p>
-                      <p className="text-[11px] text-stone-600 mt-1">
-                        Not available for retail purchase. You can design a custom bag with your own brand specifications.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="mt-4 pt-3 border-t border-stone-100">
-                      <span className="text-xl font-bold text-[#8C4B31] font-mono">
-                        {formatPrice(lightboxProduct.price)}
-                      </span>
-                    </div>
-                  )}
+
+                  {/* Quick specs */}
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-[11px]">
+                    {lightboxProduct.gsm && (
+                      <div className="bg-stone-50 rounded-lg p-2 border border-stone-100">
+                        <span className="text-stone-400 block">Paper weight</span>
+                        <span className="font-bold text-stone-800">{lightboxProduct.gsm} GSM</span>
+                      </div>
+                    )}
+                    {lightboxProduct.handleType && (
+                      <div className="bg-stone-50 rounded-lg p-2 border border-stone-100">
+                        <span className="text-stone-400 block">Handle</span>
+                        <span className="font-bold text-stone-800">{lightboxProduct.handleType}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-stone-100 flex items-center justify-end gap-3 mt-4">
@@ -480,7 +440,7 @@ export default function ProductsPage() {
                     href={`/products/${lightboxProduct.id}`}
                     className="px-5 py-2.5 rounded-full bg-[#1E3B2E] text-white text-xs font-bold hover:bg-[#8C4B31] transition-colors"
                   >
-                    {lightboxProduct.is_client_work ? "Inspect Showcase" : "Go to Full Order Flow"}
+                    Full Details →
                   </Link>
                 </div>
               </div>

@@ -443,87 +443,68 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="lg:col-span-6 flex flex-col gap-6">
               
               {product.is_client_work ? (
-                /* Client Exclusive Showcase Card */
+                /* Client Portfolio Showcase Card */
                 <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-lg space-y-6">
-                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#8C4B31]/10 text-[#8C4B31] text-xs font-bold uppercase tracking-wider">
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider">
                     <ShieldCheck size={14} />
-                    <span>Exclusive Client Showcase</span>
+                    <span>Portfolio Showcase</span>
                   </div>
 
                   <div>
                     <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
                       {product.name}
                     </h1>
-                    <p className="text-xs text-stone-500 mt-1 font-medium">
-                      Custom packaging engineered exclusively for <strong className="text-stone-900">{product.client}</strong>
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-stone-700 text-xs leading-relaxed space-y-2">
-                    <p className="font-bold text-amber-900 flex items-center gap-1.5">
-                      <ShieldCheck size={14} className="text-[#8C4B31]" />
-                      <span>Not Available for Direct Retail Purchase</span>
-                    </p>
-                    <p>
-                      This packaging was custom-manufactured exclusively for <strong>{product.client}</strong>. In accordance with client exclusivity and brand trademark protections, arbitrary direct orders cannot be placed for this company&apos;s branded packaging.
-                    </p>
+                    {product.client && (
+                      <p className="text-xs text-stone-500 mt-1 font-medium">
+                        Designed &amp; manufactured for <strong className="text-[#8C4B31]">{product.client}</strong>
+                      </p>
+                    )}
                   </div>
 
                   <p className="text-stone-600 text-sm leading-relaxed">
-                    {product.description || "Crafted in Addis Ababa using heavy-duty biodegradable Ethiopian kraft with custom botanical screenprint typography."}
+                    {product.description || "Crafted in Addis Ababa using heavy-duty biodegradable Ethiopian kraft."}
                   </p>
 
-                  {/* Custom Packaging Request Box */}
-                  <div className="p-6 rounded-2xl bg-[#FAF7F2] border border-stone-200/90 space-y-4">
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
+                      <span className="text-stone-500 block text-[10px]">Paper Weight</span>
+                      <span className="font-bold text-stone-900">{product.gsm} GSM Kraft</span>
+                    </div>
+                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
+                      <span className="text-stone-500 block text-[10px]">Handle Style</span>
+                      <span className="font-bold text-stone-900">{product.handleType}</span>
+                    </div>
+                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
+                      <span className="text-stone-500 block text-[10px]">Min. Batch</span>
+                      <span className="font-bold text-stone-900">500 pcs</span>
+                    </div>
+                    <div className="p-3 bg-[#FAF7F2] rounded-xl border border-stone-100">
+                      <span className="text-stone-500 block text-[10px]">Lead Time</span>
+                      <span className="font-bold text-stone-900">7-10 Days</span>
+                    </div>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-[#1E3B2E] space-y-3">
                     <div className="flex items-center gap-2">
-                      <Sparkles size={18} className="text-[#8C4B31]" />
-                      <h3 className="font-serif text-lg font-bold text-stone-900">
-                        Commission Your Own Branded Packaging
-                      </h3>
+                      <Sparkles size={16} className="text-[#E0B382]" />
+                      <h3 className="font-serif text-base font-bold text-white">Want a similar design for your brand?</h3>
                     </div>
-                    <p className="text-xs text-stone-600 leading-relaxed">
-                      Are you a cafe, roastery, hotel, or boutique? Green Bag can manufacture a custom batch with your own company logo, custom dimensions, and paper weights based on this build.
+                    <p className="text-xs text-stone-400 leading-relaxed">
+                      We manufacture fully custom packaging batches with your logo, colors, and dimensions.
                     </p>
-
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="p-3 bg-white rounded-xl border border-stone-200">
-                        <span className="text-stone-500 block text-[10px]">Reference Weight</span>
-                        <span className="font-bold text-stone-900">{product.gsm} GSM Kraft</span>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-stone-200">
-                        <span className="text-stone-500 block text-[10px]">Handle Style</span>
-                        <span className="font-bold text-stone-900">{product.handleType}</span>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-stone-200">
-                        <span className="text-stone-500 block text-[10px]">Min. Custom Batch</span>
-                        <span className="font-bold text-stone-900">500 pcs</span>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-stone-200">
-                        <span className="text-stone-500 block text-[10px]">Turnaround</span>
-                        <span className="font-bold text-stone-900">7–10 Days</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2">
-                      <Link
-                        href={`/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm}&dimensions=${encodeURIComponent(product.dimensions || '')}&handle=${encodeURIComponent(product.handleType || '')}`}
-                        className="btn-primary w-full py-3.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
-                      >
-                        <PenTool size={15} />
-                        <span>Configure in Design Studio</span>
-                      </Link>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between text-xs text-stone-500">
-                    <Link href="/products" className="hover:text-[#1E3B2E] font-medium flex items-center gap-1">
-                      <ArrowLeft size={13} />
-                      <span>Browse Standard Catalog</span>
-                    </Link>
-                    <Link href="/contact" className="hover:text-[#8C4B31] font-bold">
-                      Speak with Packaging Specialist &rarr;
+                    <Link
+                      href={`/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm}&dimensions=${encodeURIComponent(product.dimensions || "")}&handle=${encodeURIComponent(product.handleType || "")}`}
+                      className="w-full py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 bg-[#8C4B31] hover:bg-[#A3593B] text-white rounded-xl transition-all"
+                    >
+                      <PenTool size={14} />
+                      <span>Commission This Style</span>
                     </Link>
                   </div>
+
+                  <Link href="/products" className="hover:text-[#1E3B2E] font-medium flex items-center gap-1 text-xs text-stone-500">
+                    <ArrowLeft size={13} />
+                    <span>Back to Portfolio</span>
+                  </Link>
                 </div>
               ) : (
                 <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-lg">

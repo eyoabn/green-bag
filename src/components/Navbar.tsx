@@ -13,10 +13,10 @@ import {
   Award,
   User,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Languages
 } from "lucide-react";
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
-import { useCurrency } from "@/components/CurrencyContext";
 import { useCart } from "@/context/CartContext";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -24,7 +24,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { currency, setCurrency } = useCurrency();
+  const [lang, setLang] = useState<"EN" | "AM">("EN");
   const { setIsCartOpen, totalItems } = useCart();
   const [user, setUser] = useState<AppUser | null>(null);
 
@@ -45,8 +45,7 @@ export default function Navbar() {
   }
 
   const navLinks = [
-    { href: "/products", label: "Catalog", icon: ShoppingBag },
-    { href: "/portfolio", label: "Client Works", icon: Award },
+    { href: "/products", label: "Portfolio", icon: ShoppingBag },
     { href: "/design-submission", label: "Design Studio", icon: Sparkles },
     { href: "/learn", label: "Craft Academy", icon: BookOpen },
     { href: "/learn/schedule", label: "Workshops", badge: "LiveKit" },
@@ -88,7 +87,7 @@ export default function Navbar() {
                 >
                   {link.label}
                   {link.badge && (
-                    <span className="bg-[#8C4B31] text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full tracking-wider">
+                    <span className="bg-[#8C4B31] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full tracking-wider">
                       {link.badge}
                     </span>
                   )}
@@ -99,14 +98,15 @@ export default function Navbar() {
 
           {/* Right Action Controls */}
           <div className="hidden sm:flex items-center gap-3">
-            {/* Currency Switcher */}
+            {/* Language Switcher: English / Amharic */}
             <button
-              onClick={() => setCurrency(currency === "ETB" ? "USD" : "ETB")}
-              className="text-xs font-semibold px-2.5 py-1 rounded-full bg-stone-200/60 hover:bg-stone-300/70 text-stone-700 border border-stone-300/40 transition-all flex items-center gap-1"
-              title="Toggle ETB / USD currency display"
+              onClick={() => setLang(lang === "EN" ? "AM" : "EN")}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full bg-stone-200/60 hover:bg-stone-300/70 text-stone-700 border border-stone-300/40 transition-all flex items-center gap-1.5"
+              title="Toggle English / Amharic language"
+              aria-label="Toggle language"
             >
-              <span className="text-[10px] text-stone-500">Cur:</span>
-              <span className="font-bold text-[#1E3B2E]">{currency}</span>
+              <Languages size={13} className="text-[#1E3B2E]" />
+              <span className="font-bold text-[#1E3B2E]">{lang === "EN" ? "አማ" : "EN"}</span>
             </button>
 
             {/* Shopping Cart Button */}
@@ -142,7 +142,7 @@ export default function Navbar() {
                     )}
                   </div>
                   <span className="max-w-[100px] truncate">{user.full_name}</span>
-                  <span className="text-[9px] uppercase px-1.5 py-0.2 rounded-full font-bold bg-[#1E3B2E]/10 text-[#1E3B2E]">
+                  <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full font-bold bg-[#1E3B2E]/10 text-[#1E3B2E]">
                     {user.role}
                   </span>
                   <ChevronDown size={13} className={`text-stone-500 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
@@ -240,7 +240,7 @@ export default function Navbar() {
             >
               <ShoppingBag size={19} className="text-[#1E3B2E]" />
               {totalItems > 0 && (
-                <span className="absolute 0 top-0 right-0 bg-[#8C4B31] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute top-0 right-0 bg-[#8C4B31] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {totalItems > 99 ? "99+" : totalItems}
                 </span>
               )}

@@ -4,9 +4,7 @@
       "C:\\Program Files\\nodejs\\node.exe",
       "C:\\Users\\us\\greenwork\\node_modules\\@playwright\\test\\cli.js",
       "test",
-      "tests/e2e/phase7-livekit.spec.ts",
-      "-g",
-      "6. Student cannot get a token"
+      "tests/e2e/phase3-admin.spec.ts"
     ],
     "configFile": "C:\\Users\\us\\greenwork\\playwright.config.ts",
     "rootDir": "C:/Users/us/greenwork/tests/e2e",
@@ -112,20 +110,20 @@
   },
   "suites": [
     {
-      "title": "phase7-livekit.spec.ts",
-      "file": "phase7-livekit.spec.ts",
+      "title": "phase3-admin.spec.ts",
+      "file": "phase3-admin.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Phase 7: LiveKit Live Sessions",
-          "file": "phase7-livekit.spec.ts",
-          "line": 36,
+          "title": "Phase 3: Admin Shell, Users, Bank Accounts, Settings",
+          "file": "phase3-admin.spec.ts",
+          "line": 23,
           "column": 6,
           "specs": [
             {
-              "title": "6. Student cannot get a token before the session is live / within the 10-minute window",
+              "title": "1. Admin layout displays full 9-link navigation and desktop top bar with notification bell",
               "ok": true,
               "tags": [],
               "tests": [
@@ -140,12 +138,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 21740,
+                      "duration": 7296,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-25T22:15:29.947Z",
+                      "startTime": "2026-10-26T08:03:03.699Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -153,9 +151,213 @@
                   "status": "expected"
                 }
               ],
-              "id": "391d41307befe9d255c8-0a1654e3b935f72e5dd3",
-              "file": "phase7-livekit.spec.ts",
-              "line": 307,
+              "id": "02f0d887e68ee915f59f-47d5914ff99e838f5d56",
+              "file": "phase3-admin.spec.ts",
+              "line": 29,
+              "column": 7
+            },
+            {
+              "title": "2. Admin cannot demote or deactivate self (UI locked and API returns 403)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12349,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T08:03:11.291Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-8cb8f76bf7feb4f5548a",
+              "file": "phase3-admin.spec.ts",
+              "line": 62,
+              "column": 7
+            },
+            {
+              "title": "3. Non-admin users calling /api/admin/* receive HTTP 403 Forbidden",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3977,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T08:03:23.721Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-490ba0f083347baacf01",
+              "file": "phase3-admin.spec.ts",
+              "line": 116,
+              "column": 7
+            },
+            {
+              "title": "4. Admin promotes customer to teacher and writes audit log",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7107,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T08:03:27.875Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-cb25fbfb1b4b4340b443",
+              "file": "phase3-admin.spec.ts",
+              "line": 138,
+              "column": 7
+            },
+            {
+              "title": "5. Admin provisions a new teacher account and verifies profile & audit log",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2363,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T08:03:35.151Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-19071afce8b860bb12e6",
+              "file": "phase3-admin.spec.ts",
+              "line": 175,
+              "column": 7
+            },
+            {
+              "title": "6. Admin bank accounts CRUD and disabled account filtered out of checkout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6018,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T08:03:37.609Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-94af610a0427f9ceba54",
+              "file": "phase3-admin.spec.ts",
+              "line": 213,
+              "column": 7
+            },
+            {
+              "title": "7. Updating settings updates database, public footer, and audit log",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5322,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T08:03:43.725Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "02f0d887e68ee915f59f-38258fdcb9a883a2bc36",
+              "file": "phase3-admin.spec.ts",
+              "line": 268,
               "column": 7
             }
           ]
@@ -165,9 +367,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-25T22:15:23.044Z",
-    "duration": 37744.776000000005,
-    "expected": 1,
+    "startTime": "2026-10-26T08:02:51.950Z",
+    "duration": 58053.186,
+    "expected": 7,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

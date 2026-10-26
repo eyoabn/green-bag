@@ -10,7 +10,7 @@ const { Client } = require('pg');
 
 const DIRECT_URL =
   process.env.DIRECT_URL ||
-  'postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
+  'postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true';
 
 const USERS = [
   { email: 'admin@arenguade.com',            password: 'Password123!', role: 'admin',    full_name: 'Abebe Admin (Owner)',  phone: '+251911000001' },

@@ -24,7 +24,7 @@ import {
   History,
   Database
 } from "lucide-react";
-import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
+import { getCurrentUser, getLocalUser, setLocalUser, AppUser } from "@/utils/auth";
 import { createClient } from "@/utils/supabase/client";
 import NotificationBell from "@/components/NotificationBell";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
@@ -35,11 +35,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Real RBAC State
-  const [isVerifying, setIsVerifying] = useState(true);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [isVerifying, setIsVerifying] = useState<boolean>(true);
 
   const verifyAdminRole = async () => {
-    setIsVerifying(true);
     try {
       const user = await getCurrentUser();
       setCurrentUser(user);
@@ -57,6 +56,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   useEffect(() => {
+    const cached = getLocalUser();
+    if (cached) {
+      setCurrentUser(cached);
+      setIsVerifying(false);
+    }
     verifyAdminRole();
     const handleAuthChange = () => verifyAdminRole();
     window.addEventListener("arenguade_auth_change", handleAuthChange);

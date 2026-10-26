@@ -112,26 +112,30 @@ export async function getCurrentUser(): Promise<AppUser | null> {
     console.warn("Supabase auth.getSession() skipped:", err);
   }
 
-  // 3. Last resort: stale localStorage (network unavailable)
-  if (typeof window !== "undefined") {
-    try {
-      const stored = localStorage.getItem("arenguade_user");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && (parsed.id || parsed.email)) {
-          const validId = isValidUUID(parsed.id) ? parsed.id : toValidUUID(parsed.email || parsed.id);
-          return {
-            id: validId,
-            email: parsed.email || "user@arenguade.et",
-            full_name: parsed.full_name || parsed.fullName || parsed.email?.split("@")[0] || "Valued Customer",
-            phone: parsed.phone || "",
-            role: parsed.role || "customer",
-          };
-        }
-      }
-    } catch {}
-  }
+  // 3. Last resort: localStorage cached user
+  return getLocalUser();
+}
 
+export function getLocalUser(): AppUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("arenguade_user");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed && (parsed.id || parsed.email)) {
+        const validId = isValidUUID(parsed.id) ? parsed.id : toValidUUID(parsed.email || parsed.id);
+        return {
+          id: validId,
+          email: parsed.email || "user@arenguade.et",
+          full_name: parsed.full_name || parsed.fullName || parsed.email?.split("@")[0] || "Valued User",
+          phone: parsed.phone || "",
+          role: parsed.role || "customer",
+          avatar_url: parsed.avatar_url,
+          is_active: parsed.is_active,
+        };
+      }
+    }
+  } catch {}
   return null;
 }
 

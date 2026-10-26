@@ -24,7 +24,7 @@ const { Client }       = require('pg');
 // ------------------------------------------------------------------
 const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL  || 'https://heslqxyonklerdcxjohf.supabase.co';
 const ANON_KEY      = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhlc2xxeHlvbmtsZXJkY3hqb2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5ODMyOTIsImV4cCI6MjEwNDU1OTI5Mn0.NaVbb5W4lZa82GjtFBjE3hur60p68v5r13OdOwp3iwE';
-const DIRECT_URL    = process.env.DIRECT_URL || 'postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
+const DIRECT_URL    = process.env.DIRECT_URL || 'postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true';
 
 // Seeded test accounts (from seed.js)
 const ADMIN_EMAIL    = 'admin@arenguade.com';

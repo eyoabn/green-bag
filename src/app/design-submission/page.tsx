@@ -29,11 +29,13 @@ import {
   MapPin,
   Truck,
   Building2,
-  QrCode
+  QrCode,
+  Weight
 } from "lucide-react";
 import { uploadFileSafely } from "@/utils/fileUpload";
 import { getCurrentUser } from "@/utils/auth";
 import StickyBottomBar from "@/components/StickyBottomBar";
+import { DEFAULT_DESIGN_PRICING, DesignPricingConfig } from "@/utils/designPricing";
 
 // Preset Bag Sizes
 interface SizePreset {
@@ -168,6 +170,382 @@ const PAPER_COLORS = [
   { id: "Charcoal Black Kraft", name: "Charcoal Black Kraft", bgHex: "#353432", borderHex: "#1E1E1E", textClass: "text-stone-100" },
 ];
 
+function GsmVisualCard({
+  opt,
+  isSelected,
+  onSelect,
+  pricingConfig,
+}: {
+  opt: GsmOption;
+  isSelected: boolean;
+  onSelect: () => void;
+  pricingConfig: DesignPricingConfig;
+}) {
+  const gsmKey = String(opt.value);
+  const cfg = pricingConfig.gsm_rates[gsmKey] || DEFAULT_DESIGN_PRICING.gsm_rates[gsmKey];
+  const baseCost = cfg ? cfg.baseCost : opt.baseCost;
+  const maxKg = cfg?.maxKg ?? 8.5;
+  const feel = cfg?.feel ?? opt.description;
+  const bestFor = cfg?.bestFor ?? opt.description;
+
+  const layerCount = opt.value === 160 ? 2 : opt.value === 180 ? 3 : opt.value === 220 ? 4 : opt.value === 250 ? 5 : 6;
+  const thicknessMm = opt.value === 160 ? "0.18 mm" : opt.value === 180 ? "0.22 mm" : opt.value === 220 ? "0.28 mm" : opt.value === 250 ? "0.35 mm" : "0.42 mm";
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
+        isSelected
+          ? "border-[#1E3B2E] bg-gradient-to-br from-[#1E3B2E]/5 to-[#8C4B31]/5 ring-2 ring-[#1E3B2E]/30 shadow-sm"
+          : "border-stone-200 hover:border-stone-300 bg-white shadow-2xs"
+      }`}
+    >
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-xs text-stone-900">{opt.label}</span>
+            {opt.value === 220 && (
+              <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                Plant Standard
+              </span>
+            )}
+          </div>
+          <span className="text-xs font-mono font-bold text-[#8C4B31]">
+            {baseCost.toFixed(2)} ETB
+          </span>
+        </div>
+
+        {/* Visual Fiber Cross-Section Gauge */}
+        <div className="p-2.5 bg-[#FAF7F2] rounded-xl border border-stone-200/80 my-2 space-y-1.5">
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="text-stone-400 uppercase font-bold tracking-wider">Thickness Gauge</span>
+            <span className="font-mono font-bold text-stone-700">{thicknessMm} ({layerCount}-Ply)</span>
+          </div>
+          <div className="space-y-1">
+            {Array.from({ length: layerCount }).map((_, i) => (
+              <div
+                key={i}
+                className="h-1 rounded-full transition-all"
+                style={{
+                  backgroundColor: opt.value >= 250 ? "#8C4B31" : opt.value >= 220 ? "#1E3B2E" : "#C4A57B",
+                  opacity: 0.6 + i * 0.08,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Tactile & Load Capacity */}
+        <div className="space-y-1 text-[11px]">
+          <div className="flex items-center gap-1.5 text-stone-700 font-semibold">
+            <Weight size={12} className="text-[#8C4B31] shrink-0" />
+            <span>Load Rating: <strong>Max {maxKg} kg</strong></span>
+          </div>
+          <p className="text-stone-500 text-[11px] leading-snug">
+            <strong>Feel:</strong> {feel}
+          </p>
+          <p className="text-stone-500 text-[10px] italic leading-tight pt-0.5">
+            <strong>Best For:</strong> {bestFor}
+          </p>
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-[10px]">
+        <span className="text-stone-400">Tensile Rigidity:</span>
+        <div className="flex items-center gap-1">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <div
+              key={idx}
+              className={`w-2.5 h-1.5 rounded-xs ${
+                idx < (opt.value === 160 ? 1 : opt.value === 180 ? 2 : opt.value === 220 ? 3 : opt.value === 250 ? 4 : 5)
+                  ? "bg-[#1E3B2E]"
+                  : "bg-stone-200"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function HandleVisualCard({
+  opt,
+  isSelected,
+  onSelect,
+  pricingConfig,
+}: {
+  opt: HandleOption;
+  isSelected: boolean;
+  onSelect: () => void;
+  pricingConfig: DesignPricingConfig;
+}) {
+  const cfg = pricingConfig.handle_rates[opt.id] || DEFAULT_DESIGN_PRICING.handle_rates[opt.id];
+  const costDelta = cfg ? cfg.costDelta : opt.costDelta;
+  const gripFeel = cfg?.gripFeel ?? "Standard grip";
+  const maxKg = cfg?.maxKg ?? 8.0;
+  const bestFor = cfg?.bestFor ?? opt.description;
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
+        isSelected
+          ? "border-[#1E3B2E] bg-gradient-to-br from-[#1E3B2E]/5 to-[#8C4B31]/5 ring-2 ring-[#1E3B2E]/30 shadow-sm"
+          : "border-stone-200 hover:border-stone-300 bg-white shadow-2xs"
+      }`}
+    >
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="font-bold text-xs text-stone-900">{opt.name}</span>
+          <span
+            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+              costDelta > 0
+                ? "bg-amber-100 text-[#8C4B31]"
+                : costDelta < 0
+                ? "bg-emerald-100 text-emerald-800"
+                : "bg-stone-100 text-stone-600"
+            }`}
+          >
+            {costDelta > 0 ? `+${costDelta.toFixed(2)} ETB` : costDelta < 0 ? `${costDelta.toFixed(2)} ETB` : "Included (0 ETB)"}
+          </span>
+        </div>
+
+        {/* Architectural SVG Diagram */}
+        <div className="h-16 w-full rounded-xl bg-[#FAF7F2] border border-stone-200/80 p-2 flex items-center justify-center my-2 overflow-hidden">
+          {opt.id === "Twisted Kraft Cord" && (
+            <svg viewBox="0 0 100 50" className="w-full h-full" fill="none">
+              <rect x="15" y="32" width="70" height="16" rx="2" fill="#E7E5E4" stroke="#A8A29E" strokeWidth="1.2" />
+              <rect x="28" y="26" width="10" height="14" rx="1.5" fill="#C4A57B" stroke="#8C4B31" strokeWidth="1" />
+              <rect x="62" y="26" width="10" height="14" rx="1.5" fill="#C4A57B" stroke="#8C4B31" strokeWidth="1" />
+              <path d="M 33 28 C 33 6, 67 6, 67 28" stroke="#8C4B31" strokeWidth="4" strokeLinecap="round" />
+              <path d="M 36 18 L 40 21 M 44 11 L 49 14 M 53 10 L 58 13 M 61 17 L 65 20" stroke="#FFF" strokeWidth="1.2" strokeLinecap="round" />
+            </svg>
+          )}
+
+          {opt.id === "Woven Cotton Rope" && (
+            <svg viewBox="0 0 100 50" className="w-full h-full" fill="none">
+              <rect x="15" y="30" width="70" height="18" rx="2" fill="#E7E5E4" stroke="#A8A29E" strokeWidth="1.2" />
+              <circle cx="32" cy="38" r="4.5" fill="#FFE082" stroke="#B45309" strokeWidth="1.8" />
+              <circle cx="32" cy="38" r="2" fill="#292524" />
+              <circle cx="68" cy="38" r="4.5" fill="#FFE082" stroke="#B45309" strokeWidth="1.8" />
+              <circle cx="68" cy="38" r="2" fill="#292524" />
+              <path d="M 32 38 C 32 6, 68 6, 68 38" stroke="#F5F5F4" strokeWidth="5.5" strokeLinecap="round" />
+              <path d="M 32 38 C 32 6, 68 6, 68 38" stroke="#A8A29E" strokeWidth="1.2" strokeDasharray="2 3" />
+            </svg>
+          )}
+
+          {opt.id === "Flat-Fold Kraft" && (
+            <svg viewBox="0 0 100 50" className="w-full h-full" fill="none">
+              <rect x="15" y="30" width="70" height="18" rx="2" fill="#E7E5E4" stroke="#A8A29E" strokeWidth="1.2" />
+              <path d="M 28 32 L 28 14 C 28 9, 72 9, 72 14 L 72 32" stroke="#C4A57B" strokeWidth="7" strokeLinecap="square" fill="none" />
+              <path d="M 28 32 L 28 14 C 28 9, 72 9, 72 14 L 72 32" stroke="#8C4B31" strokeWidth="1" strokeLinecap="square" fill="none" />
+              <line x1="22" y1="36" x2="78" y2="36" stroke="#78716C" strokeWidth="1.5" strokeDasharray="3 2" />
+            </svg>
+          )}
+
+          {opt.id === "Die-Cut Oval Handle" && (
+            <svg viewBox="0 0 100 50" className="w-full h-full" fill="none">
+              <rect x="15" y="10" width="70" height="38" rx="2" fill="#E7E5E4" stroke="#A8A29E" strokeWidth="1.2" />
+              <rect x="32" y="16" width="36" height="14" rx="7" fill="#C4A57B" fillOpacity="0.3" stroke="#8C4B31" strokeWidth="1" strokeDasharray="3 2" />
+              <rect x="36" y="19" width="28" height="8" rx="4" fill="#292524" />
+            </svg>
+          )}
+
+          {opt.id === "Luxury Satin Ribbon" && (
+            <svg viewBox="0 0 100 50" className="w-full h-full" fill="none">
+              <rect x="15" y="30" width="70" height="18" rx="2" fill="#E7E5E4" stroke="#A8A29E" strokeWidth="1.2" />
+              <rect x="29" y="35" width="7" height="2.5" rx="1" fill="#292524" />
+              <rect x="64" y="35" width="7" height="2.5" rx="1" fill="#292524" />
+              <path d="M 32 35 C 32 8, 68 8, 68 35" stroke="#E0B382" strokeWidth="6.5" strokeLinecap="round" />
+              <path d="M 32 35 C 32 8, 68 8, 68 35" stroke="#FFF" strokeWidth="2" strokeOpacity="0.7" strokeDasharray="15 30" strokeLinecap="round" />
+            </svg>
+          )}
+
+          {opt.id === "No Handles (Fold-Over)" && (
+            <svg viewBox="0 0 100 50" className="w-full h-full" fill="none">
+              <path d="M 18 20 L 22 16 L 26 20 L 30 16 L 34 20 L 38 16 L 42 20 L 46 16 L 50 20 L 54 16 L 58 20 L 62 16 L 66 20 L 70 16 L 74 20 L 78 16 L 82 20 L 82 46 L 18 46 Z" fill="#E7E5E4" stroke="#A8A29E" strokeWidth="1.2" />
+              <line x1="18" y1="26" x2="82" y2="26" stroke="#8C4B31" strokeWidth="1.2" strokeDasharray="4 2" />
+              <text x="50" y="37" textAnchor="middle" fill="#8C4B31" fontSize="7" fontWeight="bold">FOLD & SEAL</text>
+            </svg>
+          )}
+        </div>
+
+        {/* Specs breakdown */}
+        <div className="space-y-1 text-[11px]">
+          <div className="flex items-center gap-1.5 text-stone-700 font-semibold">
+            <ShieldCheck size={12} className="text-[#1E3B2E] shrink-0" />
+            <span>Capacity: <strong>Up to {maxKg} kg</strong></span>
+          </div>
+          <p className="text-stone-500 text-[11px] leading-snug">
+            <strong>Grip:</strong> {gripFeel}
+          </p>
+          <p className="text-stone-500 text-[10px] italic leading-tight pt-0.5">
+            <strong>Best For:</strong> {bestFor}
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function PrintVisualCard({
+  opt,
+  isSelected,
+  onSelect,
+  pricingConfig,
+}: {
+  opt: PrintOption;
+  isSelected: boolean;
+  onSelect: () => void;
+  pricingConfig: DesignPricingConfig;
+}) {
+  const cfg = pricingConfig.print_rates[opt.id] || DEFAULT_DESIGN_PRICING.print_rates[opt.id];
+  const costDelta = cfg ? cfg.costDelta : opt.costDelta;
+  const finishType = cfg?.finishType ?? "Surface application";
+  const tactileBadge = cfg?.tactileBadge ?? "Tactile finish";
+  const bestFor = cfg?.bestFor ?? opt.description;
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
+        isSelected
+          ? "border-[#1E3B2E] bg-gradient-to-br from-[#1E3B2E]/5 to-[#8C4B31]/5 ring-2 ring-[#1E3B2E]/30 shadow-sm"
+          : "border-stone-200 hover:border-stone-300 bg-white shadow-2xs"
+      }`}
+    >
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="font-bold text-xs text-stone-900">{opt.name}</span>
+          <span
+            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+              costDelta > 0
+                ? "bg-amber-100 text-[#8C4B31]"
+                : "bg-stone-100 text-stone-600"
+            }`}
+          >
+            {costDelta > 0 ? `+${costDelta.toFixed(2)} ETB` : "Included (0 ETB)"}
+          </span>
+        </div>
+
+        {/* Realistic Finish Swatch Preview */}
+        <div 
+          className="h-16 w-full rounded-xl p-2.5 my-2 flex items-center justify-between overflow-hidden relative border border-stone-200/80 shadow-inner"
+          style={{
+            backgroundColor: opt.id === "Spot UV Gloss Coating" ? "#2B2927" : "#E8DFD1",
+          }}
+        >
+          {opt.id === "1-Color Soy Screenprint" && (
+            <div className="flex items-center gap-2.5 w-full">
+              <div className="w-10 h-10 rounded-lg bg-stone-900 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+                አ
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-mono font-bold text-stone-900 block truncate">SOY INK CONTRAST</span>
+                <span className="text-[9px] text-stone-600 block">Matte Natural Eco-Pigment</span>
+              </div>
+            </div>
+          )}
+
+          {opt.id === "2-Color Traditional Tibeb" && (
+            <div className="flex items-center gap-2.5 w-full">
+              <div className="w-10 h-10 rounded-lg flex flex-col justify-around p-1 border border-amber-600/40 bg-[#FAF7F2] shrink-0">
+                <div className="h-1.5 w-full bg-gradient-to-r from-emerald-700 via-amber-500 to-emerald-700 rounded-xs" />
+                <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-red-600 to-amber-500 rounded-xs" />
+                <div className="h-1.5 w-full bg-gradient-to-r from-emerald-700 via-amber-500 to-emerald-700 rounded-xs" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold text-stone-900 block truncate">ETHIOPIAN TIBEB BORDER</span>
+                <span className="text-[9px] text-emerald-800 font-semibold block">Dual-Pigment Cultural Accent</span>
+              </div>
+            </div>
+          )}
+
+          {opt.id === "Full-Color Process (CMYK)" && (
+            <div className="flex items-center gap-2.5 w-full">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-yellow-400 p-0.5 flex items-center justify-center shrink-0 shadow-xs">
+                <div className="w-full h-full bg-white/20 backdrop-blur-xs rounded-md flex items-center justify-center text-[10px] font-extrabold text-white">
+                  CMYK
+                </div>
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold text-stone-900 block truncate">FULL PROCESS CMYK</span>
+                <span className="text-[9px] text-stone-600 block">Photographic Vivid Resolution</span>
+              </div>
+            </div>
+          )}
+
+          {opt.id === "Gold / Copper Foil Stamping" && (
+            <div className="flex items-center gap-2.5 w-full">
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-amber-950 font-black text-sm shrink-0 shadow-md border border-amber-300"
+                style={{
+                  background: "linear-gradient(135deg, #FFE082 0%, #FFB300 50%, #FFF9C4 70%, #FF8F00 100%)",
+                }}
+              >
+                ★
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold text-amber-950 block truncate">MIRROR GOLD FOIL</span>
+                <span className="text-[9px] text-amber-800 font-semibold block">Heat-Stamped Reflective Metal</span>
+              </div>
+            </div>
+          )}
+
+          {opt.id === "Debossed / Embossed 3D Logo" && (
+            <div className="flex items-center gap-2.5 w-full">
+              <div className="w-10 h-10 rounded-lg bg-[#DCD2C2] border-t-2 border-l-2 border-stone-400/60 border-b-2 border-r-2 border-white/80 shadow-inner flex items-center justify-center font-bold text-stone-600 text-sm shrink-0">
+                3D
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold text-stone-800 block truncate">HYDRAULIC RELIEF</span>
+                <span className="text-[9px] text-stone-600 block">Blind Tactile Impression (Zero Ink)</span>
+              </div>
+            </div>
+          )}
+
+          {opt.id === "Spot UV Gloss Coating" && (
+            <div className="flex items-center gap-2.5 w-full">
+              <div className="w-10 h-10 rounded-lg bg-stone-900 border border-stone-700 flex items-center justify-center relative overflow-hidden shrink-0">
+                <div 
+                  className="w-6 h-6 rounded-md bg-stone-700 flex items-center justify-center text-[10px] font-bold text-white shadow-lg"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.05) 100%)",
+                  }}
+                >
+                  UV
+                </div>
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold text-stone-100 block truncate">SPOT UV HIGH-GLOSS</span>
+                <span className="text-[9px] text-stone-300 block">Clear Liquid Contrast Lacquer</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Specs breakdown */}
+        <div className="space-y-1 text-[11px]">
+          <div className="flex items-center gap-1.5 text-stone-700 font-semibold">
+            <Sparkles size={12} className="text-[#8C4B31] shrink-0" />
+            <span>Finish: <strong>{finishType}</strong></span>
+          </div>
+          <p className="text-stone-500 text-[11px] leading-snug">
+            <strong>Tactile:</strong> {tactileBadge}
+          </p>
+          <p className="text-stone-500 text-[10px] italic leading-tight pt-0.5">
+            <strong>Best For:</strong> {bestFor}
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 function DesignSubmissionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -197,6 +575,19 @@ function DesignSubmissionForm() {
   const [hasBottomCard, setHasBottomCard] = useState<boolean>(true);
   const [hasFoodLining, setHasFoodLining] = useState<boolean>(false);
   const [urgency, setUrgency] = useState<string>("Standard (7-10 Days)");
+  const [pricingConfig, setPricingConfig] = useState<DesignPricingConfig>(DEFAULT_DESIGN_PRICING);
+
+  // Fetch admin configured pricing matrix
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.design_pricing) {
+          setPricingConfig(data.design_pricing);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Submission Mode: Visual Builder vs Ready Artwork Upload
   const [studioMode, setStudioMode] = useState<"visual_builder" | "ready_upload">("visual_builder");
@@ -300,11 +691,17 @@ function DesignSubmissionForm() {
 
   // Dynamic price calculation
   const { unitPriceEstimate, totalPriceEstimate } = useMemo(() => {
-    const gsmOpt = GSM_OPTIONS.find((g) => g.value === gsm) || GSM_OPTIONS[2];
-    const handleOpt = HANDLE_OPTIONS.find((h) => h.id === handleType) || HANDLE_OPTIONS[0];
-    const printOpt = PRINT_OPTIONS.find((p) => p.id === printFinish) || PRINT_OPTIONS[0];
+    const gsmKey = String(gsm);
+    const gsmCfg = pricingConfig.gsm_rates[gsmKey];
+    const gsmCost = gsmCfg ? gsmCfg.baseCost : (GSM_OPTIONS.find((g) => g.value === gsm)?.baseCost ?? 18.5);
 
-    let base = gsmOpt.baseCost + handleOpt.costDelta + printOpt.costDelta;
+    const handleCfg = pricingConfig.handle_rates[handleType];
+    const handleCost = handleCfg ? handleCfg.costDelta : (HANDLE_OPTIONS.find((h) => h.id === handleType)?.costDelta ?? 0);
+
+    const printCfg = pricingConfig.print_rates[printFinish];
+    const printCost = printCfg ? printCfg.costDelta : (PRINT_OPTIONS.find((p) => p.id === printFinish)?.costDelta ?? 0);
+
+    let base = gsmCost + handleCost + printCost;
     if (paperColor === "Bleached White Kraft") base += 1.5;
     if (paperColor === "Charcoal Black Kraft") base += 2.0;
     if (hasBottomCard) base += 0.8;
@@ -326,7 +723,7 @@ function DesignSubmissionForm() {
     const unit = Math.round(base * multiplier * 10) / 10;
     const total = Math.round(unit * effectiveCount);
     return { unitPriceEstimate: unit, totalPriceEstimate: total };
-  }, [gsm, handleType, printFinish, paperColor, hasBottomCard, hasFoodLining, effectiveCount, urgency]);
+  }, [gsm, handleType, printFinish, paperColor, hasBottomCard, hasFoodLining, effectiveCount, urgency, pricingConfig]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -938,101 +1335,87 @@ function DesignSubmissionForm() {
 
             {/* 4. Paper Material & Grammage (GSM) */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-stone-200/90 shadow-sm space-y-4">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">
-                  4. Paper Weight & Grammage (GSM) *
-                </h3>
-                <p className="text-[11px] text-stone-500 mt-0.5">
-                  Heavier GSM provides greater rigidity, tear resistance, and load capacity.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">
+                    4. Paper Weight & Grammage (GSM) *
+                  </h3>
+                  <p className="text-[11px] text-stone-500 mt-0.5">
+                    Visual thickness gauge, ply layers, tensile strength, and max load capacities.
+                  </p>
+                </div>
+                <span className="self-start sm:self-auto text-[10px] bg-stone-100 text-stone-600 px-2.5 py-1 rounded-full font-mono font-semibold">
+                  Admin Calibrated Rates
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {GSM_OPTIONS.map((opt) => (
-                  <button
+                  <GsmVisualCard
                     key={opt.value}
-                    type="button"
-                    onClick={() => setGsm(opt.value)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                      gsm === opt.value
-                        ? "border-[#1E3B2E] bg-[#1E3B2E]/5 ring-2 ring-[#1E3B2E]/20"
-                        : "border-stone-200 hover:border-stone-300 bg-white"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-xs text-stone-900">{opt.label}</span>
-                      {opt.value === 220 && (
-                        <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                          Recommended
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-stone-500 leading-snug">{opt.description}</p>
-                  </button>
+                    opt={opt}
+                    isSelected={gsm === opt.value}
+                    onSelect={() => setGsm(opt.value)}
+                    pricingConfig={pricingConfig}
+                  />
                 ))}
               </div>
             </div>
 
             {/* 5. Handle Construction & Style */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-stone-200/90 shadow-sm space-y-4">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">
-                  5. Handle Construction & Grip *
-                </h3>
-                <p className="text-[11px] text-stone-500 mt-0.5">
-                  Select how customers will carry your bag.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">
+                    5. Handle Construction & Grip *
+                  </h3>
+                  <p className="text-[11px] text-stone-500 mt-0.5">
+                    Architectural structure diagram, tensile anchor reinforcement, and ergonomic carrying grip.
+                  </p>
+                </div>
+                <span className="self-start sm:self-auto text-[10px] bg-stone-100 text-stone-600 px-2.5 py-1 rounded-full font-mono font-semibold">
+                  Admin Calibrated Rates
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {HANDLE_OPTIONS.map((opt) => (
-                  <button
+                  <HandleVisualCard
                     key={opt.id}
-                    type="button"
-                    onClick={() => setHandleType(opt.id)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                      handleType === opt.id
-                        ? "border-[#1E3B2E] bg-[#1E3B2E]/5 ring-2 ring-[#1E3B2E]/20"
-                        : "border-stone-200 hover:border-stone-300 bg-white"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="font-bold text-xs text-stone-900">{opt.name}</span>
-                    </div>
-                    <p className="text-[11px] text-stone-500 leading-snug">{opt.description}</p>
-                  </button>
+                    opt={opt}
+                    isSelected={handleType === opt.id}
+                    onSelect={() => setHandleType(opt.id)}
+                    pricingConfig={pricingConfig}
+                  />
                 ))}
               </div>
             </div>
 
             {/* 6. Print Technique & Finishes */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-stone-200/90 shadow-sm space-y-4">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">
-                  6. Print Finishing & Technique *
-                </h3>
-                <p className="text-[11px] text-stone-500 mt-0.5">
-                  Surface application technique for logos, traditional Ethiopian tibeb motifs, or graphics.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">
+                    6. Print Finishing & Technique *
+                  </h3>
+                  <p className="text-[11px] text-stone-500 mt-0.5">
+                    Realistic surface tactile finish swatches, ink contrasts, metallic foils, and relief deboss.
+                  </p>
+                </div>
+                <span className="self-start sm:self-auto text-[10px] bg-stone-100 text-stone-600 px-2.5 py-1 rounded-full font-mono font-semibold">
+                  Admin Calibrated Rates
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {PRINT_OPTIONS.map((opt) => (
-                  <button
+                  <PrintVisualCard
                     key={opt.id}
-                    type="button"
-                    onClick={() => setPrintFinish(opt.id)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                      printFinish === opt.id
-                        ? "border-[#1E3B2E] bg-[#1E3B2E]/5 ring-2 ring-[#1E3B2E]/20"
-                        : "border-stone-200 hover:border-stone-300 bg-white"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="font-bold text-xs text-stone-900">{opt.name}</span>
-                    </div>
-                    <p className="text-[11px] text-stone-500 leading-snug">{opt.description}</p>
-                  </button>
+                    opt={opt}
+                    isSelected={printFinish === opt.id}
+                    onSelect={() => setPrintFinish(opt.id)}
+                    pricingConfig={pricingConfig}
+                  />
                 ))}
               </div>
             </div>

@@ -212,9 +212,9 @@ export default function CustomerOrdersListPage() {
       )}
 
       {/* Filter Tabs & Search */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-stone-200/90 shadow-xs">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-xs overflow-hidden">
         {/* Status Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 no-scrollbar touch-scroll">
           {[
             { id: "all", label: "All Orders" },
             { id: "pending_payment", label: "Payment Required" },
@@ -227,7 +227,7 @@ export default function CustomerOrdersListPage() {
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                 statusFilter === tab.id
                   ? "bg-[#1E3B2E] text-white shadow-xs"
                   : "bg-stone-100 hover:bg-stone-200 text-stone-600"
@@ -287,20 +287,20 @@ export default function CustomerOrdersListPage() {
             return (
               <div
                 key={order.id}
-                className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs hover:shadow-md transition-all space-y-4"
+                className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-stone-200 shadow-xs hover:shadow-md transition-all space-y-4 overflow-hidden min-w-0 max-w-full"
               >
                 {/* Top Row: Order # and Status */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start sm:items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-2xl bg-[#1E3B2E]/10 text-[#1E3B2E] flex items-center justify-center shrink-0">
                       <ShoppingBag size={20} />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-sm text-stone-900">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <span className="font-mono font-bold text-sm text-stone-900 break-all">
                           {order.order_number}
                         </span>
-                        <span className="text-[11px] text-stone-400 font-normal">
+                        <span className="text-[11px] text-stone-400 font-normal shrink-0">
                           • {new Date(order.created_at).toLocaleDateString()}
                         </span>
                       </div>
@@ -310,7 +310,7 @@ export default function CustomerOrdersListPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 self-end sm:self-auto">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${badge.className}`}>
                       <BadgeIcon size={12} />
                       <span>{badge.label}</span>
@@ -336,7 +336,7 @@ export default function CustomerOrdersListPage() {
                 )}
 
                 {/* Items Preview */}
-                <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
+                <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar touch-scroll">
                   {order.order_items?.map((item) => (
                     <div
                       key={item.id}

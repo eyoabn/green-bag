@@ -243,8 +243,8 @@ export default function SchedulePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-28 sm:pb-20 bg-[#F9F6F0]">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full">
+    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-28 sm:pb-20 bg-[#F9F6F0] overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full min-w-0">
         
         {/* Header Section */}
         <div className="max-w-3xl mb-12">
@@ -541,21 +541,24 @@ export default function SchedulePage() {
 
                     {/* Bank Details */}
                     {selectedSession.price > 0 && (
-                      <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-2">
+                      <div className="p-3.5 sm:p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-2 overflow-hidden">
                         <span className="text-xs font-bold text-stone-600 uppercase block">
                           Transfer {selectedSession.price} ETB to Settlement Account:
                         </span>
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                           {activeBanks.map((bank) => (
-                            <div key={bank.id} className="flex items-center justify-between text-xs py-1.5 border-b border-stone-200/60 last:border-0">
-                              <div>
-                                <span className="font-semibold text-stone-800">{bank.name}</span>
-                                <p className="font-mono font-bold text-stone-900">{bank.accountNumber}</p>
+                            <div key={bank.id} className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 text-xs py-2 border-b border-stone-200/60 last:border-0">
+                              <div className="min-w-0">
+                                <span className="font-semibold text-stone-800 block break-words">{bank.name}</span>
+                                <p className="font-mono font-bold text-stone-900 break-all select-all">{bank.accountNumber}</p>
+                                {bank.accountHolder && (
+                                  <span className="text-[10px] text-stone-500 block break-words">{bank.accountHolder}</span>
+                                )}
                               </div>
                               <button
                                 type="button"
                                 onClick={() => handleCopy(bank.accountNumber)}
-                                className="p-2 rounded-lg bg-white border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 flex items-center gap-1 min-h-[36px] cursor-pointer"
+                                className="p-2 rounded-lg bg-white border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 flex items-center gap-1 min-h-[36px] cursor-pointer shrink-0 self-start xs:self-auto"
                               >
                                 {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
                                 <span>{copied ? "Copied" : "Copy"}</span>
@@ -572,15 +575,15 @@ export default function SchedulePage() {
                         <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1.5">
                           Payment Receipt Screenshot <span className="text-red-500">*</span>
                         </label>
-                        <label className="border-2 border-dashed border-stone-300 hover:border-[#8C4B31] bg-[#FAF7F2] p-4 rounded-2xl flex items-center justify-center gap-2 cursor-pointer transition-colors min-h-[56px]">
+                        <label className="border-2 border-dashed border-stone-300 hover:border-[#8C4B31] bg-[#FAF7F2] p-4 rounded-2xl flex items-center justify-center gap-2 cursor-pointer transition-colors min-h-[56px] overflow-hidden">
                           <input 
                             type="file" 
                             accept="image/*,application/pdf" 
                             className="hidden" 
                             onChange={handleReceiptUpload}
                           />
-                          <Upload size={18} className="text-[#8C4B31]" />
-                          <span className="text-xs font-medium text-stone-700 truncate max-w-xs">
+                          <Upload size={18} className="text-[#8C4B31] shrink-0" />
+                          <span className="text-xs font-medium text-stone-700 truncate max-w-[200px] sm:max-w-xs">
                             {receiptFile ? `✓ ${receiptFile.name}` : "Tap to pick photo or screenshot"}
                           </span>
                         </label>

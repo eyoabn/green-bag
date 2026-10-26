@@ -95,13 +95,28 @@ export async function PATCH(
           updates.admin_reply = String(body.admin_reply).trim();
         }
 
+        let designatedBank: any = null;
+        if (body.bank_account_id) {
+          const { rows: bRows } = await pool.query(
+            "SELECT id, bank_name, account_name, account_number, instructions FROM public.bank_accounts WHERE id = $1 LIMIT 1",
+            [body.bank_account_id]
+          );
+          if (bRows.length > 0) designatedBank = bRows[0];
+        }
+
         const updatedSpecs = {
           ...currentSpecs,
           workflow_stage: "quoted",
           accepted_by_admin: true,
           accepted_by_admin_at: new Date().toISOString(),
+          designated_bank: designatedBank,
+          designated_bank_account_id: designatedBank?.id || body.bank_account_id || null,
         };
         updates.specs_json = JSON.stringify(updatedSpecs);
+
+        const bankDirective = designatedBank
+          ? ` Please transfer your deposit to our official ${designatedBank.bank_name} (Acc: ${designatedBank.account_number}) and enter your transaction reference.`
+          : ` Please accept the quote and send your deposit via CBE or Telebirr to initiate manufacturing.`;
 
         await pool.query(
           `INSERT INTO public.notifications (user_id, title, body, link)
@@ -109,7 +124,7 @@ export async function PATCH(
           [
             existing.submitted_by,
             "We Can Do It! Custom Design Accepted",
-            `We can do it! Our plant engineers have analyzed and accepted your custom packaging design "${existing.title}". Quoted Total: ${p.toLocaleString()} ETB. Please accept the quote and send your deposit via CBE or Telebirr to initiate manufacturing.`,
+            `We can do it! Our plant engineers have analyzed and accepted your custom packaging design "${existing.title}". Quoted Total: ${p.toLocaleString()} ETB.${bankDirective}`,
             "/dashboard/designs",
           ]
         );

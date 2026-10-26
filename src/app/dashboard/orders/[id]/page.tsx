@@ -171,7 +171,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const needsProof = ["pending_payment", "rejected"].includes(order.status);
 
   return (
-    <div className="flex flex-col max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="flex flex-col max-w-4xl mx-auto space-y-6 pb-12 w-full min-w-0 overflow-x-hidden">
       
       {/* Back button & Title */}
       <div>
@@ -184,12 +184,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
-                Order {order.order_number}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-serif text-xl sm:text-3xl font-bold text-stone-900 break-words">
+                Order <span className="font-mono text-lg sm:text-2xl break-all">{order.order_number}</span>
               </h1>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                 order.status === "completed"
                   ? "bg-emerald-100 text-emerald-800"
                   : order.status === "approved" || order.status === "in_production"
@@ -209,7 +209,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           {canCancel && (
             <button
               onClick={handleCancel}
-              className="text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-4 py-2 rounded-full transition-colors self-start sm:self-auto cursor-pointer"
+              className="text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-4 py-2 rounded-full transition-colors self-start sm:self-auto cursor-pointer shrink-0"
             >
               Cancel Order
             </button>
@@ -276,46 +276,47 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
       {/* Upload/Re-upload Payment Proof Area */}
       {needsProof && !isCancelled && (
-        <div className="bg-[#FAF7F2] rounded-3xl border border-[#8C4B31]/30 p-6 shadow-sm">
+        <div className="bg-[#FAF7F2] rounded-2xl sm:rounded-3xl border border-[#8C4B31]/30 p-4 sm:p-6 shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 mb-2">
-            <Building2 size={18} className="text-[#8C4B31]" />
+            <Building2 size={18} className="text-[#8C4B31] shrink-0" />
             <h3 className="font-serif text-base font-bold text-stone-900">
               Payment Transfer Instructions
             </h3>
           </div>
 
           {order.bank_accounts && (
-            <div className="bg-white rounded-2xl p-4 border border-stone-200 mt-3 space-y-2 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-stone-500">Bank / Channel:</span>
-                <span className="font-bold text-stone-900">{order.bank_accounts.bank_name}</span>
+            <div className="bg-white rounded-2xl p-4 border border-stone-200 mt-3 space-y-2.5 text-xs overflow-hidden">
+              <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 border-b border-stone-100 pb-2">
+                <span className="text-stone-500 shrink-0">Bank / Channel:</span>
+                <span className="font-bold text-stone-900 break-words xs:text-right">{order.bank_accounts.bank_name}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-stone-500">Account Name:</span>
-                <span className="font-bold text-stone-900">{order.bank_accounts.account_name}</span>
+              <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 border-b border-stone-100 pb-2">
+                <span className="text-stone-500 shrink-0">Account Name:</span>
+                <span className="font-bold text-stone-900 break-words xs:text-right">{order.bank_accounts.account_name}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-stone-500">Account Number:</span>
-                <div className="flex items-center gap-1.5 font-mono font-bold text-[#1E3B2E]">
-                  <span>{order.bank_accounts.account_number}</span>
+              <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 border-b border-stone-100 pb-2">
+                <span className="text-stone-500 shrink-0">Account Number:</span>
+                <div className="flex items-center gap-1.5 font-mono font-bold text-[#1E3B2E] break-all">
+                  <span className="select-all">{order.bank_accounts.account_number}</span>
                   <button
+                    type="button"
                     onClick={() => copyToClipboard(order.bank_accounts.account_number)}
-                    className="p-1 hover:bg-stone-100 rounded text-stone-400 hover:text-stone-600 cursor-pointer"
+                    className="p-1 hover:bg-stone-100 rounded text-stone-400 hover:text-stone-600 cursor-pointer shrink-0"
                     title="Copy Account Number"
                   >
                     {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
                   </button>
                 </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-stone-500">Total Amount Due:</span>
+              <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 pt-1">
+                <span className="text-stone-500 shrink-0">Total Amount Due:</span>
                 <span className="font-bold text-[#8C4B31] text-sm font-mono">
                   {Number(order.total_price).toLocaleString()} ETB
                 </span>
               </div>
-              <div className="flex justify-between items-center border-t border-stone-100 pt-2">
-                <span className="text-stone-500">Payment Reference:</span>
-                <span className="font-mono font-bold text-stone-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+              <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 border-t border-stone-100 pt-2">
+                <span className="text-stone-500 shrink-0">Payment Reference:</span>
+                <span className="font-mono font-bold text-stone-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 break-all select-all">
                   {order.order_number}
                 </span>
               </div>
@@ -328,22 +329,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </label>
 
             {uploadError && (
-              <p className="text-xs text-red-600">{uploadError}</p>
+              <p className="text-xs text-red-600 break-words">{uploadError}</p>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
               <input
                 type="file"
                 required
                 accept="image/jpeg,image/png,image/webp,application/pdf"
                 onChange={(e) => setFileToUpload(e.target.files?.[0] || null)}
-                className="w-full text-xs text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] cursor-pointer"
+                className="w-full max-w-full text-xs text-stone-600 file:mr-2 sm:file:mr-3 file:py-2 file:px-3 sm:file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] cursor-pointer overflow-hidden truncate"
               />
 
               <button
                 type="submit"
                 disabled={!fileToUpload || isUploading}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#8C4B31] hover:bg-[#1E3B2E] text-white text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#8C4B31] hover:bg-[#1E3B2E] text-white text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer disabled:opacity-50 text-center justify-center"
               >
                 {isUploading ? "Uploading..." : "Submit Receipt for Verification"}
               </button>

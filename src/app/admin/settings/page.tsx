@@ -12,8 +12,13 @@ import {
   Globe, 
   Share2, 
   ShieldCheck, 
-  Clock 
+  Clock,
+  PenTool,
+  Layers,
+  Sparkles,
+  Tag
 } from "lucide-react";
+import { DEFAULT_DESIGN_PRICING, DesignPricingConfig } from "@/utils/designPricing";
 
 export default function AdminSettingsPage() {
   const [companyName, setCompanyName] = useState("");
@@ -48,6 +53,9 @@ export default function AdminSettingsPage() {
   const [classesSectionTitle, setClassesSectionTitle] = useState("Upcoming Classes Ready for Registration");
   const [classesSectionSub, setClassesSectionSub] = useState("Join our hands-on packaging and artisan print workshops");
   const [classesSectionVisible, setClassesSectionVisible] = useState(true);
+
+  // Design Studio Dynamic Pricing Configuration
+  const [pricingConfig, setPricingConfig] = useState<DesignPricingConfig>(DEFAULT_DESIGN_PRICING);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,6 +103,16 @@ export default function AdminSettingsPage() {
         setClassesSectionTitle(content.classes_section_title ?? "Upcoming Classes Ready for Registration");
         setClassesSectionSub(content.classes_section_sub ?? "Join our hands-on packaging and artisan print workshops");
         setClassesSectionVisible(content.classes_section_visible !== false);
+
+        // Design Studio dynamic pricing
+        const p = s.design_pricing || content.design_pricing;
+        if (p) {
+          setPricingConfig({
+            gsm_rates: { ...DEFAULT_DESIGN_PRICING.gsm_rates, ...(p.gsm_rates || {}) },
+            handle_rates: { ...DEFAULT_DESIGN_PRICING.handle_rates, ...(p.handle_rates || {}) },
+            print_rates: { ...DEFAULT_DESIGN_PRICING.print_rates, ...(p.print_rates || {}) },
+          });
+        }
       }
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to load factory settings");
@@ -150,6 +168,7 @@ export default function AdminSettingsPage() {
             classes_section_sub: classesSectionSub.trim(),
             classes_section_visible: classesSectionVisible,
           },
+          design_pricing: pricingConfig,
         }),
       });
 
@@ -604,6 +623,145 @@ export default function AdminSettingsPage() {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Section 4: Design Studio Pricing & Surcharge Matrix (ETB) */}
+            <div className="space-y-4 pt-4 border-t border-stone-200/80">
+              <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                <h3 className="font-serif text-base font-bold text-stone-900 flex items-center gap-2">
+                  <PenTool size={16} className="text-[#8C4B31]" />
+                  <span>Design Studio Pricing & Surcharges Matrix (ETB)</span>
+                </h3>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Live Calculator Sync
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-500 leading-relaxed">
+                Control the unit base prices and custom surcharges used by the public 3D Design Studio. Changes update customer price calculations dynamically in real time.
+              </p>
+
+              {/* Subsection A: GSM Base Costs */}
+              <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Layers size={14} className="text-[#1E3B2E]" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900">
+                    A. Paper Weight & Grammage Base Rates (ETB / Unit)
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {Object.entries(pricingConfig.gsm_rates).map(([gsmKey, gsmData]) => (
+                    <div key={gsmKey} className="p-3 bg-white rounded-xl border border-stone-200 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-stone-800 block">
+                          {gsmData.label}
+                        </label>
+                        <span className="text-[9px] font-mono text-stone-400">Max {gsmData.maxKg}kg</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-mono font-bold text-stone-500">ETB</span>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="1"
+                          value={gsmData.baseCost}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setPricingConfig((prev) => ({
+                              ...prev,
+                              gsm_rates: {
+                                ...prev.gsm_rates,
+                                [gsmKey]: { ...gsmData, baseCost: val },
+                              },
+                            }));
+                          }}
+                          className="w-full border border-stone-300 rounded-lg p-1.5 bg-[#FAF7F2] text-xs font-mono font-bold text-stone-900 focus:outline-none focus:ring-1 focus:ring-[#8C4B31]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subsection B: Handle Construction Price Deltas */}
+              <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Tag size={14} className="text-[#8C4B31]" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900">
+                    B. Handle Grip Construction Surcharges (ETB / Unit Delta)
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {Object.entries(pricingConfig.handle_rates).map(([handleKey, handleData]) => (
+                    <div key={handleKey} className="p-3 bg-white rounded-xl border border-stone-200 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-stone-800 block truncate" title={handleData.name}>
+                          {handleData.name}
+                        </label>
+                        <span className="text-[9px] font-mono text-stone-400">Max {handleData.maxKg}kg</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-mono font-bold text-stone-500">ETB</span>
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={handleData.costDelta}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setPricingConfig((prev) => ({
+                              ...prev,
+                              handle_rates: {
+                                ...prev.handle_rates,
+                                [handleKey]: { ...handleData, costDelta: val },
+                              },
+                            }));
+                          }}
+                          className="w-full border border-stone-300 rounded-lg p-1.5 bg-[#FAF7F2] text-xs font-mono font-bold text-stone-900 focus:outline-none focus:ring-1 focus:ring-[#8C4B31]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subsection C: Print Finishing Surcharges */}
+              <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-[#1E3B2E]" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-stone-900">
+                    C. Print Finishing & Technique Surcharges (ETB / Unit Surcharge)
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {Object.entries(pricingConfig.print_rates).map(([printKey, printData]) => (
+                    <div key={printKey} className="p-3 bg-white rounded-xl border border-stone-200 space-y-1">
+                      <label className="text-[11px] font-bold text-stone-800 block truncate" title={printData.name}>
+                        {printData.name}
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-mono font-bold text-stone-500">ETB</span>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          value={printData.costDelta}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setPricingConfig((prev) => ({
+                              ...prev,
+                              print_rates: {
+                                ...prev.print_rates,
+                                [printKey]: { ...printData, costDelta: val },
+                              },
+                            }));
+                          }}
+                          className="w-full border border-stone-300 rounded-lg p-1.5 bg-[#FAF7F2] text-xs font-mono font-bold text-stone-900 focus:outline-none focus:ring-1 focus:ring-[#8C4B31]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
 
             <div className="pt-4 border-t border-stone-100 flex justify-end">

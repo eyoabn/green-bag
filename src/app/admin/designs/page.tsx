@@ -75,6 +75,7 @@ const MANUFACTURING_STAGES = [
 
 export default function AdminDesignsPage() {
   const [designs, setDesigns] = useState<DesignItem[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,6 +83,7 @@ export default function AdminDesignsPage() {
   // Local edit state per design
   const [quotePrices, setQuotePrices] = useState<Record<string, string>>({});
   const [adminReplies, setAdminReplies] = useState<Record<string, string>>({});
+  const [selectedBankAccounts, setSelectedBankAccounts] = useState<Record<string, string>>({});
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Inline file viewer state: map of designId -> signedUrl
@@ -96,21 +98,45 @@ export default function AdminDesignsPage() {
     setErrorMsg(null);
     try {
       const url = selectedFilter === "all" ? "/api/designs" : `/api/designs?status=${selectedFilter}`;
-      const res = await fetch(url);
+      const [res, banksRes] = await Promise.all([
+        fetch(url),
+        fetch("/api/bank-accounts").catch(() => null),
+      ]);
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load custom designs.");
 
       const loadedDesigns: DesignItem[] = data.designs || [];
       setDesigns(loadedDesigns);
 
+      if (banksRes && banksRes.ok) {
+        const banksData = await banksRes.json();
+        const accs = banksData.accounts || banksData.bankAccounts || [];
+        setBankAccounts(accs.length > 0 ? accs : [
+          { id: "cbe-1", bank_name: "Commercial Bank of Ethiopia (CBE)", account_name: "Ethiopia Arenguade Paper Products PLC", account_number: "1000 1234 5678 9" },
+          { id: "telebirr-1", bank_name: "Telebirr Enterprise QR & Till", account_name: "Arenguade Packaging Merchant", account_number: "+251 911 741618 (Till: 893201)" },
+          { id: "awash-1", bank_name: "Awash International Bank", account_name: "Arenguade Packaging Factory", account_number: "0132 0876 5432 00" },
+        ]);
+      }
+
       const quotes: Record<string, string> = {};
       const replies: Record<string, string> = {};
+      const designatedBanks: Record<string, string> = {};
+
       loadedDesigns.forEach((d) => {
         if (d.quoted_price) quotes[d.id] = String(d.quoted_price);
         if (d.admin_reply) replies[d.id] = d.admin_reply;
+        let specs: any = {};
+        try {
+          specs = typeof d.specs_json === "string" ? JSON.parse(d.specs_json) : (d.specs_json || {});
+        } catch {}
+        if (specs.designated_bank_account_id) {
+          designatedBanks[d.id] = specs.designated_bank_account_id;
+        }
       });
       setQuotePrices(quotes);
       setAdminReplies(replies);
+      setSelectedBankAccounts(designatedBanks);
     } catch (err: any) {
       console.error("Load designs error:", err);
       setErrorMsg(err.message || "Failed to load designs");
@@ -165,6 +191,8 @@ export default function AdminDesignsPage() {
       return;
     }
 
+    const targetBankId = selectedBankAccounts[id] || (bankAccounts[0]?.id ?? null);
+
     if (!confirm(`Accept this packaging request with "We Can Do It!" and send quotation of ${Number(rawPrice).toLocaleString()} ETB to the customer?`)) return;
 
     setActionLoadingId(id);
@@ -176,13 +204,14 @@ export default function AdminDesignsPage() {
           action: "accept_and_quote",
           quoted_price: Number(rawPrice),
           admin_reply: adminReplies[id] || "We can do it! Custom dieline approved by our plant engineering desk.",
+          bank_account_id: targetBankId,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to accept and quote design.");
 
       await loadDesigns();
-      alert("Design accepted ('We Can Do It!') and notification dispatched to customer to send payment!");
+      alert("Design accepted ('We Can Do It!') and notification dispatched to customer to send payment to the designated account!");
     } catch (err: any) {
       alert(err.message || "Failed to accept design.");
     } finally {
@@ -691,8 +720,8 @@ export default function AdminDesignsPage() {
                 {/* Admin Quotation, Feedback, and Status Controls */}
                 <div className="p-5 bg-[#FAF7F2] rounded-2xl border border-stone-200 space-y-4">
                   
-                  {/* Top row: Quote Price & Status Selector */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Top row: Quote Price, Designated Bank, & Status Selector */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
                         Binding Quoted Price (ETB):
@@ -710,6 +739,23 @@ export default function AdminDesignsPage() {
 
                     <div>
                       <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
+                        Designated Bank Account for Deposit:
+                      </label>
+                      <select
+                        value={selectedBankAccounts[design.id] || (bankAccounts[0]?.id ?? "")}
+                        onChange={(e) => setSelectedBankAccounts({ ...selectedBankAccounts, [design.id]: e.target.value })}
+                        className="w-full p-2.5 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 font-semibold text-stone-900"
+                      >
+                        {bankAccounts.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.bank_name} — {b.account_number}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
                         Workflow State:
                       </label>
                       <div className="flex flex-wrap items-center gap-1.5">
@@ -719,7 +765,7 @@ export default function AdminDesignsPage() {
                             type="button"
                             onClick={() => handleUpdateStatusAndQuote(design.id, st)}
                             disabled={actionLoadingId === design.id}
-                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all uppercase cursor-pointer ${
+                            className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold transition-all uppercase cursor-pointer ${
                               design.status === st
                                 ? "bg-stone-900 text-white shadow-xs"
                                 : "bg-white text-stone-700 border border-stone-300 hover:bg-stone-100"
@@ -734,9 +780,25 @@ export default function AdminDesignsPage() {
 
                   {/* Admin Reply Note to Customer */}
                   <div>
-                    <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
-                      Factory Technical Reply / Quotation Note (Customer Notified):
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block">
+                        Factory Technical Reply / Quotation Note (Customer Notified):
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const priceVal = quotePrices[design.id] || "25000";
+                          const targetBank = bankAccounts.find(b => b.id === (selectedBankAccounts[design.id] || bankAccounts[0]?.id)) || bankAccounts[0];
+                          const bankText = targetBank ? ` to our official ${targetBank.bank_name} (Acc: ${targetBank.account_number})` : "";
+                          const autoText = `We can do it! We have analyzed your custom design dieline and can manufacture your run (${design.dimensions || "Bespoke Size"}, ${design.gsm || 220} GSM kraft, ${design.handle_type || "Twisted Kraft Cord"}, ${design.print_finish || "1-Color Soy"}). Binding quoted price: ${Number(priceVal).toLocaleString()} ETB. Please accept quote and transfer deposit${bankText} to initiate plate engraving.`;
+                          setAdminReplies({ ...adminReplies, [design.id]: autoText });
+                        }}
+                        className="text-[10px] font-bold text-[#8C4B31] hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <Sparkles size={11} />
+                        <span>Auto-Fill &quot;We Can Do It!&quot; Proposal</span>
+                      </button>
+                    </div>
                     <textarea
                       rows={2}
                       placeholder="E.g. We can produce 5,000 units on 220 GSM kraft with hot gold foil stamping. Estimated dispatch 10 business days."

@@ -455,7 +455,7 @@ export default function CustomerDesignsPage() {
               return (
                 <div
                   key={design.id}
-                  className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-md space-y-6"
+                  className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-stone-200 shadow-md space-y-6 overflow-hidden min-w-0 max-w-full"
                 >
                   {/* Top Bar: Title, ID, Status, and Quoted Price */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-100">
@@ -610,94 +610,164 @@ export default function CustomerDesignsPage() {
 
                   {/* Quotation Decision Bar (When status is 'quoted') */}
                   {design.status === "quoted" && (
-                    <div className="p-5 bg-gradient-to-r from-purple-50 to-emerald-50 rounded-2xl border-2 border-purple-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-bold uppercase mb-1">
-                          <CheckCircle2 size={12} />
-                          <span>We Can Do It! Factory Accepted Your Design</span>
+                    <div className="p-5 bg-gradient-to-r from-purple-50 via-emerald-50/50 to-stone-50 rounded-2xl border-2 border-purple-300 flex flex-col gap-4 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-bold uppercase mb-1.5 shadow-2xs">
+                            <CheckCircle2 size={12} />
+                            <span>We Can Do It! Factory Verified & Accepted Your Design</span>
+                          </div>
+                          <h4 className="text-base font-bold text-purple-950">
+                            Quotation Ready: {Number(design.quoted_price).toLocaleString()} ETB
+                          </h4>
+                          <p className="text-[11px] text-stone-700 mt-0.5 leading-relaxed">
+                            Our Addis Ababa manufacturing engineers analyzed your design dielines and confirmed full production feasibility. Accept this quote to lock your spot and settle deposit.
+                          </p>
                         </div>
-                        <h4 className="text-sm font-bold text-purple-950">
-                          Quotation Ready: {Number(design.quoted_price).toLocaleString()} ETB
-                        </h4>
-                        <p className="text-[11px] text-stone-700 mt-0.5 leading-relaxed">
-                          Our Addis Ababa engineering team verified your dielines and confirmed manufacturing capability. Accept this quote to receive official payment details and begin your production run.
-                        </p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => handleRespondToQuote(design.id, "accept")}
+                            disabled={actionLoadingId === design.id}
+                            className="px-5 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            <Check size={14} />
+                            <span>Accept Quote & Pay</span>
+                          </button>
+                          <button
+                            onClick={() => handleRespondToQuote(design.id, "decline")}
+                            disabled={actionLoadingId === design.id}
+                            className="px-4 py-2.5 rounded-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold border border-stone-300 transition-colors cursor-pointer"
+                          >
+                            Decline
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => handleRespondToQuote(design.id, "accept")}
-                          disabled={actionLoadingId === design.id}
-                          className="px-5 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
-                        >
-                          <Check size={14} />
-                          <span>Accept Quote & Pay</span>
-                        </button>
-                        <button
-                          onClick={() => handleRespondToQuote(design.id, "decline")}
-                          disabled={actionLoadingId === design.id}
-                          className="px-4 py-2.5 rounded-full bg-white hover:bg-stone-100 text-stone-700 text-xs font-bold border border-stone-300 transition-colors cursor-pointer"
-                        >
-                          Decline
-                        </button>
-                      </div>
+
+                      {/* Designated Payment Account Highlight */}
+                      {specsObj.designated_bank && (
+                        <div className="p-3.5 bg-white/95 rounded-xl border border-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs overflow-hidden">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                              <Building2 size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-900 shrink-0">
+                                  Designated Settlement Channel:
+                                </span>
+                                <span className="text-xs font-bold text-stone-900 break-words">
+                                  {specsObj.designated_bank.bank_name}
+                                </span>
+                              </div>
+                              <p className="text-xs font-mono font-bold text-[#8C4B31] select-all break-all">
+                                {specsObj.designated_bank.account_number}
+                                <span className="text-[10px] font-sans font-normal text-stone-500 ml-2 break-words">
+                                  ({specsObj.designated_bank.account_name})
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(specsObj.designated_bank.account_number, `quote-${design.id}`)}
+                            className="text-xs font-bold text-stone-700 hover:text-[#8C4B31] flex items-center gap-1 self-start sm:self-auto px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 transition-colors cursor-pointer shrink-0"
+                          >
+                            {copiedAccount === `quote-${design.id}` ? (
+                              <>
+                                <Check size={12} className="text-emerald-600" />
+                                <span className="text-emerald-700">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={12} />
+                                <span>Copy Account</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {/* WORKFLOW PHASE 1: ACCEPTED BUT PAYMENT NOT YET SUBMITTED */}
                   {isAccepted && !isPaymentSubmitted && (
-                    <div className="p-6 bg-[#FAF7F2] rounded-3xl border-2 border-amber-300 shadow-sm space-y-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-stone-900">
-                          <Building2 size={20} className="text-[#8C4B31]" />
+                    <div className="p-4 sm:p-6 bg-[#FAF7F2] rounded-2xl sm:rounded-3xl border-2 border-amber-300 shadow-sm space-y-5 overflow-hidden">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-start sm:items-center gap-2 text-stone-900">
+                          <Building2 size={20} className="text-[#8C4B31] shrink-0 mt-0.5 sm:mt-0" />
                           <div>
                             <h4 className="font-serif text-base font-bold">Step 3: Telebirr QR & CBE Bank Settlement</h4>
-                            <p className="text-[11px] text-stone-500">
+                            <p className="text-[11px] text-stone-500 leading-relaxed">
                               Please transfer the order total ({Number(design.quoted_price).toLocaleString()} ETB) via Telebirr QR or CBE bank transfer, enter the QR reference below, and upload your payment proof.
                             </p>
                           </div>
                         </div>
-                        <span className="text-[10px] uppercase font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                        <span className="text-[10px] uppercase font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 shrink-0 self-start sm:self-auto">
                           Payment Pending
                         </span>
                       </div>
 
                       {/* Official Bank & Telebirr QR Cards */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {bankAccounts.map((b) => (
-                          <div key={b.id} className="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-2">
-                            <div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#1E3B2E] flex items-center gap-1">
-                                {b.bank_name.toLowerCase().includes("telebirr") && <QrCode size={13} className="text-[#8C4B31]" />}
-                                <span>{b.bank_name}</span>
-                              </span>
-                              <p className="text-xs font-mono font-bold text-stone-900 mt-1 select-all">
-                                {b.account_number}
-                              </p>
-                              <p className="text-[10px] text-stone-500 mt-0.5 truncate">{b.account_name}</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard(b.account_number, b.id)}
-                              className="text-[11px] font-bold text-stone-700 hover:text-[#8C4B31] flex items-center gap-1 self-start cursor-pointer"
-                            >
-                              {copiedAccount === b.id ? (
-                                <>
-                                  <Check size={12} className="text-emerald-600" />
-                                  <span className="text-emerald-700">Copied!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy size={12} />
-                                  <span>Copy Account / Till</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        ))}
+                        {bankAccounts
+                          .slice()
+                          .sort((a, b) => {
+                            if (specsObj.designated_bank_account_id === a.id) return -1;
+                            if (specsObj.designated_bank_account_id === b.id) return 1;
+                            return 0;
+                          })
+                          .map((b) => {
+                            const isDesignated = specsObj.designated_bank_account_id === b.id || (specsObj.designated_bank && specsObj.designated_bank.account_number === b.account_number);
+                            return (
+                              <div
+                                key={b.id}
+                                className={`p-4 rounded-2xl border shadow-xs flex flex-col justify-between space-y-2 transition-all ${
+                                  isDesignated
+                                    ? "bg-gradient-to-br from-emerald-50/70 to-purple-50/40 border-emerald-500 ring-2 ring-emerald-500/20"
+                                    : "bg-white border-stone-200"
+                                }`}
+                              >
+                                <div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#1E3B2E] flex items-center gap-1">
+                                      {b.bank_name.toLowerCase().includes("telebirr") && <QrCode size={13} className="text-[#8C4B31]" />}
+                                      <span>{b.bank_name}</span>
+                                    </span>
+                                    {isDesignated && (
+                                      <span className="text-[9px] font-extrabold uppercase bg-emerald-700 text-white px-2 py-0.5 rounded-full shadow-2xs">
+                                        Factory Designated
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs font-mono font-bold text-stone-900 mt-1 select-all break-all">
+                                    {b.account_number}
+                                  </p>
+                                  <p className="text-[10px] text-stone-500 mt-0.5 truncate">{b.account_name}</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(b.account_number, b.id)}
+                                  className="text-[11px] font-bold text-stone-700 hover:text-[#8C4B31] flex items-center gap-1 self-start cursor-pointer shrink-0"
+                                >
+                                  {copiedAccount === b.id ? (
+                                    <>
+                                      <Check size={12} className="text-emerald-600" />
+                                      <span className="text-emerald-700">Copied!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy size={12} />
+                                      <span>Copy Account / Till</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })}
                       </div>
 
                       {/* Upload Screenshot & QR Ref Form */}
-                      <div className="p-5 bg-white rounded-2xl border border-stone-200 space-y-4">
+                      <div className="p-4 sm:p-5 bg-white rounded-xl sm:rounded-2xl border border-stone-200 space-y-4 overflow-hidden">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1 flex items-center gap-1">
@@ -715,7 +785,7 @@ export default function CustomerDesignsPage() {
                               }}
                               className="w-full border border-stone-300 rounded-xl p-2.5 bg-[#FAF7F2] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
                             />
-                            <span className="text-[10px] text-stone-400 mt-0.5 block">
+                            <span className="text-[10px] text-stone-400 mt-0.5 block leading-normal">
                               Enter the Telebirr transaction ID or CBE slip confirmation number.
                             </span>
                           </div>
@@ -731,12 +801,12 @@ export default function CustomerDesignsPage() {
                                 const f = e.target.files?.[0];
                                 if (f) setPaymentFiles((prev) => ({ ...prev, [design.id]: f }));
                               }}
-                              className="w-full text-xs text-stone-700 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] cursor-pointer"
+                              className="w-full max-w-full text-xs text-stone-700 file:mr-2 sm:file:mr-3 file:py-2 file:px-3 sm:file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] cursor-pointer overflow-hidden truncate"
                             />
                             {paymentFiles[design.id] && (
-                              <p className="text-[11px] text-emerald-700 font-bold mt-1 flex items-center gap-1">
-                                <CheckCircle size={12} />
-                                <span>Selected: {paymentFiles[design.id].name} ({(paymentFiles[design.id].size / 1024).toFixed(1)} KB)</span>
+                              <p className="text-[11px] text-emerald-700 font-bold mt-1 flex items-center gap-1 min-w-0 max-w-full">
+                                <CheckCircle size={12} className="shrink-0" />
+                                <span className="truncate">Selected: {paymentFiles[design.id].name} ({(paymentFiles[design.id].size / 1024).toFixed(1)} KB)</span>
                               </p>
                             )}
                           </div>
@@ -747,9 +817,9 @@ export default function CustomerDesignsPage() {
                             type="button"
                             disabled={uploadingId === design.id || (!paymentFiles[design.id] && !qrCodeRefs[design.id])}
                             onClick={() => handlePaymentSubmit(design.id)}
-                            className="px-6 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                            className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-center"
                           >
-                            <Upload size={14} />
+                            <Upload size={14} className="shrink-0" />
                             <span>{uploadingId === design.id ? "Submitting Payment Proof..." : "Submit QR Code & Payment Proof"}</span>
                           </button>
                         </div>

@@ -4,7 +4,7 @@
       "C:\\Program Files\\nodejs\\node.exe",
       "C:\\Users\\us\\greenwork\\node_modules\\@playwright\\test\\cli.js",
       "test",
-      "tests/e2e/phase3-admin.spec.ts"
+      "tests/e2e/phase10-mobile-ui.spec.ts"
     ],
     "configFile": "C:\\Users\\us\\greenwork\\playwright.config.ts",
     "rootDir": "C:/Users/us/greenwork/tests/e2e",
@@ -110,255 +110,578 @@
   },
   "suites": [
     {
-      "title": "phase3-admin.spec.ts",
-      "file": "phase3-admin.spec.ts",
+      "title": "phase10-mobile-ui.spec.ts",
+      "file": "phase10-mobile-ui.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Phase 3: Admin Shell, Users, Bank Accounts, Settings",
-          "file": "phase3-admin.spec.ts",
-          "line": 23,
+          "title": "Phase 10: Mobile Responsiveness & Zero Horizontal Overflow",
+          "file": "phase10-mobile-ui.spec.ts",
+          "line": 9,
           "column": 6,
-          "specs": [
+          "specs": [],
+          "suites": [
             {
-              "title": "1. Admin layout displays full 9-link navigation and desktop top bar with notification bell",
-              "ok": true,
-              "tags": [],
-              "tests": [
+              "title": "iPhone SE (375x667) Viewport Checks",
+              "file": "phase10-mobile-ui.spec.ts",
+              "line": 22,
+              "column": 10,
+              "specs": [
                 {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
+                  "title": "public home page has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7296,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-26T08:03:03.699Z",
+                      "timeout": 60000,
                       "annotations": [],
-                      "attachments": []
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1210,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:27.448Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
                     }
                   ],
-                  "status": "expected"
+                  "id": "7b0a992f6b78675a07c4-c8824044aacce644b8e5",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 25,
+                  "column": 11
+                },
+                {
+                  "title": "product catalog has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1151,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:29.882Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "7b0a992f6b78675a07c4-97d0b4f82694dec01656",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 35,
+                  "column": 11
+                },
+                {
+                  "title": "product detail page has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 2026,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:31.069Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "7b0a992f6b78675a07c4-53a27c3dbd7fa4437b8d",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 45,
+                  "column": 11
+                },
+                {
+                  "title": "checkout page has zero horizontal scroll and fits viewport",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1581,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:33.133Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "7b0a992f6b78675a07c4-4b785773e7e5f71d234c",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 56,
+                  "column": 11
+                },
+                {
+                  "title": "learn & workshop calendar page has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1403,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:34.739Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "7b0a992f6b78675a07c4-30aa72157d450cf6b538",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 67,
+                  "column": 11
+                },
+                {
+                  "title": "customer login page has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1014,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:36.172Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "7b0a992f6b78675a07c4-8c1f1ab5e03c992f0b66",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 77,
+                  "column": 11
+                },
+                {
+                  "title": "customer dashboard orders view has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 6022,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:37.221Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "7b0a992f6b78675a07c4-2dcd10363a995dd14ebd",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 87,
+                  "column": 11
+                },
+                {
+                  "title": "customer custom designs view has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 930,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:43.279Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "7b0a992f6b78675a07c4-293ec487e2563d276b81",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 104,
+                  "column": 11
                 }
-              ],
-              "id": "02f0d887e68ee915f59f-47d5914ff99e838f5d56",
-              "file": "phase3-admin.spec.ts",
-              "line": 29,
-              "column": 7
+              ]
             },
             {
-              "title": "2. Admin cannot demote or deactivate self (UI locked and API returns 403)",
-              "ok": true,
-              "tags": [],
-              "tests": [
+              "title": "Standard Android (360x780) Viewport Checks",
+              "file": "phase10-mobile-ui.spec.ts",
+              "line": 22,
+              "column": 10,
+              "specs": [
                 {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
+                  "title": "public home page has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 12349,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-26T08:03:11.291Z",
+                      "timeout": 60000,
                       "annotations": [],
-                      "attachments": []
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 870,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:44.241Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
                     }
                   ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-8cb8f76bf7feb4f5548a",
-              "file": "phase3-admin.spec.ts",
-              "line": 62,
-              "column": 7
-            },
-            {
-              "title": "3. Non-admin users calling /api/admin/* receive HTTP 403 Forbidden",
-              "ok": true,
-              "tags": [],
-              "tests": [
+                  "id": "7b0a992f6b78675a07c4-3bbfcf40a632179b10f4",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 25,
+                  "column": 11
+                },
                 {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
+                  "title": "product catalog has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3977,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-26T08:03:23.721Z",
+                      "timeout": 60000,
                       "annotations": [],
-                      "attachments": []
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 907,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:45.150Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
                     }
                   ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-490ba0f083347baacf01",
-              "file": "phase3-admin.spec.ts",
-              "line": 116,
-              "column": 7
-            },
-            {
-              "title": "4. Admin promotes customer to teacher and writes audit log",
-              "ok": true,
-              "tags": [],
-              "tests": [
+                  "id": "7b0a992f6b78675a07c4-934cdf049111eeec0e6c",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 35,
+                  "column": 11
+                },
                 {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
+                  "title": "product detail page has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7107,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-26T08:03:27.875Z",
+                      "timeout": 60000,
                       "annotations": [],
-                      "attachments": []
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 862,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:46.097Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
                     }
                   ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-cb25fbfb1b4b4340b443",
-              "file": "phase3-admin.spec.ts",
-              "line": 138,
-              "column": 7
-            },
-            {
-              "title": "5. Admin provisions a new teacher account and verifies profile & audit log",
-              "ok": true,
-              "tags": [],
-              "tests": [
+                  "id": "7b0a992f6b78675a07c4-5264c89a28232ac82a91",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 45,
+                  "column": 11
+                },
                 {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
+                  "title": "checkout page has zero horizontal scroll and fits viewport",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2363,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-26T08:03:35.151Z",
+                      "timeout": 60000,
                       "annotations": [],
-                      "attachments": []
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1029,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:47.000Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
                     }
                   ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-19071afce8b860bb12e6",
-              "file": "phase3-admin.spec.ts",
-              "line": 175,
-              "column": 7
-            },
-            {
-              "title": "6. Admin bank accounts CRUD and disabled account filtered out of checkout",
-              "ok": true,
-              "tags": [],
-              "tests": [
+                  "id": "7b0a992f6b78675a07c4-c1840727fa7306bcdda7",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 56,
+                  "column": 11
+                },
                 {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
+                  "title": "learn & workshop calendar page has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6018,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-26T08:03:37.609Z",
+                      "timeout": 60000,
                       "annotations": [],
-                      "attachments": []
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1031,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:48.064Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
                     }
                   ],
-                  "status": "expected"
-                }
-              ],
-              "id": "02f0d887e68ee915f59f-94af610a0427f9ceba54",
-              "file": "phase3-admin.spec.ts",
-              "line": 213,
-              "column": 7
-            },
-            {
-              "title": "7. Updating settings updates database, public footer, and audit log",
-              "ok": true,
-              "tags": [],
-              "tests": [
+                  "id": "7b0a992f6b78675a07c4-9a2b9c95fc2c21fc1872",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 67,
+                  "column": 11
+                },
                 {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
+                  "title": "customer login page has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5322,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-26T08:03:43.725Z",
+                      "timeout": 60000,
                       "annotations": [],
-                      "attachments": []
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 818,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:49.128Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
                     }
                   ],
-                  "status": "expected"
+                  "id": "7b0a992f6b78675a07c4-3fb2373b37b2c75e3931",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 77,
+                  "column": 11
+                },
+                {
+                  "title": "customer dashboard orders view has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 2850,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:49.976Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "7b0a992f6b78675a07c4-649af6eca6f70fcd0107",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 87,
+                  "column": 11
+                },
+                {
+                  "title": "customer custom designs view has zero horizontal scroll",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 902,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-10-26T09:18:52.859Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "7b0a992f6b78675a07c4-dd2ec7200d988ecb9624",
+                  "file": "phase10-mobile-ui.spec.ts",
+                  "line": 104,
+                  "column": 11
                 }
-              ],
-              "id": "02f0d887e68ee915f59f-38258fdcb9a883a2bc36",
-              "file": "phase3-admin.spec.ts",
-              "line": 268,
-              "column": 7
+              ]
             }
           ]
         }
@@ -367,9 +690,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-26T08:02:51.950Z",
-    "duration": 58053.186,
-    "expected": 7,
+    "startTime": "2026-10-26T09:18:19.647Z",
+    "duration": 34674.487,
+    "expected": 16,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

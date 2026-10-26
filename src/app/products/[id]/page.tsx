@@ -141,11 +141,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const commissionUrl = `/design-submission?preset=${encodeURIComponent(product.name)}&gsm=${product.gsm || 220}&dimensions=${encodeURIComponent(product.dimensions || "")}&handle=${encodeURIComponent(product.handleType || "")}`;
 
   return (
-    <div className="min-h-screen bg-[#F9F6F0] pt-20 sm:pt-24 pb-28 md:pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F9F6F0] pt-20 sm:pt-24 pb-28 md:pb-20 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 min-w-0">
         
         {/* Top Breadcrumb */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
           <Link
             href="/products"
             className="inline-flex items-center gap-2 text-xs font-bold text-stone-600 hover:text-[#8C4B31] transition-colors group"
@@ -160,7 +160,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Main Showcase Presentation Card */}
-        <div className="bg-white rounded-3xl border border-stone-200/90 shadow-sm overflow-hidden p-6 sm:p-10 mb-10">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-sm overflow-hidden p-4 sm:p-6 md:p-10 mb-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             
             {/* Left Column: Imagery (5 Cols) */}

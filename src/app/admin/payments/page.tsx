@@ -254,8 +254,8 @@ export default function AdminPaymentsPage() {
       )}
 
       {/* Filter Chips Bar */}
-      <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-stone-200">
-        <div className="flex items-center gap-2 overflow-x-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-stone-200 overflow-hidden">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar touch-scroll">
           {[
             { id: "all", label: `All Inbound (${rawOrders.length + rawEnrollments.length})` },
             { id: "order", label: `Retail Orders (${rawOrders.length})` },

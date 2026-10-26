@@ -439,7 +439,7 @@ function CustomerDashboardContent() {
                     return (
                       <div
                         key={order.id}
-                        className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
+                        className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-200 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 overflow-hidden min-w-0 max-w-full"
                       >
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-3">
@@ -609,7 +609,7 @@ function CustomerDashboardContent() {
                     return (
                       <div
                         key={d.id}
-                        className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-4"
+                        className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-stone-200 shadow-sm space-y-4 overflow-hidden min-w-0 max-w-full"
                       >
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-stone-100">
                           <div className="flex items-center gap-3">

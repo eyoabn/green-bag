@@ -296,7 +296,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Main Admin Content Stage with Desktop Top Bar */}
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 min-w-0 w-full max-w-full overflow-x-hidden md:ml-64 flex flex-col min-h-screen">
         <header data-testid="admin-topbar" className="flex max-md:hidden h-16 bg-white border-b border-stone-200 px-8 items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">Plant Administration</span>
@@ -317,7 +317,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-8 pb-24 md:pb-8">
+        <main className="flex-1 min-w-0 w-full max-w-full overflow-x-hidden p-3.5 sm:p-6 md:p-8 pb-24 md:pb-8">
           {children}
         </main>
 

@@ -46,16 +46,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased ${inter.variable} ${playfair.variable}`}
+      className={`h-full antialiased overflow-x-hidden max-w-full ${inter.variable} ${playfair.variable}`}
     >
-      <body className="min-h-full flex flex-col font-sans text-stone-900 bg-[#F9F6F0]">
+      <body className="min-h-full flex flex-col font-sans text-stone-900 bg-[#F9F6F0] overflow-x-hidden max-w-full w-full">
         <LanguageProvider>
           <CurrencyProvider>
             <CartProvider>
               <Navbar />
               <CartDrawer />
               <PublicMobileNav />
-              <main className="flex-1">{children}</main>
+              <main className="flex-1 w-full max-w-full min-w-0 overflow-x-hidden">{children}</main>
               <Footer />
             </CartProvider>
           </CurrencyProvider>

@@ -21,6 +21,7 @@ export default function PublicMobileNav() {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/teacher") ||
     pathname === "/design-submission" ||
+    pathname === "/checkout" ||
     (pathname.startsWith("/products/") && pathname !== "/products");
 
   if (shouldHide) {

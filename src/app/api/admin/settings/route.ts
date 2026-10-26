@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireRole } from "@/utils/roles";
 import { pool } from "@/utils/db";
 import { logAuditEvent } from "@/utils/audit";
+import { DEFAULT_DESIGN_PRICING } from "@/utils/designPricing";
 
 const settingsSchema = z.object({
   company_name: z.string().min(2, "Company name must be at least 2 characters"),
@@ -22,6 +23,7 @@ const settingsSchema = z.object({
   tax_id: z.string().optional(),
   settlement_days: z.number().int().min(1).max(30).optional(),
   homepage_content: z.record(z.string(), z.any()).optional(),
+  design_pricing: z.record(z.string(), z.any()).optional(),
 });
 
 // GET /api/admin/settings - Read company configuration
@@ -54,9 +56,15 @@ export async function GET() {
       homepage_content: {},
     };
 
+    const content = data.homepage_content || {};
+    const designPricing = content.design_pricing || DEFAULT_DESIGN_PRICING;
+
     return NextResponse.json({
       success: true,
-      settings: data,
+      settings: {
+        ...data,
+        design_pricing: designPricing,
+      },
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to load settings" }, { status: 500 });
@@ -75,7 +83,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: msg }, { status: 400 });
     }
 
-    const { company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content } = parsed.data;
+    const { company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, design_pricing } = parsed.data;
+
+    const mergedContent = {
+      ...(homepage_content || {}),
+      ...(design_pricing ? { design_pricing } : {}),
+    };
 
     const res = await pool.query(
       `
@@ -101,7 +114,7 @@ export async function PATCH(request: NextRequest) {
         JSON.stringify(social_links || {}),
         tax_id?.trim() || "",
         settlement_days ?? 3,
-        JSON.stringify(homepage_content || {}),
+        JSON.stringify(mergedContent),
       ]
     );
 
@@ -120,7 +133,7 @@ export async function PATCH(request: NextRequest) {
         contact_email.trim(), 
         address.trim(), 
         JSON.stringify(social_links || {}),
-        JSON.stringify(homepage_content || {})
+        JSON.stringify(mergedContent)
       ]
     );
 

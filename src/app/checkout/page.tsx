@@ -215,22 +215,22 @@ export default function CheckoutPage() {
   // Case 1: Post-Order Created State (Show Reference & Proof Upload)
   if (createdOrder) {
     return (
-      <div className="flex flex-col min-h-screen pt-28 pb-20 bg-[#F9F6F0]">
-        <div className="max-w-3xl mx-auto px-6 w-full">
-          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-stone-200 shadow-xl space-y-8">
+      <div className="flex flex-col min-h-screen pt-20 sm:pt-28 pb-20 bg-[#F9F6F0] overflow-x-hidden">
+        <div className="max-w-3xl mx-auto px-3.5 sm:px-6 w-full min-w-0">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 md:p-12 border border-stone-200 shadow-xl space-y-6 sm:space-y-8 overflow-hidden">
             
             {/* Header */}
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 size={36} />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <CheckCircle2 size={32} className="sm:w-9 sm:h-9" />
               </div>
               <span className="text-xs font-bold uppercase tracking-widest text-[#1E3B2E]">
                 Order Confirmed
               </span>
-              <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900">
+              <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-stone-900 break-words">
                 {proofSuccess ? "Payment Proof Submitted" : "Awaiting Bank Settlement"}
               </h1>
-              <p className="text-stone-600 text-xs sm:text-sm max-w-md mx-auto">
+              <p className="text-stone-600 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
                 {proofSuccess
                   ? "Your receipt has been submitted. Plant administrators will verify your transaction shortly."
                   : "Please complete your bank transfer using the generated order reference code."}
@@ -238,52 +238,53 @@ export default function CheckoutPage() {
             </div>
 
             {/* Crucial Order Reference Box */}
-            <div className="bg-[#FAF7F2] p-6 rounded-2xl border-2 border-dashed border-[#1E3B2E]/30 text-center space-y-2">
-              <span className="text-xs font-bold text-stone-500 uppercase tracking-wider block">
+            <div className="bg-[#FAF7F2] p-4 sm:p-6 rounded-2xl border-2 border-dashed border-[#1E3B2E]/30 text-center space-y-2.5 overflow-hidden">
+              <span className="text-[11px] sm:text-xs font-bold text-stone-500 uppercase tracking-wider block">
                 Official Payment Reference Note
               </span>
-              <div className="flex items-center justify-center gap-3">
-                <span className="font-mono text-2xl sm:text-3xl font-black text-[#8C4B31] tracking-wider">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                <span className="font-mono text-xl sm:text-2xl md:text-3xl font-black text-[#8C4B31] tracking-wider break-all select-all">
                   {createdOrder.order_number}
                 </span>
                 <button
                   type="button"
                   onClick={() => copyToClipboard(createdOrder.order_number)}
-                  className="p-2 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:border-stone-400 transition-colors shadow-2xs"
+                  className="p-2 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:border-stone-400 transition-colors shadow-2xs shrink-0 cursor-pointer"
                   title="Copy Order Reference"
                 >
                   {copiedBank ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
                 </button>
               </div>
-              <p className="text-[11px] text-stone-500 max-w-md mx-auto">
-                IMPORTANT: Enter <strong className="text-stone-800">{createdOrder.order_number}</strong> into your mobile banking transfer description so our account managers can match your payment.
+              <p className="text-[11px] text-stone-500 max-w-md mx-auto leading-normal break-words">
+                IMPORTANT: Enter <strong className="text-stone-800 break-all">{createdOrder.order_number}</strong> into your mobile banking transfer description so our account managers can match your payment.
               </p>
             </div>
 
             {/* Bank Details Card */}
             {selectedBank && (
-              <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200 space-y-3 text-xs">
-                <div className="flex items-center justify-between border-b border-stone-200/80 pb-3">
-                  <span className="font-bold text-stone-700 flex items-center gap-2">
+              <div className="bg-stone-50 p-4 sm:p-6 rounded-2xl border border-stone-200 space-y-3 text-xs overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-stone-200/80 pb-3">
+                  <span className="font-bold text-stone-700 flex items-center gap-2 shrink-0">
                     <Building2 size={16} className="text-[#8C4B31]" />
                     Settlement Bank:
                   </span>
-                  <span className="font-bold text-stone-900 text-sm">{selectedBank.bank_name}</span>
+                  <span className="font-bold text-stone-900 text-sm break-words sm:text-right">{selectedBank.bank_name}</span>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-stone-500">Account Name:</span>
-                  <span className="font-semibold text-stone-800">{selectedBank.account_name}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <span className="text-stone-500 shrink-0">Account Name:</span>
+                  <span className="font-semibold text-stone-800 break-words sm:text-right">{selectedBank.account_name}</span>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-stone-500">Account Number:</span>
-                  <div className="flex items-center gap-2 font-mono font-bold text-stone-900 text-sm">
-                    <span>{selectedBank.account_number}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <span className="text-stone-500 shrink-0">Account Number:</span>
+                  <div className="flex items-center gap-2 font-mono font-bold text-stone-900 text-sm break-all">
+                    <span className="select-all">{selectedBank.account_number}</span>
                     <button
                       type="button"
                       onClick={() => copyToClipboard(selectedBank.account_number)}
-                      className="text-stone-400 hover:text-stone-700"
+                      className="text-stone-400 hover:text-stone-700 p-1 shrink-0 cursor-pointer"
+                      title="Copy Account Number"
                     >
                       <Copy size={13} />
                     </button>
@@ -304,32 +305,32 @@ export default function CheckoutPage() {
               <form onSubmit={handleUploadProof} className="space-y-4 pt-2">
                 <div className="border-t border-stone-200 pt-6">
                   <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2 mb-1">
-                    <Upload size={16} className="text-[#1E3B2E]" />
+                    <Upload size={16} className="text-[#1E3B2E] shrink-0" />
                     <span>Upload Bank Transfer Receipt (Proof of Payment)</span>
                   </h3>
-                  <p className="text-xs text-stone-500 mb-4">
+                  <p className="text-xs text-stone-500 mb-4 leading-relaxed">
                     Attach a screenshot or PDF of your CBE Birr, Telebirr, or Mobile Banking transfer receipt (max 5 MB).
                   </p>
 
                   {proofError && (
                     <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
                       <AlertCircle size={15} className="text-red-600 shrink-0" />
-                      <span>{proofError}</span>
+                      <span className="break-words">{proofError}</span>
                     </div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <input
                       type="file"
                       accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
                       onChange={(e) => setProofFile(e.target.files ? e.target.files[0] : null)}
-                      className="text-xs text-stone-600 file:mr-3 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] file:cursor-pointer w-full bg-stone-50 p-2 rounded-2xl border border-stone-200"
+                      className="text-xs text-stone-600 file:mr-2 sm:file:mr-3 file:py-2.5 file:px-3 sm:file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] file:cursor-pointer w-full max-w-full bg-stone-50 p-2 rounded-2xl border border-stone-200 overflow-hidden truncate"
                     />
 
                     <button
                       type="submit"
                       disabled={!proofFile || isUploadingProof}
-                      className="w-full sm:w-auto btn-primary py-3 px-6 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                      className="w-full sm:w-auto btn-primary py-3 px-6 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer text-center justify-center"
                     >
                       {isUploadingProof ? "Uploading..." : "Upload Receipt"}
                     </button>
@@ -339,14 +340,14 @@ export default function CheckoutPage() {
             ) : (
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-3">
                 <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-                <span>
+                <span className="break-words">
                   Receipt uploaded! Your order is now <strong>Under Verification</strong>.
                 </span>
               </div>
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-stone-200">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-stone-200">
               <Link
                 href={`/dashboard/orders/${createdOrder.id}`}
                 className="w-full sm:w-auto btn-primary py-3.5 px-6 text-xs font-bold flex items-center justify-center gap-2 text-center"
@@ -357,7 +358,7 @@ export default function CheckoutPage() {
 
               <Link
                 href="/dashboard/orders"
-                className="w-full sm:w-auto btn-secondary py-3.5 px-6 text-xs font-semibold text-center"
+                className="w-full sm:w-auto btn-secondary py-3.5 px-6 text-xs font-semibold text-center flex items-center justify-center"
               >
                 Go to My Orders
               </Link>
@@ -394,8 +395,8 @@ export default function CheckoutPage() {
 
   // Case 3: Standard Checkout Form
   return (
-    <div className="flex flex-col min-h-screen pt-24 pb-20 bg-[#F9F6F0]">
-      <div className="max-w-6xl mx-auto px-6 sm:px-8 w-full">
+    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-20 bg-[#F9F6F0] overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-3.5 sm:px-8 w-full min-w-0">
         
         {/* Navigation */}
         <Link 
@@ -406,11 +407,11 @@ export default function CheckoutPage() {
           <span>Back to Catalog</span>
         </Link>
 
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">
             Direct Manufacturer Checkout
           </span>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
+          <h1 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
             Order Settlement & Delivery
           </h1>
           <p className="text-xs text-stone-500 mt-1">
@@ -421,17 +422,17 @@ export default function CheckoutPage() {
         {error && (
           <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
             <AlertCircle size={16} className="text-red-600 shrink-0" />
-            <span>{error}</span>
+            <span className="break-words">{error}</span>
           </div>
         )}
 
-        <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
           {/* Left Column: Form Details (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             
             {/* Step 1: Delivery Address & Phone */}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-sm space-y-4">
+            <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-sm space-y-4 overflow-hidden">
               <div className="flex items-center gap-2.5 pb-3 border-b border-stone-100">
                 <Truck size={18} className="text-[#1E3B2E]" />
                 <h2 className="font-serif text-lg font-bold text-stone-900">1. Delivery Destination</h2>
@@ -488,7 +489,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Step 2: Bank Account Selection */}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-sm space-y-4">
+            <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-sm space-y-4 overflow-hidden">
               <div className="flex items-center gap-2.5 pb-3 border-b border-stone-100">
                 <Building2 size={18} className="text-[#8C4B31]" />
                 <h2 className="font-serif text-lg font-bold text-stone-900">2. Select Settlement Bank</h2>
@@ -510,33 +511,33 @@ export default function CheckoutPage() {
                       <div
                         key={b.id}
                         onClick={() => setSelectedBankId(b.id)}
-                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-[56px] ${
+                        className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-[56px] overflow-hidden ${
                           isSelected
                             ? "border-[#1E3B2E] bg-[#1E3B2E]/5"
                             : "border-stone-200 hover:border-stone-300 bg-white"
                         }`}
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
                           <input
                             type="radio"
                             name="bankAccount"
                             checked={isSelected}
                             onChange={() => setSelectedBankId(b.id)}
-                            className="mt-1 w-4 h-4 text-[#1E3B2E] focus:ring-[#1E3B2E] cursor-pointer"
+                            className="mt-1 w-4 h-4 text-[#1E3B2E] focus:ring-[#1E3B2E] cursor-pointer shrink-0"
                           />
-                          <div>
-                            <span className="font-bold text-xs text-stone-900 block">{b.bank_name}</span>
-                            <span className="text-[11px] text-stone-500 block">{b.account_name}</span>
+                          <div className="min-w-0">
+                            <span className="font-bold text-xs text-stone-900 block break-words">{b.bank_name}</span>
+                            <span className="text-[11px] text-stone-500 block break-words">{b.account_name}</span>
                             {b.instructions && (
-                              <span className="text-[10px] text-stone-400 mt-1 block italic">
+                              <span className="text-[10px] text-stone-400 mt-1 block italic break-words">
                                 {b.instructions}
                               </span>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 self-end sm:self-auto pl-6 sm:pl-0">
-                          <span className="font-mono text-xs font-bold text-stone-800 bg-white px-3 py-1.5 rounded-lg border border-stone-200">
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100 shrink-0">
+                          <span className="font-mono text-xs font-bold text-stone-800 bg-white px-2.5 sm:px-3 py-1.5 rounded-lg border border-stone-200 break-all select-all">
                             {b.account_number}
                           </span>
                           <button
@@ -545,7 +546,7 @@ export default function CheckoutPage() {
                               e.stopPropagation();
                               copyToClipboard(b.account_number);
                             }}
-                            className="p-2 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer"
+                            className="p-2 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer shrink-0"
                             title="Copy Account Number"
                           >
                             <Copy size={14} />
@@ -561,7 +562,7 @@ export default function CheckoutPage() {
 
           {/* Right Column: Order Summary (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/90 shadow-sm space-y-6 sticky top-28">
+            <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-sm space-y-6 sticky top-28 overflow-hidden">
               <div className="flex items-center gap-2.5 pb-3 border-b border-stone-100">
                 <ShoppingBag size={18} className="text-[#1E3B2E]" />
                 <h2 className="font-serif text-lg font-bold text-stone-900">Order Summary</h2>

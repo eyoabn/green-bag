@@ -112,11 +112,11 @@ export default function ProductsPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-28 sm:pb-20 bg-[#F9F6F0]">
+    <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-28 sm:pb-20 bg-[#F9F6F0] overflow-x-hidden">
       
       {/* Header Banner */}
       <section className="bg-gradient-to-b from-[#F2ECE1] to-[#F9F6F0] border-b border-stone-200/80 py-16">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 min-w-0">
           <div className="max-w-3xl">
             <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase flex items-center gap-1.5 mb-2">
               <Sparkles size={14} /> {t.catalog_badge}
@@ -152,7 +152,7 @@ export default function ProductsPage() {
       </section>
 
       {/* Filter and Search Bar */}
-      <section className="max-w-7xl mx-auto px-6 sm:px-8 py-8 w-full">
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-8 w-full min-w-0">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 pb-6 border-b border-stone-200">
           
           {/* Category Filter Pills */}

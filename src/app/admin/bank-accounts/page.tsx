@@ -295,7 +295,7 @@ export default function AdminBankAccountsPage() {
                     <span className="text-stone-400 text-[10px] uppercase font-bold tracking-wider block">
                       Account Number
                     </span>
-                    <span className="font-mono text-sm font-bold text-[#1E3B2E] tracking-wider select-all">
+                    <span className="font-mono text-sm font-bold text-[#1E3B2E] tracking-wider select-all break-all">
                       {b.account_number}
                     </span>
                   </div>
@@ -352,8 +352,8 @@ export default function AdminBankAccountsPage() {
 
       {/* Modal for Create / Edit */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-stone-200 animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-8 shadow-2xl border border-stone-200 animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-4 border-b border-stone-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-[#1E3B2E]/10 flex items-center justify-center text-[#1E3B2E]">

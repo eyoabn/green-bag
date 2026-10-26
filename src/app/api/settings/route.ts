@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/utils/db";
+import { DEFAULT_DESIGN_PRICING } from "@/utils/designPricing";
 
-// GET /api/settings - Public settings reader for Footer, Contact, and site-wide branding
+// GET /api/settings - Public settings reader for Footer, Contact, site-wide branding & Design Studio pricing
 export async function GET() {
   try {
     const res = await pool.query(`
@@ -21,11 +22,18 @@ export async function GET() {
       social_links: { facebook: "", instagram: "", telegram: "", linkedin: "" },
       tax_id: "",
       settlement_days: 3,
+      homepage_content: {},
     };
+
+    const homepageContent = settings.homepage_content || {};
+    const designPricing = homepageContent.design_pricing || DEFAULT_DESIGN_PRICING;
 
     return NextResponse.json({
       success: true,
-      settings,
+      settings: {
+        ...settings,
+        design_pricing: designPricing,
+      },
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to load public settings" }, { status: 500 });

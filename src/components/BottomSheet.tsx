@@ -50,10 +50,10 @@ export function BottomSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "sheet-title" : undefined}
-        className={`relative w-full ${maxWidth} bg-white rounded-t-3xl md:rounded-2xl shadow-2xl border-t md:border border-stone-200 max-h-[92vh] md:max-h-[85vh] flex flex-col z-10 transition-transform duration-200 animate-in slide-in-from-bottom md:zoom-in-95`}
+        className={`relative w-full ${maxWidth} max-w-full bg-white rounded-t-3xl md:rounded-2xl shadow-2xl border-t md:border border-stone-200 max-h-[92vh] md:max-h-[85vh] flex flex-col z-10 transition-transform duration-200 animate-in slide-in-from-bottom md:zoom-in-95 overflow-hidden`}
       >
         {/* Mobile Drag Indicator Handle */}
-        <div className="md:hidden flex justify-center pt-2.5 pb-1">
+        <div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
           <div className="w-10 h-1 bg-stone-300 rounded-full" />
         </div>
 
@@ -80,7 +80,7 @@ export function BottomSheet({
           </div>
 
         {/* Scrollable Content Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 pb-[max(env(safe-area-inset-bottom),20px)] md:pb-5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 px-4 sm:px-5 py-4 pb-[max(env(safe-area-inset-bottom),20px)] md:pb-5">
           {children}
         </div>
       </div>

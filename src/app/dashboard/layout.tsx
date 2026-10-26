@@ -183,7 +183,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main Content Stage */}
-      <main className="flex-1 md:ml-64 p-4 sm:p-8 pb-24 md:pb-8">
+      <main className="flex-1 min-w-0 w-full max-w-full overflow-x-hidden md:ml-64 p-3.5 sm:p-6 md:p-8 pb-24 md:pb-8">
         {children}
       </main>
 

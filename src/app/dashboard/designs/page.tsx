@@ -359,7 +359,7 @@ export default function CustomerDesignsPage() {
             <div className="p-3 bg-[#FAF7F2] rounded-2xl border border-stone-200">
               <div className="flex items-center gap-1.5 text-purple-900 font-bold text-[11px] mb-1">
                 <span className="w-4 h-4 rounded-full bg-purple-800 text-white flex items-center justify-center text-[10px]">2</span>
-                <span>"We Can Do It!" Quote</span>
+                <span>&ldquo;We Can Do It!&rdquo; Quote</span>
               </div>
               <p className="text-[10px] text-stone-500 leading-snug">
                 Factory reviews tolerance & sends binding quote in ETB.
@@ -379,7 +379,7 @@ export default function CustomerDesignsPage() {
             <div className="p-3 bg-[#FAF7F2] rounded-2xl border border-stone-200">
               <div className="flex items-center gap-1.5 text-emerald-900 font-bold text-[11px] mb-1">
                 <span className="w-4 h-4 rounded-full bg-emerald-800 text-white flex items-center justify-center text-[10px]">4</span>
-                <span>"It Is On Doing"</span>
+                <span>&ldquo;It Is On Doing&rdquo;</span>
               </div>
               <p className="text-[10px] text-stone-500 leading-snug">
                 QR verified: plates engraved, rotary printing & cutting starts.
@@ -766,7 +766,7 @@ export default function CustomerDesignsPage() {
                           <span>QR Code & Payment Proof Submitted — Awaiting Plant Verification</span>
                         </div>
                         <p className="text-[11px] text-amber-800 mt-1">
-                          Our Addis Ababa finance desk is analyzing your QR code transaction ({specsObj.qr_code_ref || "Recorded"}). Once confirmed, you will receive our "It Is On Doing" production confirmation and laser platemaking will initiate.
+                          Our Addis Ababa finance desk is analyzing your QR code transaction ({specsObj.qr_code_ref || "Recorded"}). Once confirmed, you will receive our &ldquo;It Is On Doing&rdquo; production confirmation and laser platemaking will initiate.
                         </p>
                       </div>
 

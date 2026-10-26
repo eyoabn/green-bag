@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/utils/roles";
-import { Pool } from "pg";
-
-let pool: Pool;
-function getPool() {
-  if (!pool) {
-    const connectionString =
-      process.env.DIRECT_URL ||
-      process.env.DATABASE_URL ||
-      "postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres";
-    pool = new Pool({ connectionString });
-  }
-  return pool;
-}
+import { pool } from "@/utils/db";
 
 // GET /api/admin/audit - Searchable, filterable audit log
 export async function GET(request: NextRequest) {
   try {
     await requireRole(["admin"]);
-    const db = getPool();
+    const db = pool;
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.trim() || "";

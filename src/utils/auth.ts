@@ -1,4 +1,4 @@
-﻿// Shared auth utility — usable in both Client Components and Server contexts.
+// Shared auth utility — usable in both Client Components and Server contexts.
 // Do NOT add "use client" here; this file is imported from both sides.
 
 import { createClient } from "@/utils/supabase/client";
@@ -25,6 +25,38 @@ export { isValidUUID, toValidUUID };
  * Ensures the returned user has a valid UUID format id.
  */
 export async function getCurrentUser(): Promise<AppUser | null> {
+  // In browser, fast server verification via /api/profile ensures cookie session accuracy
+  if (typeof window !== "undefined") {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch("/api/profile", { signal: controller.signal });
+      clearTimeout(timer);
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.profile) {
+          const p = json.profile;
+          const appUser: AppUser = {
+            id: p.id,
+            email: p.email || "",
+            full_name: p.fullName || p.email?.split("@")[0] || "Valued User",
+            phone: p.phone || "",
+            role: (p.role as AppUser["role"]) || "customer",
+            avatar_url: p.avatarUrl,
+            is_active: p.isActive,
+          };
+          localStorage.setItem("arenguade_user", JSON.stringify(appUser));
+          return appUser;
+        }
+      } else if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem("arenguade_user");
+        return null;
+      }
+    } catch {
+      // Fall through to browser client
+    }
+  }
+
   const supabase = createClient();
 
   // 1. Always try Supabase Auth getUser() first — authoritative source of truth

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       { name: "class_sessions", label: "Craft Academy Workshops", isPrivate: false },
       { name: "enrollments", label: "Student Registrations", isPrivate: true },
       { name: "bank_accounts", label: "Settlement Accounts (CBE, Awash)", isPrivate: false },
-      { name: "design_submissions", label: "Custom Dieline Projects", isPrivate: true },
+      { name: "designs", label: "Custom Dieline Projects", isPrivate: true },
       { name: "notifications", label: "Realtime Alerts & Dispatch", isPrivate: true },
       { name: "audit_log", label: "Immutable Operations Ledger", isPrivate: true },
       { name: "settings", label: "Factory & CMS Configurations", isPrivate: true },

@@ -204,7 +204,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="lg:col-span-7 space-y-6">
               
               <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">
                     {product.category}
                   </span>
@@ -212,11 +212,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <span className="text-xs text-stone-500 font-semibold">
                     Client: <strong>{product.client}</strong>
                   </span>
+                  {product.is_available ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                      In Stock
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-stone-200 text-stone-700">
+                      Unavailable
+                    </span>
+                  )}
                 </div>
 
-                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
-                  {product.name}
-                </h1>
+                <div className="flex items-baseline justify-between gap-4 flex-wrap">
+                  <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
+                    {product.name}
+                  </h1>
+                  {product.price > 0 && (
+                    <span className="text-2xl font-bold text-stone-900 shrink-0">
+                      {product.price} ETB
+                    </span>
+                  )}
+                </div>
                 
                 <p className="text-stone-600 text-sm mt-3 leading-relaxed">
                   {product.description}
@@ -299,13 +315,26 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 </p>
 
                 <div className="pt-1">
-                  <Link
-                    href={commissionUrl}
-                    className="w-full py-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 bg-[#8C4B31] hover:bg-[#A3593B] text-white rounded-full transition-all shadow-md cursor-pointer"
-                  >
-                    <PenTool size={15} />
-                    <span>{lang === "am" ? "ይህንን ዲዛይን በራስዎ ሎጎ ይዘዙ" : "Commission Similar Custom Design &rarr;"}</span>
-                  </Link>
+                  {product.is_available ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.location.href = commissionUrl;
+                      }}
+                      className="w-full py-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 bg-[#8C4B31] hover:bg-[#A3593B] text-white rounded-full transition-all shadow-md cursor-pointer"
+                    >
+                      <PenTool size={15} />
+                      <span>{lang === "am" ? "ይህንን ዲዛይን በራስዎ ሎጎ ይዘዙ" : "Request Custom Production"}</span>
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      type="button"
+                      className="w-full py-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 bg-stone-300 text-stone-500 rounded-full cursor-not-allowed"
+                    >
+                      <span>Product Currently Unavailable</span>
+                    </button>
+                  )}
                 </div>
               </div>
 

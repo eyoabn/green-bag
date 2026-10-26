@@ -80,6 +80,7 @@ export async function PATCH(
     }
 
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+    let createdOrder: any = null;
 
     if (user.role === "admin") {
       // 1. Accept Design & Send Quotation ("We Can Do It!")
@@ -266,6 +267,7 @@ export async function PATCH(
           ]
         );
         const newOrder = orderRows[0];
+        createdOrder = newOrder;
 
         const { rows: prodRows } = await pool.query(
           "SELECT id FROM public.products WHERE is_available = true LIMIT 1"
@@ -347,6 +349,13 @@ export async function PATCH(
       // Customer Role Actions
       if (existing.submitted_by !== user.id) {
         return NextResponse.json({ error: "Access denied." }, { status: 403 });
+      }
+
+      if (body.quoted_price !== undefined || body.status === "quoted") {
+        return NextResponse.json(
+          { error: "Customers cannot set or modify quoted prices. Only administrators can quote prices." },
+          { status: 403 }
+        );
       }
 
       // Customer submitting bank transfer proof screenshot
@@ -448,6 +457,7 @@ export async function PATCH(
             ]
           );
           const newOrder = orderRows[0];
+          createdOrder = newOrder;
           updates.linked_order_id = newOrder.id;
 
           const { rows: prodRows } = await pool.query(
@@ -574,7 +584,7 @@ export async function PATCH(
       [user.id, id, JSON.stringify(updates)]
     );
 
-    return NextResponse.json({ success: true, design: updated });
+    return NextResponse.json({ success: true, design: updated, ...(createdOrder ? { order: createdOrder } : {}) });
   } catch (err: any) {
     console.error("PATCH /api/designs/[id] error:", err);
     const status = err.status || 500;

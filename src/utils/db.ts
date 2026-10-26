@@ -2,8 +2,11 @@ import { Pool } from "pg";
 
 const connectionString =
   process.env.DATABASE_URL ||
-  process.env.DIRECT_URL ||
-  "postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
+  process.env.DIRECT_URL;
+
+if (!connectionString) {
+  console.warn("WARNING: Neither DATABASE_URL nor DIRECT_URL is defined in the environment. Direct PostgreSQL pool cannot connect.");
+}
 
 // Singleton PostgreSQL pool for direct administrative and schema operations
 declare global {

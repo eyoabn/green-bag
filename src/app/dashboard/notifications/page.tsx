@@ -60,9 +60,9 @@ export default function NotificationsPage() {
         setUserId(user.id);
         loadNotifications();
 
-        // Subscribe to Realtime notifications for this user
+        // Subscribe to Realtime notifications for this user with unique channel identifier
         channel = supabase
-          .channel(`page-notifications-${user.id}`)
+          .channel(`page-notifications-${user.id}-${Math.random().toString(36).substring(2, 8)}`)
           .on(
             "postgres_changes",
             {

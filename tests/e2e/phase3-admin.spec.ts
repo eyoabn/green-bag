@@ -71,8 +71,11 @@ test.describe("Phase 3: Admin Shell, Users, Bank Accounts, Settings", () => {
     await page.waitForSelector("table", { timeout: 10000 });
 
     // Search for Admin email to find self row
-    await page.fill('input[placeholder*="Search by name"]', SEED_USERS.admin.email);
-    await page.waitForTimeout(500);
+    const searchInput = page.locator('input[placeholder*="Search by name"]');
+    await searchInput.click();
+    await searchInput.fill("");
+    await searchInput.pressSequentially(SEED_USERS.admin.email, { delay: 30 });
+    await page.waitForTimeout(1000);
 
     // Verify admin self-row shows "ADMIN (Locked)" and cannot be deactivated
     const selfRow = page.locator("tr").filter({ hasText: SEED_USERS.admin.email });

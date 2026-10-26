@@ -3,7 +3,8 @@ import { Client } from "pg";
 
 const directUrl =
   process.env.DIRECT_URL ||
-  "postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres";
+  process.env.DATABASE_URL ||
+  "postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
 
 const TEST_USERS = {
   admin: { email: "admin@arenguade.com", password: "Password123!" },

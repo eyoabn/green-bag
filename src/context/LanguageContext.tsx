@@ -179,7 +179,7 @@ const EN: Translations = {
     "Authentic paper bags manufactured at our Addis Ababa facility for Ethiopian coffee roasters, boutique fashion houses, hotels, and bakeries.",
   catalog_cta_label: "Commission Your Own Branded Packaging",
   catalog_cta_btn: "Start Your Design",
-  catalog_search_placeholder: "Search portfolio...",
+  catalog_search_placeholder: "Search catalog...",
   catalog_results: "portfolio pieces",
   catalog_portfolio_pieces: "portfolio pieces",
   catalog_empty: "No portfolio items found",

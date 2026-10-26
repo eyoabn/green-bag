@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { User, ShoppingBag, BookOpen, LogOut, Menu, X, ArrowLeft, Sparkles, Layers, ShieldCheck, ArrowRight, Bell } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
@@ -83,6 +84,23 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         fixed md:fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-stone-200 flex flex-col pt-4 transition-transform duration-300
         ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
+        {/* Brand Header */}
+        <div className="px-6 pt-2 pb-3 border-b border-stone-100 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-[#FAF7F2] border border-stone-200/80 p-0.5 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+            <Image
+              src="/images/arenguade-icon-transparent.png"
+              alt="Arenguade Logo"
+              width={32}
+              height={32}
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div>
+            <span className="font-serif font-bold text-stone-900 text-sm block leading-tight">Arenguade Portal</span>
+            <span className="text-[10px] text-stone-500 uppercase tracking-wider">Member Workspace</span>
+          </div>
+        </div>
+
         {/* User Card */}
         <div className="p-6 border-b border-stone-100">
           <div className="flex items-center gap-3">

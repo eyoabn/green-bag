@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Sparkles, CheckCircle2, AlertCircle, ShieldCheck, UserCheck, BookOpen } from "lucide-react";
 import { setLocalUser, AppUser } from "@/utils/auth";
@@ -107,7 +108,17 @@ function LoginFormContent() {
         {/* Ambient Top Glow */}
         <div className="absolute top-0 left-0 w-36 h-36 bg-[#1E3B2E]/5 rounded-br-full pointer-events-none" />
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Link href="/" className="mb-4 inline-block hover:opacity-90 transition-opacity">
+            <Image
+              src="/images/arenguade-logo.png"
+              alt="Arenguade Artisanal Kraft Packaging & Craft Academy"
+              width={260}
+              height={80}
+              className="h-13 w-auto object-contain"
+              priority
+            />
+          </Link>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8C4B31]/10 text-[#8C4B31] text-xs font-bold uppercase tracking-wider mb-2">
             <Sparkles size={13} />
             <span>Ethiopian Packaging Guild</span>

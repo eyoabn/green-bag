@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, 
@@ -179,9 +180,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       
       {/* Mobile Top Header */}
       <div className="md:hidden bg-white px-6 py-4 border-b border-stone-200 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-serif font-black text-sm">
-            አ
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-[#FAF7F2] border border-stone-200/80 p-0.5 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+            <Image
+              src="/images/arenguade-icon-transparent.png"
+              alt="Arenguade Logo"
+              width={36}
+              height={36}
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <span className="font-serif font-bold text-stone-900 text-sm block leading-tight">Arenguade Admin</span>
@@ -209,8 +216,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Brand Header */}
         <div className="p-6 border-b border-stone-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-serif font-bold text-lg shadow-sm">
-              አ
+            <div className="w-10 h-10 rounded-2xl bg-[#FAF7F2] border border-stone-200/80 p-1 flex items-center justify-center shrink-0 shadow-xs overflow-hidden">
+              <Image
+                src="/images/arenguade-icon-transparent.png"
+                alt="Arenguade Logo"
+                width={40}
+                height={40}
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <div className="font-serif text-lg font-bold tracking-tight text-[#1E3B2E] leading-none">

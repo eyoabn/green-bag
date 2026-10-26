@@ -149,10 +149,18 @@ export default function Home() {
             
             {/* Left: Value Proposition */}
             <div className="md:col-span-7 flex flex-col gap-5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-200/70 border border-stone-300 w-fit">
-                <span className="w-2 h-2 rounded-full bg-[#1E3B2E]" />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-200/70 border border-stone-300 w-fit">
+                <div className="w-5 h-5 rounded-full overflow-hidden bg-white/90 p-0.5 border border-stone-300/80 shrink-0">
+                  <Image
+                    src="/images/arenguade-icon-transparent.png"
+                    alt="Arenguade Seal"
+                    width={20}
+                    height={20}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
                 <span className="text-[11px] font-bold tracking-wider text-stone-700 uppercase">
-                  {lang === "am" ? t.hero_badge : (cmsContent.hero_badge || "Addis Ababa • Eco-Packaging")}
+                  {lang === "am" ? t.hero_badge : (cmsContent.hero_badge || "Addis Ababa • Artisanal Kraft Guild")}
                 </span>
               </div>
 

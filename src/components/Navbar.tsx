@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
   ShoppingBag, 
@@ -66,15 +67,22 @@ export default function Navbar() {
           
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#1E3B2E] flex items-center justify-center text-[#E0B382] shadow-sm group-hover:bg-[#8C4B31] transition-colors shrink-0">
-              <span className="font-serif font-black text-base sm:text-lg">አ</span>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#FAF7F2] border border-stone-300/80 p-0.5 flex items-center justify-center shadow-xs group-hover:scale-105 group-hover:border-[#1E3B2E]/40 transition-all shrink-0 overflow-hidden">
+              <Image
+                src="/images/arenguade-icon-transparent.png"
+                alt="Arenguade Artisanal Packaging & Craft Academy"
+                width={40}
+                height={40}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#1E3B2E] group-hover:text-[#8C4B31] transition-colors leading-none">
                 Arenguade
               </span>
               <span className="hidden xs:block text-[9px] sm:text-[10px] font-semibold tracking-wider text-stone-500 uppercase mt-0.5">
-                Eco Paper • Addis Ababa
+                Artisanal Kraft & Academy
               </span>
             </div>
           </Link>

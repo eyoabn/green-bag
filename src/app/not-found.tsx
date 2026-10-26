@@ -1,12 +1,19 @@
 import Link from "next/link";
-import { PackageOpen, ArrowLeft, ShoppingBag } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, ShoppingBag } from "lucide-react";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-[#F9F6F0] flex flex-col items-center justify-center p-6 text-center">
       <div className="max-w-md w-full bg-white p-8 sm:p-10 rounded-3xl border border-stone-200 shadow-xl space-y-6 animate-in fade-in zoom-in-95">
-        <div className="w-16 h-16 rounded-2xl bg-[#1E3B2E]/10 text-[#1E3B2E] flex items-center justify-center mx-auto">
-          <PackageOpen size={36} />
+        <div className="w-16 h-16 rounded-2xl bg-[#FAF7F2] border border-stone-200 p-2 flex items-center justify-center mx-auto shadow-xs overflow-hidden">
+          <Image
+            src="/images/arenguade-icon-transparent.png"
+            alt="Arenguade Logo"
+            width={56}
+            height={56}
+            className="w-full h-full object-contain"
+          />
         </div>
 
         <div className="space-y-2">

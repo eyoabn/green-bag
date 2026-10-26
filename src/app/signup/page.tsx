@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Sparkles, CheckCircle2, AlertCircle, ShieldCheck, ShoppingBag, BookOpen } from "lucide-react";
 import { setLocalUser, AppUser } from "@/utils/auth";
@@ -83,7 +84,17 @@ function SignupFormContent() {
         {/* Subtle Background Glow */}
         <div className="absolute top-0 right-0 w-36 h-36 bg-[#8C4B31]/5 rounded-bl-full pointer-events-none" />
 
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 flex flex-col items-center">
+          <Link href="/" className="mb-3 inline-block hover:opacity-90 transition-opacity">
+            <Image
+              src="/images/arenguade-logo.png"
+              alt="Arenguade Artisanal Kraft Packaging & Craft Academy"
+              width={240}
+              height={75}
+              className="h-12 w-auto object-contain"
+              priority
+            />
+          </Link>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider mb-2">
             <Sparkles size={13} />
             <span>Create Your Account</span>

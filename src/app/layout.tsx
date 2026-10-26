@@ -24,17 +24,35 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Arenguade Paper Product — Sustainable Packaging & Craft Academy",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://arenguadepaper.com"),
+  title: "Arenguade — Artisanal Kraft Packaging & Craft Academy",
   description:
     "Addis Ababa's premier manufacturer of 100% biodegradable artisan kraft bags and vocational paper-making academy. Browse our portfolio and commission your own custom packaging.",
   keywords:
-    "Ethiopian packaging, kraft bags, paper bags, Addis Ababa, sustainable packaging, custom printing, eco packaging",
+    "Ethiopian packaging, kraft bags, paper bags, Addis Ababa, sustainable packaging, custom printing, eco packaging, craft academy",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   openGraph: {
-    title: "Arenguade Paper Product — Sustainable Packaging",
+    title: "Arenguade — Artisanal Kraft Packaging & Craft Academy",
     description:
       "100% biodegradable artisan kraft bags manufactured in Addis Ababa. Custom branding, wholesale orders.",
     type: "website",
     locale: "en_ET",
+    images: [
+      {
+        url: "/images/arenguade-banner.jpg",
+        width: 1024,
+        height: 572,
+        alt: "Arenguade Artisanal Kraft Packaging & Craft Academy",
+      },
+    ],
   },
 };
 

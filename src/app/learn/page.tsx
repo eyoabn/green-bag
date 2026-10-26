@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { 
   Users, 
   Video, 
@@ -26,9 +27,17 @@ export default function LearnPage() {
         
         <div className="lg:col-span-7">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-200/70 border border-stone-300/60 w-fit mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#8C4B31] animate-pulse" />
+            <div className="w-5 h-5 rounded-full overflow-hidden bg-white/90 p-0.5 border border-stone-300/80 shrink-0">
+              <Image
+                src="/images/arenguade-icon-transparent.png"
+                alt="Arenguade Academy"
+                width={20}
+                height={20}
+                className="w-full h-full object-contain"
+              />
+            </div>
             <span className="text-[11px] font-bold tracking-wider text-stone-700 uppercase">
-              Vocational Paper Craft & Engineering Guild
+              Arenguade Craft Academy • Addis Ababa Guild
             </span>
           </div>
 

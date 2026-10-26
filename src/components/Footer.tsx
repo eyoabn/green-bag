@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
   Leaf, 
@@ -68,15 +69,21 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-2 flex flex-col gap-5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#8C4B31] flex items-center justify-center text-[#FAF7F2] font-serif font-black text-lg shadow-sm">
-                አ
+              <div className="w-12 h-12 rounded-2xl bg-white/10 p-1 backdrop-blur-xs border border-white/15 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                <Image
+                  src="/images/arenguade-icon-transparent.png"
+                  alt="Arenguade Packaging & Craft Academy"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div className="flex flex-col">
-                <span className="font-serif text-2xl font-bold tracking-tight text-white">
-                  {settings.company_name?.includes("Arenguade") ? "Arenguade" : settings.company_name}
+                <span className="font-serif text-2xl font-bold tracking-tight text-white leading-tight">
+                  Arenguade
                 </span>
-                <span className="text-[11px] font-semibold tracking-wider text-[#E0B382] uppercase">
-                  {settings.company_name}
+                <span className="text-[10px] font-semibold tracking-wider text-[#E0B382] uppercase mt-0.5">
+                  Artisanal Kraft Packaging & Craft Academy
                 </span>
               </div>
             </div>

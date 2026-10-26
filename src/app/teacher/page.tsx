@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { 
   Video, 
@@ -161,8 +162,16 @@ export default function TeacherDashboardPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1E3B2E]/10 border border-[#1E3B2E]/20 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider mb-2">
-              <BookOpen size={13} />
-              Guild Artisan Portal
+              <div className="w-4 h-4 rounded-full overflow-hidden bg-white/90 p-0.5 border border-stone-300/80 shrink-0">
+                <Image
+                  src="/images/arenguade-icon-transparent.png"
+                  alt="Arenguade Emblem"
+                  width={16}
+                  height={16}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <span>Arenguade Guild Artisan Portal</span>
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900">
               Instructor Studio Dashboard

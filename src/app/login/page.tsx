@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Sparkles, CheckCircle2, AlertCircle, ShieldCheck, UserCheck, BookOpen } from "lucide-react";
+import { ArrowRight, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import { setLocalUser, AppUser } from "@/utils/auth";
 
 function LoginFormContent() {
@@ -75,31 +75,6 @@ function LoginFormContent() {
     }
   };
 
-  const handleQuickLogin = (demoEmail: string, demoPassword: string = "password123") => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setIsLoading(true);
-    setErrorMessage("");
-
-    fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: demoEmail, password: demoPassword }),
-    })
-      .then((r) => r.json())
-      .then((resJson) => {
-        if (resJson?.success && resJson?.user) {
-          completeLogin(resJson.user);
-        } else {
-          setErrorMessage(resJson?.error || "Unable to log in with quick account.");
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        setErrorMessage(err?.message || "Quick login failed.");
-        setIsLoading(false);
-      });
-  };
 
   return (
     <div className="flex flex-col min-h-screen pt-24 pb-16 bg-[#F9F6F0] items-center justify-center px-4">
@@ -206,62 +181,13 @@ function LoginFormContent() {
           </button>
         </form>
 
-        {/* Real Demo Accounts for Easy Testing */}
-        <div className="mt-6 pt-4 border-t border-stone-100">
-          <p className="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-2 text-center">
-            Role-Based Demo Access
-          </p>
-          <div className="grid grid-cols-3 gap-1.5">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("admin@arenguade.com", "Password123!")}
-              className="py-2 px-2 rounded-xl border border-red-200 bg-red-50/60 hover:bg-red-900 hover:text-white transition-all text-red-900 text-center flex flex-col items-center gap-1 cursor-pointer"
-            >
-              <ShieldCheck size={14} className="text-red-700 shrink-0" />
-              <div className="overflow-hidden">
-                <p className="text-[10px] font-bold truncate">Admin</p>
-                <p className="text-[8px] opacity-70">Abebe Admin</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("teacher.tigist@arenguade.com", "Password123!")}
-              className="py-2 px-2 rounded-xl border border-amber-200 bg-amber-50/60 hover:bg-[#8C4B31] hover:text-white transition-all text-amber-950 text-center flex flex-col items-center gap-1 cursor-pointer"
-            >
-              <BookOpen size={14} className="text-amber-700 shrink-0" />
-              <div className="overflow-hidden">
-                <p className="text-[10px] font-bold truncate">Teacher</p>
-                <p className="text-[8px] opacity-70">Tigist Tadesse</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("customer.selam@gmail.com", "Password123!")}
-              className="py-2 px-2 rounded-xl border border-emerald-200 bg-emerald-50/60 hover:bg-[#1E3B2E] hover:text-white transition-all text-emerald-950 text-center flex flex-col items-center gap-1 cursor-pointer"
-            >
-              <UserCheck size={14} className="text-emerald-700 shrink-0" />
-              <div className="overflow-hidden">
-                <p className="text-[10px] font-bold truncate">Customer</p>
-                <p className="text-[8px] opacity-70">Selam Kebede</p>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-stone-200 flex flex-col items-center gap-2">
-          <div className="text-center text-xs text-stone-500">
+        <div className="mt-6 pt-4 border-t border-stone-200 text-center">
+          <p className="text-xs text-stone-500">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-[#8C4B31] font-bold hover:underline">
-              Create buyer or student account
+              Create an account
             </Link>
-          </div>
-
-          <div className="text-center text-[11px] text-stone-400 flex items-center gap-1.5 mt-1">
-            <ShieldCheck size={13} className="text-[#1E3B2E]" />
-            <span>Plant Administrators: Access is authenticated via your registered admin account.</span>
-          </div>
+          </p>
         </div>
       </div>
     </div>

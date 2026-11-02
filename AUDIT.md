@@ -28,7 +28,7 @@
 | `/learn` | `src/app/learn/page.tsx` | `UI-ONLY` | **WIRED & WORKING** | Guild curriculum marketing; links to schedule and live classrooms |
 | `/learn/schedule` | `src/app/learn/schedule/page.tsx` | `MOCK DATA` | **WIRED & WORKING** | Live class calendar from `/api/classes`, atomic capacity RPC registration via `/api/enrollments` |
 | `/portfolio` | `src/app/portfolio/page.tsx` | `WORKING` | **WIRED & WORKING** | Client deliverables showcase with real Addis Ababa packaging photography and responsive next/image optimization |
-| `/login` | `src/app/login/page.tsx` | `BROKEN` | **WIRED & WORKING** | Real Supabase Auth cookie session, rate limiting protection, seeded quick-login buttons, role-based redirection |
+| `/login` | `src/app/login/page.tsx` | `BROKEN` | **WIRED & WORKING** | Real Supabase Auth cookie session, rate limiting protection, secure credential validation, role-based redirection |
 | `/signup` | `src/app/signup/page.tsx` | `BROKEN` | **WIRED & WORKING** | Supabase Auth sign-up, Zod input validation, default `customer` role assignment, prevention of client role tampering |
 | `/forgot-password` | `src/app/forgot-password/page.tsx` | `MISSING` | **WIRED & WORKING** | Password reset request with Supabase Auth dispatch and email rate limiting |
 | `/reset-password` | `src/app/reset-password/page.tsx` | `MISSING` | **WIRED & WORKING** | Password update handler validating secure recovery token exchange |

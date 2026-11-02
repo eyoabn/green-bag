@@ -22,12 +22,14 @@ import {
 import { getCurrentUser, setLocalUser, AppUser } from "@/utils/auth";
 import NotificationBell from "@/components/NotificationBell";
 import { useLanguage } from "@/context/LanguageContext";
+import { useCart } from "@/context/CartContext";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { t, toggleLang, lang } = useLanguage();
+  const { setIsCartOpen, totalItems } = useCart();
   const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
@@ -65,9 +67,12 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto">
         <nav className="bg-[#FAF7F2]/95 backdrop-blur-xl border border-stone-300/60 shadow-lg shadow-stone-900/5 rounded-full px-4 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
           
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#FAF7F2] border border-stone-300/80 p-0.5 flex items-center justify-center shadow-xs group-hover:scale-105 group-hover:border-[#1E3B2E]/40 transition-all shrink-0 overflow-hidden">
+          {/* Brand Logo with reference brand-mark polygon on mobile */}
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+            <div className="brand-mark md:hidden shrink-0 shadow-xs" aria-hidden="true">
+              <span>አ</span>
+            </div>
+            <div className="hidden md:flex w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#FAF7F2] border border-stone-300/80 p-0.5 items-center justify-center shadow-xs group-hover:scale-105 group-hover:border-[#1E3B2E]/40 transition-all shrink-0 overflow-hidden">
               <Image
                 src="/images/arenguade-icon-transparent.png"
                 alt="Arenguade Artisanal Packaging & Craft Academy"
@@ -112,7 +117,7 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Right Action Controls */}
+          {/* Right Action Controls (Desktop) */}
           <div className="hidden sm:flex items-center gap-3">
             {/* Language Switcher: English / Amharic */}
             <button
@@ -222,24 +227,46 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Right Controls: Language Toggle + Notification + Hamburger */}
-          <div className="flex lg:hidden items-center gap-1.5 sm:gap-2">
-            {/* Quick Language Toggle on Mobile Header */}
+          {/* Mobile Right Controls: Language Toggle + Cart Pill + Notification + Menu */}
+          <div className="flex lg:hidden items-center gap-2">
+            {/* Language Switcher Pill */}
+            <div className="flex items-center rounded-full border border-stone-300/70 bg-white/70 p-0.5 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => lang === "am" && toggleLang()}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all ${lang === "en" ? "bg-[#1E3B2E] text-white" : "text-stone-500"}`}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => lang === "en" && toggleLang()}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all ${lang === "am" ? "bg-[#1E3B2E] text-white" : "text-stone-500"}`}
+              >
+                አማ
+              </button>
+            </div>
+
+            {/* Cart Icon Button with Red/Terracotta Badge */}
             <button
-              onClick={toggleLang}
-              className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-stone-200/70 hover:bg-stone-300/80 text-[#1E3B2E] border border-stone-300/50 flex items-center gap-1 transition-colors cursor-pointer"
-              title={lang === "en" ? "Switch to Amharic / አማርኛ" : "Switch to English"}
-              aria-label="Toggle language"
+              type="button"
+              onClick={() => setIsCartOpen(true)}
+              className="relative w-8 h-8 rounded-full border border-stone-300/80 bg-white/80 flex items-center justify-center text-stone-700 hover:text-stone-900 active:scale-95 transition-all cursor-pointer"
+              aria-label="View shopping bag"
             >
-              <Languages size={13} className="text-[#1E3B2E]" />
-              <span>{lang === "en" ? "አማ" : "EN"}</span>
+              <ShoppingBag size={17} strokeWidth={1.8} />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#8C4B31] text-white text-[8px] font-bold flex items-center justify-center border border-white">
+                  {totalItems}
+                </span>
+              )}
             </button>
 
             {user && <NotificationBell />}
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-full text-stone-700 hover:bg-stone-200/60 transition-colors cursor-pointer"
+              className="p-1.5 rounded-full text-stone-700 hover:bg-stone-200/60 transition-colors cursor-pointer"
               aria-label="Toggle navigation"
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}

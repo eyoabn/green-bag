@@ -50,6 +50,7 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [lightboxProduct, setLightboxProduct] = useState<Product | null>(null);
+  const [selectedMobileProduct, setSelectedMobileProduct] = useState<Product | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -114,8 +115,19 @@ export default function ProductsPage() {
   return (
     <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-28 sm:pb-20 bg-[#F9F6F0] overflow-x-hidden">
       
-      {/* Header Banner */}
-      <section className="bg-gradient-to-b from-[#F2ECE1] to-[#F9F6F0] border-b border-stone-200/80 py-16">
+      {/* 1A. Mobile Page Intro (Reference Architecture) */}
+      <div className="md:hidden px-4 pt-4 pb-2">
+        <div className="eyebrow">Custom manufacturing</div>
+        <h1 className="font-serif text-[32px] font-semibold tracking-tight text-stone-900 mt-1 mb-1 leading-tight">
+          The packaging collection
+        </h1>
+        <p className="text-stone-600 text-xs">
+          Proven forms, ready to be made unmistakably yours.
+        </p>
+      </div>
+
+      {/* 1B. Desktop Header Banner */}
+      <section className="hidden md:block bg-gradient-to-b from-[#F2ECE1] to-[#F9F6F0] border-b border-stone-200/80 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 min-w-0">
           <div className="max-w-3xl">
             <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase flex items-center gap-1.5 mb-2">
@@ -152,11 +164,11 @@ export default function ProductsPage() {
       </section>
 
       {/* Filter and Search Bar */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-8 w-full min-w-0">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 pb-6 border-b border-stone-200">
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-8 w-full min-w-0">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pb-4 sm:pb-6 border-b border-stone-200">
           
           {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar touch-scroll -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 hide-scrollbar touch-scroll -mx-4 px-4 sm:mx-0 sm:px-0">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -164,9 +176,9 @@ export default function ProductsPage() {
                   setSelectedCategory(cat);
                   setPage(1);
                 }}
-                className={`text-xs font-bold px-4 py-2 rounded-full whitespace-nowrap transition-all cursor-pointer ${
+                className={`text-xs font-bold px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full whitespace-nowrap transition-all cursor-pointer ${
                   selectedCategory === cat
-                    ? "bg-[#1E3B2E] text-[#E0B382] shadow-sm"
+                    ? "bg-[#1E3B2E] text-white shadow-sm"
                     : "bg-white text-stone-600 hover:bg-stone-200/70 border border-stone-200"
                 }`}
               >
@@ -192,7 +204,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Results Counter */}
-        <div className="py-4 text-xs font-medium text-stone-500 flex items-center justify-between">
+        <div className="py-3 sm:py-4 text-xs font-medium text-stone-500 flex items-center justify-between">
           <span>
             Showing <strong className="text-stone-900">{productsList.length}</strong> of{" "}
             <strong className="text-stone-900">{totalCount}</strong> portfolio pieces
@@ -204,30 +216,64 @@ export default function ProductsPage() {
           )}
         </div>
 
-        {/* B2B Client Deliverable Notice */}
-        <div className="bg-[#1E3B2E]/5 border border-[#1E3B2E]/20 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
-              <Sparkles size={16} />
+        {/* 2A. MOBILE 2-COLUMN PRODUCT GRID (Reference Design) */}
+        <div className="md:hidden grid grid-cols-2 gap-3 mt-1">
+          {loading ? (
+            Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="bg-white border border-stone-200 rounded-xl p-3 animate-pulse h-60" />
+            ))
+          ) : productsList.length === 0 ? (
+            <div className="col-span-full py-12 text-center bg-white rounded-2xl border border-stone-200 p-6">
+              <Package size={32} className="mx-auto text-stone-300 mb-2" />
+              <p className="text-xs text-stone-600">No bags match this filter.</p>
             </div>
-            <div>
-              <span className="block font-bold text-xs text-stone-900">Factory Deliverables & Client Showcase</span>
-              <p className="text-xs text-stone-600 mt-0.5 leading-relaxed">
-                Every packaging model shown below was custom-manufactured for specific Ethiopian businesses and coffee brands. Want this packaging structure branded with <em>your company&apos;s logo and custom dimensions</em>?
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/design-submission"
-            className="whitespace-nowrap px-5 py-2.5 rounded-xl bg-[#8C4B31] hover:bg-[#A3593B] text-white text-xs font-bold transition-all shadow-xs shrink-0 self-start sm:self-auto flex items-center gap-1.5"
-          >
-            <span>Commission Custom Batch</span>
-            <ArrowRight size={13} />
-          </Link>
+          ) : (
+            productsList.map((product) => (
+              <button
+                type="button"
+                key={product.id}
+                onClick={() => setSelectedMobileProduct(product)}
+                className="text-left flex flex-col bg-white border border-stone-200/90 rounded-xl overflow-hidden active:scale-96 transition-all shadow-xs cursor-pointer"
+              >
+                <div className="relative h-40 bg-stone-100 overflow-hidden w-full">
+                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                  <span className="absolute bottom-2 right-2 text-[8px] font-bold text-white bg-[#1E3B2E]/85 backdrop-blur-xs px-2 py-0.5 rounded-full border border-white/30">
+                    {product.gsm || 220} GSM
+                  </span>
+                </div>
+                <div className="p-2.5 flex flex-col justify-between flex-1">
+                  <span className="text-[9px] font-bold text-[#8C4B31] uppercase tracking-wider">{product.category}</span>
+                  <h3 className="font-serif text-sm font-semibold text-stone-900 mt-1 mb-2 line-clamp-1">{product.name}</h3>
+                  <div className="flex items-center justify-between text-xs font-bold text-[#1E3B2E] pt-1 border-t border-stone-100">
+                    <span>from {product.price || 25} ETB</span>
+                    <ArrowRight size={14} />
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
         </div>
 
-        {/* Portfolio Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-2">
+        {/* 2B. MOBILE CUSTOM CALLOUT */}
+        <section className="md:hidden custom-callout mt-6">
+          <div className="callout-icon">
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <span className="text-[9px] font-bold text-[#8C4B31] uppercase tracking-wider block mb-1">Need a different form?</span>
+            <h2 className="font-serif text-xl font-bold text-stone-900">We engineer beyond the catalog.</h2>
+            <p className="text-stone-600 text-xs mt-1 leading-relaxed">
+              Share your dimensions and our structural team will make a production-ready dieline.
+            </p>
+          </div>
+          <Link href="/design-submission" className="btn-primary w-full text-xs py-3 rounded-xl mt-4 flex items-center justify-center gap-2">
+            <span>Open design studio</span>
+            <ArrowRight size={15} />
+          </Link>
+        </section>
+
+        {/* 2C. DESKTOP 3-COLUMN PORTFOLIO GRID */}
+        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-8 mt-2">
           {loading ? (
             Array.from({ length: 6 }).map((_, idx) => (
               <div key={idx} className="bg-white rounded-3xl p-6 border border-stone-200 animate-pulse flex flex-col">
@@ -265,9 +311,9 @@ export default function ProductsPage() {
                 <div className="h-64 bg-stone-100 relative overflow-hidden">
                   {product.image ? (
                     <img 
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      src={product.image} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -275,17 +321,14 @@ export default function ProductsPage() {
                     </div>
                   )}
                   
-                  {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                   
-                  {/* Badge */}
                   <span className={`absolute top-3 left-3 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm ${
                     product.is_client_work ? "bg-[#8C4B31]" : "bg-[#1E3B2E]"
                   }`}>
                     {product.badge}
                   </span>
 
-                  {/* Quick Preview */}
                   <button
                     onClick={() => setLightboxProduct(product)}
                     className="absolute top-3 right-3 p-2 rounded-full bg-white/90 text-stone-800 hover:bg-white hover:text-[#8C4B31] transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 shadow-md cursor-pointer touch-target flex items-center justify-center"
@@ -294,7 +337,6 @@ export default function ProductsPage() {
                     <Eye size={15} />
                   </button>
 
-                  {/* Client name at bottom */}
                   {product.client && (
                     <span className="absolute bottom-3 left-3 text-white text-xs font-semibold drop-shadow-sm truncate max-w-[85%]">
                       {product.client}
@@ -323,7 +365,6 @@ export default function ProductsPage() {
                     {product.description || "Premium Ethiopian recycled kraft packaging crafted with durability and precision."}
                   </p>
 
-                  {/* Specs row */}
                   <div className="mt-4 pt-4 border-t border-stone-100 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[11px] text-stone-500">
                       <ShieldCheck size={13} className="text-[#1E3B2E]" />
@@ -346,7 +387,7 @@ export default function ProductsPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="mt-12 pt-6 border-t border-stone-200 flex items-center justify-between text-xs text-stone-600">
+          <div className="mt-8 sm:mt-12 pt-6 border-t border-stone-200 flex items-center justify-between text-xs text-stone-600">
             <div>
               Page <strong className="text-stone-900">{page}</strong> of <strong className="text-stone-900">{totalPages}</strong>
             </div>
@@ -374,7 +415,7 @@ export default function ProductsPage() {
         )}
 
         {/* Bottom CTA */}
-        <div className="mt-16 bg-[#1E3B2E] rounded-3xl p-8 sm:p-10 text-center">
+        <div className="mt-12 sm:mt-16 bg-[#1E3B2E] rounded-3xl p-8 sm:p-10 text-center">
           <span className="text-xs font-bold tracking-widest text-[#E0B382] uppercase">Ready to Order?</span>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white mt-2 mb-3">
             {t.catalog_bottom_heading}
@@ -400,6 +441,57 @@ export default function ProductsPage() {
           </div>
         </div>
       </section>
+
+      {/* Mobile Detail Bottom Sheet (Reference Feature) */}
+      {selectedMobileProduct && (
+        <div className="sheet-backdrop md:hidden" onClick={() => setSelectedMobileProduct(null)}>
+          <section className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-handle" />
+            <div className="detail-image relative h-56 rounded-2xl overflow-hidden mb-4 bg-stone-100">
+              <img src={selectedMobileProduct.image} alt={selectedMobileProduct.name} className="w-full h-full object-cover" />
+              <button
+                type="button"
+                aria-label="Close details"
+                onClick={() => setSelectedMobileProduct(null)}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 text-stone-800 flex items-center justify-center shadow-md cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+              <span className="absolute bottom-3 left-3 bg-stone-900/70 backdrop-blur-xs text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">
+                1 / {selectedMobileProduct.gallery.length || 1}
+              </span>
+            </div>
+            <div className="eyebrow">{selectedMobileProduct.category}</div>
+            <h2 className="font-serif text-2xl font-bold text-stone-900 mt-1 mb-2">{selectedMobileProduct.name}</h2>
+            <p className="text-stone-600 text-xs leading-relaxed mb-4">
+              {selectedMobileProduct.description || "A production-tested silhouette customized with your dimensions, colors, artwork and handle architecture."}
+            </p>
+            <div className="case-notice">
+              <ShieldCheck size={18} className="text-[#1E3B2E] shrink-0 mt-0.5" />
+              <span><strong>Client case study.</strong> Final artwork shown belongs to its brand. Your batch is made uniquely for you.</span>
+            </div>
+            <div className="spec-grid rounded-xl overflow-hidden my-4 border border-stone-200">
+              <div><span>Material</span><strong>{selectedMobileProduct.material || `${selectedMobileProduct.gsm || 220} GSM Kraft`}</strong></div>
+              <div><span>Handle</span><strong>{selectedMobileProduct.handleType || "Woven Cotton Rope"}</strong></div>
+              <div><span>Origin</span><strong>Addis Ababa, Ethiopia</strong></div>
+              <div><span>Minimum</span><strong>500 units</strong></div>
+            </div>
+            <div className="sheet-action pt-3 border-t border-stone-200">
+              <div>
+                <span>500 unit batch</span>
+                <strong>{(selectedMobileProduct.price || 40) * 500} ETB</strong>
+              </div>
+              <Link
+                href={`/design-submission?product=${selectedMobileProduct.id}`}
+                className="btn-primary text-xs py-3 px-5 rounded-xl flex items-center justify-center gap-1.5"
+              >
+                <span>Commission batch</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* Lightbox Modal */}
       {lightboxProduct && (

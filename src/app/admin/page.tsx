@@ -93,8 +93,23 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col max-w-6xl mx-auto space-y-8 pb-20">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Mobile Header (Reference design) */}
+      <div className="admin-header md:hidden">
+        <div>
+          <span className="text-[10px] font-bold tracking-widest text-[#8C4B31] uppercase block">
+            Executive Portal
+          </span>
+          <h1 className="font-serif text-2xl font-bold text-stone-900 mt-0.5">
+            Operations & Yield
+          </h1>
+        </div>
+        <div className="avatar">
+          AA<span />
+        </div>
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -141,16 +156,53 @@ export default function AdminDashboardPage() {
           <p className="text-stone-500 mt-1">{error}</p>
           <button
             onClick={fetchStats}
-            className="mt-4 px-4 py-2 bg-red-800 text-white font-bold rounded-full text-xs"
+            className="mt-4 px-4 py-2 bg-red-800 text-white font-bold rounded-full text-xs cursor-pointer"
           >
             Retry
           </button>
         </div>
       ) : (
         <>
+          {/* Mobile Attention Card & Quick Metrics (Reference design) */}
+          <div className="space-y-3 md:hidden">
+            <Link href="/admin/payments" className="attention-card">
+              <div>
+                <span>Needs attention now</span>
+                <strong>{stats.pendingPayments} pending payments</strong>
+                <small>Awaiting bank transfer verification</small>
+              </div>
+              <div>{stats.pendingPayments}</div>
+              <ChevronRight size={20} />
+            </Link>
 
-      {/* 1. TOP: "Needs Attention Now" Action Cards */}
-      <div className="space-y-3">
+            <div className="metrics-grid">
+              <article>
+                <span>Today's Orders</span>
+                <strong>{stats.pendingOrderPayments}</strong>
+                <small>Awaiting settlement</small>
+              </article>
+              <article>
+                <span>In Production</span>
+                <strong>{stats.ordersByStatus?.in_production || 0}</strong>
+                <small>Factory line active</small>
+              </article>
+            </div>
+
+            <div className="admin-tabs">
+              <Link href="/admin/payments" className="btn-tab text-center py-2 text-xs font-semibold">
+                Payments ({stats.pendingPayments})
+              </Link>
+              <Link href="/admin/orders" className="btn-tab text-center py-2 text-xs font-semibold">
+                Orders ({stats.totalOrders})
+              </Link>
+              <Link href="/admin/designs" className="btn-tab text-center py-2 text-xs font-semibold">
+                Studio ({stats.newDesignsCount})
+              </Link>
+            </div>
+          </div>
+
+          {/* Desktop "Needs Attention Now" Action Cards */}
+          <div className="hidden md:block space-y-3">
         <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
           Needs Attention Now
         </span>

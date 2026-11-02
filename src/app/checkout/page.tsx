@@ -237,26 +237,48 @@ export default function CheckoutPage() {
               </p>
             </div>
 
-            {/* Crucial Order Reference Box */}
-            <div className="bg-[#FAF7F2] p-4 sm:p-6 rounded-2xl border-2 border-dashed border-[#1E3B2E]/30 text-center space-y-2.5 overflow-hidden">
-              <span className="text-[11px] sm:text-xs font-bold text-stone-500 uppercase tracking-wider block">
-                Official Payment Reference Note
-              </span>
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-                <span className="font-mono text-xl sm:text-2xl md:text-3xl font-black text-[#8C4B31] tracking-wider break-all select-all">
-                  {createdOrder.order_number}
+            {/* Crucial Order Reference Card */}
+            {/* Desktop Original Reference Card */}
+            <div className="hidden md:block bg-[#FAF7F2] p-4 sm:p-5 rounded-2xl border border-stone-200 space-y-3">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
+                  Payment Reference Code
                 </span>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <span className="font-mono text-base sm:text-lg font-bold text-[#1E3B2E] select-all break-all">
+                    {createdOrder.order_number}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(createdOrder.order_number)}
+                    className="btn-secondary text-[11px] py-1.5 px-3 shrink-0 cursor-pointer"
+                  >
+                    {copiedBank ? "Copied" : "Copy Reference"}
+                  </button>
+                </div>
+              </div>
+              <p className="text-[11px] text-stone-500 italic">
+                * Please include this exact order reference in your bank transfer reason/remark so our plant team can instantly reconcile your order.
+              </p>
+            </div>
+
+            {/* Mobile Reference Card */}
+            <div className="md:hidden">
+              <div className="reference-card">
+                <span>Payment reference code</span>
+                <strong>{createdOrder.order_number}</strong>
                 <button
                   type="button"
                   onClick={() => copyToClipboard(createdOrder.order_number)}
-                  className="p-2 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-stone-900 hover:border-stone-400 transition-colors shadow-2xs shrink-0 cursor-pointer"
-                  title="Copy Order Reference"
+                  className="cursor-pointer"
                 >
-                  {copiedBank ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                  {copiedBank ? <Check size={14} /> : <Copy size={14} />}
+                  <span>{copiedBank ? "Copied" : "Copy code"}</span>
                 </button>
               </div>
-              <p className="text-[11px] text-stone-500 max-w-md mx-auto leading-normal break-words">
-                IMPORTANT: Enter <strong className="text-stone-800 break-all">{createdOrder.order_number}</strong> into your mobile banking transfer description so our account managers can match your payment.
+              <p className="helper">
+                <ShieldCheck size={14} className="text-[#1E3B2E] shrink-0" />
+                <span>Include this code in your bank transfer note so our finance team can verify faster.</span>
               </p>
             </div>
 
@@ -304,35 +326,80 @@ export default function CheckoutPage() {
             {!proofSuccess ? (
               <form onSubmit={handleUploadProof} className="space-y-4 pt-2">
                 <div className="border-t border-stone-200 pt-6">
-                  <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2 mb-1">
-                    <Upload size={16} className="text-[#1E3B2E] shrink-0" />
-                    <span>Upload Bank Transfer Receipt (Proof of Payment)</span>
-                  </h3>
-                  <p className="text-xs text-stone-500 mb-4 leading-relaxed">
-                    Attach a screenshot or PDF of your CBE Birr, Telebirr, or Mobile Banking transfer receipt (max 5 MB).
-                  </p>
+                  {/* Desktop Upload View */}
+                  <div className="hidden md:block">
+                    <h3 className="font-serif text-base font-bold text-stone-900 mb-1">
+                      Upload Bank Transfer Receipt Screenshot
+                    </h3>
+                    <p className="text-xs text-stone-500 mb-4">
+                      Upload your CBE Birr, Telebirr, or Awash receipt screenshot to begin order processing.
+                    </p>
 
-                  {proofError && (
-                    <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
-                      <AlertCircle size={15} className="text-red-600 shrink-0" />
-                      <span className="break-words">{proofError}</span>
+                    {proofError && (
+                      <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                        <AlertCircle size={15} className="text-red-600 shrink-0" />
+                        <span className="break-words">{proofError}</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                        onChange={(e) => setProofFile(e.target.files ? e.target.files[0] : null)}
+                        className="text-xs text-stone-600 file:mr-2 sm:file:mr-3 file:py-2.5 file:px-3 sm:file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] file:cursor-pointer w-full max-w-full bg-stone-50 p-2 rounded-2xl border border-stone-200 overflow-hidden truncate"
+                      />
+
+                      <button
+                        type="submit"
+                        disabled={!proofFile || isUploadingProof}
+                        className="w-full sm:w-auto btn-primary py-3 px-6 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer text-center justify-center"
+                      >
+                        {isUploadingProof ? "Uploading..." : "Upload Receipt"}
+                      </button>
                     </div>
-                  )}
+                  </div>
 
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <input
-                      type="file"
-                      accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
-                      onChange={(e) => setProofFile(e.target.files ? e.target.files[0] : null)}
-                      className="text-xs text-stone-600 file:mr-2 sm:file:mr-3 file:py-2.5 file:px-3 sm:file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1E3B2E] file:text-white hover:file:bg-[#8C4B31] file:cursor-pointer w-full max-w-full bg-stone-50 p-2 rounded-2xl border border-stone-200 overflow-hidden truncate"
-                    />
+                  {/* Mobile Reference Upload View */}
+                  <div className="md:hidden">
+                    <span className="step-label">Attach transfer receipt</span>
+                    
+                    {proofError && (
+                      <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                        <AlertCircle size={15} className="text-red-600 shrink-0" />
+                        <span className="break-words">{proofError}</span>
+                      </div>
+                    )}
+
+                    <label className={`receipt-upload cursor-pointer ${proofFile ? "uploaded" : ""}`}>
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                        onChange={(e) => setProofFile(e.target.files ? e.target.files[0] : null)}
+                        className="hidden"
+                      />
+                      {proofFile ? <Check size={24} className="text-emerald-600 shrink-0" /> : <Upload size={24} className="text-stone-400 shrink-0" />}
+                      <span>
+                        <strong className="text-xs font-bold text-stone-900 block truncate">
+                          {proofFile ? proofFile.name : "Tap to upload or photograph receipt"}
+                        </strong>
+                        <small className="text-[11px] text-stone-500 block mt-0.5">
+                          {proofFile ? `${(proofFile.size / 1024 / 1024).toFixed(2)} MB · Ready for review` : "JPG, PNG or PDF · Up to 5 MB"}
+                        </small>
+                      </span>
+                    </label>
+
+                    <div className="secure-note">
+                      <ShieldCheck size={18} className="text-[#1E3B2E] shrink-0" />
+                      <span><strong>Manually verified.</strong> Your order enters production only after our finance team confirms the transfer.</span>
+                    </div>
 
                     <button
                       type="submit"
                       disabled={!proofFile || isUploadingProof}
-                      className="w-full sm:w-auto btn-primary py-3 px-6 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer text-center justify-center"
+                      className="btn-primary w-full py-3.5 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer text-center justify-center mt-3 shadow-md shadow-[#1E3B2E]/10"
                     >
-                      {isUploadingProof ? "Uploading..." : "Upload Receipt"}
+                      {isUploadingProof ? "Uploading & Verifying..." : "Submit Receipt for Verification"}
                     </button>
                   </div>
                 </div>
@@ -504,58 +571,108 @@ export default function CheckoutPage() {
                   Loading active settlement accounts...
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {banks.map((b) => {
-                    const isSelected = selectedBankId === b.id;
-                    return (
-                      <div
-                        key={b.id}
-                        onClick={() => setSelectedBankId(b.id)}
-                        className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-[56px] overflow-hidden ${
-                          isSelected
-                            ? "border-[#1E3B2E] bg-[#1E3B2E]/5"
-                            : "border-stone-200 hover:border-stone-300 bg-white"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3 min-w-0">
-                          <input
-                            type="radio"
-                            name="bankAccount"
-                            checked={isSelected}
-                            onChange={() => setSelectedBankId(b.id)}
-                            className="mt-1 w-4 h-4 text-[#1E3B2E] focus:ring-[#1E3B2E] cursor-pointer shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <span className="font-bold text-xs text-stone-900 block break-words">{b.bank_name}</span>
-                            <span className="text-[11px] text-stone-500 block break-words">{b.account_name}</span>
-                            {b.instructions && (
-                              <span className="text-[10px] text-stone-400 mt-1 block italic break-words">
-                                {b.instructions}
-                              </span>
-                            )}
+                <>
+                  {/* Desktop Original Bank List */}
+                  <div className="hidden md:block space-y-3">
+                    {banks.map((b) => {
+                      const isSelected = selectedBankId === b.id;
+                      return (
+                        <div
+                          key={b.id}
+                          onClick={() => setSelectedBankId(b.id)}
+                          className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-[56px] overflow-hidden ${
+                            isSelected
+                              ? "border-[#1E3B2E] bg-[#1E3B2E]/5"
+                              : "border-stone-200 hover:border-stone-300 bg-white"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3 min-w-0">
+                            <input
+                              type="radio"
+                              name="bankAccountDesktop"
+                              checked={isSelected}
+                              onChange={() => setSelectedBankId(b.id)}
+                              className="mt-1 w-4 h-4 text-[#1E3B2E] focus:ring-[#1E3B2E] cursor-pointer shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <span className="font-bold text-xs text-stone-900 block break-words">{b.bank_name}</span>
+                              <span className="text-[11px] text-stone-500 block break-words">{b.account_name}</span>
+                              {b.instructions && (
+                                <span className="text-[10px] text-stone-400 mt-1 block italic break-words">
+                                  {b.instructions}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100 shrink-0">
+                            <span className="font-mono text-xs font-bold text-stone-800 bg-white px-2.5 sm:px-3 py-1.5 rounded-lg border border-stone-200 break-all select-all">
+                              {b.account_number}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(b.account_number);
+                              }}
+                              className="p-2 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer shrink-0"
+                              title="Copy Account Number"
+                            >
+                              <Copy size={14} />
+                            </button>
                           </div>
                         </div>
+                      );
+                    })}
+                  </div>
 
-                        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100 shrink-0">
-                          <span className="font-mono text-xs font-bold text-stone-800 bg-white px-2.5 sm:px-3 py-1.5 rounded-lg border border-stone-200 break-all select-all">
-                            {b.account_number}
-                          </span>
+                  {/* Mobile Reference Bank List */}
+                  <div className="md:hidden bank-list">
+                    {banks.map((b) => {
+                      const isSelected = selectedBankId === b.id;
+                      const isTelebirr = b.bank_name.toLowerCase().includes("telebirr");
+                      const isAwash = b.bank_name.toLowerCase().includes("awash");
+                      const logoLetter = isTelebirr ? "T" : b.bank_name.charAt(0);
+                      const logoClass = isTelebirr ? "bank-telebirr" : isAwash ? "bank-awash" : "";
+
+                      return (
+                        <div
+                          key={b.id}
+                          role="radio"
+                          aria-checked={isSelected}
+                          tabIndex={0}
+                          onClick={() => setSelectedBankId(b.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") setSelectedBankId(b.id);
+                          }}
+                          className={`bank-card cursor-pointer ${isSelected ? "active" : ""}`}
+                        >
+                          <div className={`bank-logo ${logoClass}`}>
+                            {logoLetter}
+                          </div>
+                          <div>
+                            <strong>{b.bank_name}</strong>
+                            <span className="font-mono">{b.account_number}</span>
+                          </div>
+                          <div className="radio-mark">
+                            {isSelected && <span />}
+                          </div>
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               copyToClipboard(b.account_number);
                             }}
-                            className="p-2 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer shrink-0"
-                            title="Copy Account Number"
+                            className="copy-account cursor-pointer"
                           >
-                            <Copy size={14} />
+                            {copiedBank ? <Check size={13} className="text-emerald-700" /> : <Copy size={13} />}
+                            <span>{copiedBank ? "Copied" : "Copy"}</span>
                           </button>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </div>
           </div>

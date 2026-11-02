@@ -1,0 +1,10 @@
+{
+  "description": "Explore and commission custom Ethiopian paper packaging, book craft workshops, manage orders, and settle payments in one mobile-friendly platform.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -1934,10 +1934,11 @@ function DesignSubmissionForm() {
 
       <StickyBottomBar>
         <div className="flex flex-col">
-          <span className="text-[10px] text-stone-500 font-bold uppercase">Estimated Quote</span>
-          <span className="text-base font-bold text-[#8C4B31] font-mono">
+          <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wider">Estimated Quote</span>
+          <span className="text-base font-serif font-bold text-[#8C4B31] leading-tight">
             {totalPriceEstimate.toLocaleString()} ETB
           </span>
+          <span className="text-[9px] text-stone-400">{effectiveCount.toLocaleString()} pcs · Direct Factory Tier</span>
         </div>
         <button
           type="button"
@@ -1946,9 +1947,10 @@ function DesignSubmissionForm() {
             if (form) form.requestSubmit();
           }}
           disabled={isSubmitting || !title.trim()}
-          className="btn-primary touch-target text-xs px-6 py-2.5 disabled:opacity-50"
+          className="btn-primary touch-target text-xs px-5 py-2.5 rounded-xl disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-md shadow-[#1E3B2E]/10"
         >
-          {isSubmitting ? "Submitting..." : "Submit Studio Request"}
+          <span>{isSubmitting ? "Submitting..." : "Request Quote"}</span>
+          <ArrowRight size={14} />
         </button>
       </StickyBottomBar>
     </div>

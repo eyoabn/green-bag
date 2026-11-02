@@ -17,7 +17,11 @@ import {
   Sparkles, 
   Copy, 
   Check,
-  AlertCircle
+  AlertCircle,
+  Play,
+  ChevronRight,
+  Store,
+  Radio
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { uploadFileSafely } from "@/utils/fileUpload";
@@ -246,8 +250,128 @@ export default function SchedulePage() {
     <div className="flex flex-col min-h-screen pt-20 sm:pt-24 pb-28 sm:pb-20 bg-[#F9F6F0] overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full min-w-0">
         
-        {/* Header Section */}
-        <div className="max-w-3xl mb-12">
+        {/* Mobile Header (Reference design) */}
+        <div className="block md:hidden mb-5">
+          <span className="text-[11px] font-bold tracking-widest text-[#8C4B31] uppercase block mb-1">
+            Arenguade Craft Academy
+          </span>
+          <h1 className="font-serif text-3xl font-bold text-stone-900 tracking-tight mb-2">
+            Learn by making
+          </h1>
+          <p className="text-stone-600 text-xs leading-relaxed">
+            Practical skills from working Ethiopian paper craft professionals.
+          </p>
+        </div>
+
+        {/* Mobile Segmented Filter */}
+        <div className="segmented mb-6 md:hidden">
+          {[
+            { id: "all", label: "All" },
+            { id: "in_person", label: "Studio" },
+            { id: "live", label: "Online" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setFilterType(tab.id as any)}
+              className={filterType === tab.id ? "active" : ""}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Mobile Workshop Cards (Reference design) */}
+        <div className="workshop-list md:hidden mb-8">
+          {loading ? (
+            <div className="bg-white p-8 rounded-2xl border border-stone-200 text-center">
+              <Sparkles size={24} className="animate-spin text-[#8C4B31] mx-auto mb-2" />
+              <p className="text-xs font-semibold text-stone-700">Loading live workshop schedule...</p>
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div className="bg-white p-8 rounded-2xl border border-stone-200 text-center">
+              <CalendarIcon size={28} className="text-stone-400 mx-auto mb-2" />
+              <h3 className="font-serif text-lg font-bold text-stone-800">No sessions scheduled</h3>
+              <p className="text-xs text-stone-500 mt-1">Please check back soon for upcoming craft workshops.</p>
+            </div>
+          ) : (
+            filteredSessions.map((workshop, idx) => {
+              const craftImages = [
+                "/images/photo_1_2026-09-05_00-36-02.jpg",
+                "/images/photo_2_2026-09-05_00-36-02.jpg",
+                "/images/photo_3_2026-09-05_00-36-02.jpg",
+                "/images/photo_4_2026-09-05_00-36-03.jpg"
+              ];
+              const imgUrl = craftImages[idx % craftImages.length];
+              const initials = (workshop.teacher?.full_name || "BA")
+                .split(" ")
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join("");
+
+              return (
+                <article className="workshop-card" key={workshop.id}>
+                  <div className="workshop-image">
+                    <img src={imgUrl} alt={workshop.title} />
+                    <span>
+                      {workshop.type === "live" ? <Radio size={12} /> : <Store size={12} />}
+                      {workshop.type === "live" ? "Live Online" : "In-Person Studio"}
+                    </span>
+                  </div>
+                  <div className="workshop-copy">
+                    <div className="date-line">
+                      <CalendarIcon size={14} />
+                      <strong>{formatScheduleDate(workshop.starts_at)}</strong>
+                      <span>·</span>
+                      <Clock size={14} />
+                      <span>{formatScheduleTime(workshop.starts_at, workshop.ends_at)}</span>
+                    </div>
+                    <h2>{workshop.title}</h2>
+                    <div className="instructor">
+                      <div>{initials}</div>
+                      <span>Led by <strong>{workshop.teacher?.full_name || "Guild Master"}</strong></span>
+                    </div>
+                    <div className="workshop-meta">
+                      <div>
+                        <span>Tuition</span>
+                        <strong>{workshop.price > 0 ? `${workshop.price} ETB` : "Free"}</strong>
+                      </div>
+                      <span className="seats-badge">
+                        {workshop.isFull ? "Full" : `${workshop.spotsLeft} seats left`}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={workshop.isFull}
+                      onClick={() => {
+                        setSelectedSession(workshop);
+                        setBookingSuccess(false);
+                        setReceiptFile(null);
+                        setErrorMessage(null);
+                      }}
+                      className="btn-primary w-full py-3 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span>{workshop.isFull ? "Fully Booked" : "Book your seat"}</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                </article>
+              );
+            })
+          )}
+
+          <Link href="/learn" className="live-preview">
+            <div><Play size={20} className="fill-current" /></div>
+            <span>
+              <small>Preview the classroom</small>
+              <strong>See how live learning works</strong>
+            </span>
+            <ChevronRight size={18} className="text-stone-400" />
+          </Link>
+        </div>
+
+        {/* Desktop Header Section */}
+        <div className="hidden md:block max-w-3xl mb-12">
           <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase block mb-2">
             Arenguade Craft Academy
           </span>
@@ -259,8 +383,8 @@ export default function SchedulePage() {
           </p>
         </div>
 
-        {/* Filter Navigation */}
-        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar touch-scroll">
+        {/* Desktop Filter Navigation */}
+        <div className="hidden md:flex items-center gap-2 mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar touch-scroll">
           {[
             { id: "all", label: "All Workshops" },
             { id: "in_person", label: "In-Person Studio (Addis Ababa)" },
@@ -280,8 +404,8 @@ export default function SchedulePage() {
           ))}
         </div>
 
-        {/* Sessions & Process Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Desktop Sessions & Process Grid */}
+        <div className="hidden md:grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Sessions List */}
           <div className="lg:col-span-8 space-y-6">

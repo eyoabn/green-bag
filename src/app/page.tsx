@@ -143,7 +143,78 @@ export default function Home() {
       )}
       
       {/* 1. HERO SECTION */}
-      <section className="relative w-full py-12 md:py-20 border-b border-stone-200 bg-[#F9F6F0]">
+      {/* 1A. MOBILE HERO (Reference Design Architecture) */}
+      <section className="md:hidden w-full bg-[#F9F6F0]">
+        <div className="relative h-[104vw] max-h-[420px] overflow-hidden bg-[#d6c4aa]">
+          <Image
+            src="/images/photo_3_2026-09-05_00-36-02.jpg"
+            alt="Unbleached kraft paper shopping bag in a warm studio setting"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-stone-950/60 pointer-events-none" />
+          
+          {/* Craft Seal Stamp (AA Addis Ababa) */}
+          <div className="craft-seal" aria-hidden="true">
+            <span>HANDCRAFTED</span>
+            <strong>AA</strong>
+            <span>ADDIS ABABA</span>
+          </div>
+
+          {/* Status Dot Caption */}
+          <div className="image-caption">
+            <span className="status-dot" />
+            <span>Made to order in Addis</span>
+          </div>
+        </div>
+
+        <div className="px-5 pt-7 pb-4">
+          <div className="eyebrow">Packaging with provenance</div>
+          <h1 className="font-serif text-[38px] font-semibold leading-[1.02] tracking-tight text-stone-900 mt-2 mb-3">
+            Made by hand.<br />Built for your brand.
+          </h1>
+          <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-6">
+            Biodegradable paper packaging, shaped by Ethiopian craft and engineered for modern retail.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Link 
+              href="/products" 
+              className="btn-primary text-xs py-3 rounded-xl touch-target text-center shadow-md shadow-[#1E3B2E]/10"
+            >
+              <span>Explore catalog</span>
+              <ArrowRight size={15} />
+            </Link>
+            <Link 
+              href="/learn/schedule" 
+              className="btn-secondary text-xs py-3 rounded-xl touch-target text-center"
+            >
+              <span>Book workshop</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile Trust Strip */}
+        <div className="trust-strip hide-scrollbar mt-4">
+          <div className="trust-chip">
+            <strong>1.2M+</strong>
+            <span>Bags produced</span>
+          </div>
+          <div className="trust-chip">
+            <strong>50+</strong>
+            <span>Enterprise clients</span>
+          </div>
+          <div className="trust-chip">
+            <strong>100%</strong>
+            <span>Recyclable Kraft</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 1B. DESKTOP HERO SECTION (Full 12-Column Responsive Layout) */}
+      <section className="hidden md:block relative w-full py-12 md:py-20 border-b border-stone-200 bg-[#F9F6F0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
             
@@ -172,7 +243,7 @@ export default function Home() {
                 {lang === "am" ? t.hero_subline : (cmsContent.hero_subline || heroContent.subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses.")}
               </p>
 
-              {/* One primary action, one secondary */}
+              {/* Actions */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <Link 
                   href="/products" 
@@ -192,7 +263,7 @@ export default function Home() {
                 </Link>
               </div>
 
-              {/* Trust Badges Chips (Driven by Admin CMS stats or defaults) */}
+              {/* Trust Badges */}
               <div className="pt-4 mt-2 border-t border-stone-200/90 flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold text-stone-700">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
                   <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {lang === "am" ? t.hero_trust_1 : (cmsContent.stat_1_val ? `${cmsContent.stat_1_val} ${cmsContent.stat_1_label}` : "1.2M+ Bags Produced")}
@@ -206,7 +277,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: 3D Studio Bag (Desktop) or Fast Optimized Static Image (Mobile) */}
+            {/* Right: 3D Studio Bag */}
             <div className="md:col-span-5">
               <div className="relative aspect-square w-full rounded-3xl bg-white border border-stone-200/90 shadow-lg flex items-center justify-center overflow-hidden">
                 {canRender3D ? (
@@ -245,14 +316,15 @@ export default function Home() {
       </section>
 
       {/* 2. FACTORY CLIENT SHOWCASES */}
-      <section className="py-16 bg-[#F9F6F0]">
+      <section className="py-12 md:py-16 bg-[#F9F6F0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 md:mb-8 gap-4">
             <div>
               <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase">
-                {lang === "am" ? "የፋብሪካ ውጤቶች • ልዩ የደንበኞች ሥራዎች" : "Factory Deliverables • Bespoke Client Works"}
+                <span className="md:hidden">{lang === "am" ? "የተመረጡ ሥራዎች • የኢትዮጵያ ምርቶች" : "Selected work • Made for Ethiopia’s originals"}</span>
+                <span className="hidden md:inline">{lang === "am" ? "የፋብሪካ ውጤቶች • ልዩ የደንበኞች ሥራዎች" : "Factory Deliverables • Bespoke Client Works"}</span>
               </span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
+              <h2 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 mt-1">
                 {lang === "am" ? t.products_heading : (cmsContent.showcase_title || "Custom Packaging Showcase")}
               </h2>
               <p className="text-stone-600 text-xs sm:text-sm mt-1 max-w-2xl">
@@ -269,7 +341,46 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {/* 2A. MOBILE TOUCH CAROUSEL (Reference Design) */}
+          <div className="md:hidden case-carousel hide-scrollbar -mx-4 px-4 pb-2">
+            {featuredProducts.length > 0 ? (
+              featuredProducts.map((p) => {
+                const img = (p.images && p.images[0]) || "/images/photo_6_2026-09-05_00-36-03.jpg";
+                return (
+                  <Link href={`/products/${p.id}`} key={p.id} className="case-card shrink-0 block">
+                    <img src={img} alt={p.name} />
+                    <div className="case-copy">
+                      <span>{p.category || "Specialty Packaging"}</span>
+                      <h3>{p.name}</h3>
+                      <p>{p.description || "Custom biodegradable packaging manufactured with soy ink in Addis Ababa."}</p>
+                    </div>
+                  </Link>
+                );
+              })
+            ) : (
+              <>
+                <article className="case-card shrink-0">
+                  <img src="/images/photo_6_2026-09-05_00-36-03.jpg" alt="Premium coffee pouch" />
+                  <div className="case-copy">
+                    <span>Specialty coffee</span>
+                    <h3>Rare Coffee Roasters</h3>
+                    <p>Valve-sealed pouches, screen printed in two earthy tones.</p>
+                  </div>
+                </article>
+                <article className="case-card shrink-0">
+                  <img src="/images/photo_7_2026-09-05_00-36-03.jpg" alt="Luxury boutique bags" />
+                  <div className="case-copy">
+                    <span>Luxury retail</span>
+                    <h3>Richo Boutique</h3>
+                    <p>Cotton handles and a Tibeb-inspired border for a tactile finish.</p>
+                  </div>
+                </article>
+              </>
+            )}
+          </div>
+
+          {/* 2B. DESKTOP GRID */}
+          <div className="hidden md:grid grid-cols-2 md:grid-cols-3 gap-6">
             {productsLoading ? (
               Array.from({ length: 3 }).map((_, idx) => (
                 <div key={idx} className="app-card animate-pulse h-80 flex flex-col justify-between">
@@ -289,7 +400,7 @@ export default function Home() {
                           src={img} 
                           alt={product.name} 
                           fill 
-                          sizes="(max-width: 768px) 100vw, 33vw"
+                          sizes="33vw"
                           className="object-cover" 
                         />
                         <span className="absolute top-2.5 left-2.5 bg-[#1E3B2E] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">
@@ -333,6 +444,73 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* 2C. OUR PROCESS SECTION (Mobile Reference Feature - Hidden on Desktop) */}
+      <section className="md:hidden py-12 bg-white border-y border-stone-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          <div className="max-w-2xl mb-6">
+            <span className="eyebrow">Our process</span>
+            <h2 className="font-serif text-2xl font-bold text-stone-900 mt-1">
+              From your sketch to the street
+            </h2>
+            <p className="text-stone-600 text-xs mt-1">
+              Direct factory production pipeline designed for Ethiopian businesses.
+            </p>
+          </div>
+
+          <div className="process-list max-w-xl">
+            <article className="process-item">
+              <span>01</span>
+              <div>
+                <h3>Share your vision</h3>
+                <p>Choose a form, material and print finish in our custom studio.</p>
+              </div>
+            </article>
+            <article className="process-item">
+              <span>02</span>
+              <div>
+                <h3>Prototype in Addis</h3>
+                <p>Our makers test structure, ink adherence and handle load capacity.</p>
+              </div>
+            </article>
+            <article className="process-item">
+              <span>03</span>
+              <div>
+                <h3>Approve & produce</h3>
+                <p>Track your batch from press to local delivery across Addis Ababa.</p>
+              </div>
+            </article>
+          </div>
+
+          <Link 
+            href="/design-submission" 
+            className="btn-primary w-full text-xs py-3 px-6 rounded-xl inline-flex items-center justify-center gap-2 shadow-md shadow-[#1E3B2E]/10"
+          >
+            <span>Start a custom project</span>
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+
+      {/* 2D. ACADEMY MOBILE BANNER (Reference Visual Feature) */}
+      <div className="md:hidden">
+        <section className="academy-banner">
+          <img src="/images/photo_2_2026-09-05_00-36-02.jpg" alt="Handmade Ethiopian paper craft artisans" />
+          <div className="academy-overlay">
+            <div className="eyebrow">Arenguade craft academy</div>
+            <h2>Learn the craft.<br />Build a livelihood.</h2>
+            <p>Hands-on studio courses and live masterclasses led by working Ethiopian makers.</p>
+            <Link 
+              href="/learn/schedule" 
+              className="btn-secondary bg-white/10 hover:bg-white/20 text-white border-white/40 text-xs py-2.5 px-5 rounded-xl inline-flex items-center gap-2"
+            >
+              <span>Explore classes</span>
+              <ArrowRight size={15} />
+            </Link>
+          </div>
+        </section>
+      </div>
 
       {/* 3. HOW LEARNING WORKS (ACADEMY & WORKSHOPS) */}
       <section className="py-16 bg-white border-y border-stone-200">

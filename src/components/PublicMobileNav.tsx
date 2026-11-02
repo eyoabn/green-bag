@@ -20,6 +20,8 @@ export default function PublicMobileNav() {
     !pathname ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/teacher") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/profile") ||
     pathname === "/design-submission" ||
     pathname === "/checkout" ||
     (pathname.startsWith("/products/") && pathname !== "/products");

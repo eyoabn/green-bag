@@ -98,7 +98,7 @@ export default function CheckoutPage() {
     setError("");
 
     if (!currentUser) {
-      alert("Please log in to complete checkout.");
+      setError("Please sign in to complete your packaging order.");
       router.push("/login?returnTo=/checkout");
       return;
     }

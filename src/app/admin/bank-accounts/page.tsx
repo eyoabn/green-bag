@@ -104,10 +104,10 @@ export default function AdminBankAccountsPage() {
         setActionSuccess(`Bank account ${!currentStatus ? "ACTIVATED" : "DISABLED"} successfully.`);
         setTimeout(() => setActionSuccess(""), 3500);
       } else {
-        alert(resJson?.error || "Failed to toggle status");
+        setError(resJson?.error || "Failed to toggle status");
       }
     } catch (err: any) {
-      alert(err?.message || "Failed to update account status");
+      setError(err?.message || "Failed to update account status");
     }
   };
 
@@ -123,10 +123,10 @@ export default function AdminBankAccountsPage() {
         setActionSuccess(resJson.message || "Account removed successfully.");
         setTimeout(() => setActionSuccess(""), 3500);
       } else {
-        alert(resJson?.error || "Failed to delete bank account");
+        setError(resJson?.error || "Failed to delete bank account");
       }
     } catch (err: any) {
-      alert(err?.message || "Error deleting bank account");
+      setError(err?.message || "Error deleting bank account");
     }
   };
 

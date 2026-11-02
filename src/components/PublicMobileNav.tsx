@@ -36,10 +36,11 @@ export default function PublicMobileNav() {
   const isPortal = pathname.startsWith("/dashboard") || pathname === "/profile" || pathname === "/login";
 
   return (
-    <nav 
-      aria-label="Primary navigation"
-      className="bottom-nav md:hidden max-w-md mx-auto"
-    >
+    <div className="md:hidden">
+      <nav 
+        aria-label="Primary navigation"
+        className="bottom-nav max-w-md mx-auto"
+      >
       {/* 1. Home */}
       <Link
         href="/"
@@ -85,6 +86,7 @@ export default function PublicMobileNav() {
         <span>{lang === "am" ? "መለያ" : "Portal"}</span>
       </Link>
     </nav>
+  </div>
   );
 }
 

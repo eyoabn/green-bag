@@ -81,7 +81,36 @@ export default function Home() {
         } else {
           const fallbackRes = await fetch("/api/products?pageSize=6");
           const fallbackJson = await fallbackRes.json();
-          if (fallbackJson.products) setFeaturedProducts(fallbackJson.products);
+          if (fallbackJson.products && fallbackJson.products.length > 0) {
+            setFeaturedProducts(fallbackJson.products);
+          } else {
+            setFeaturedProducts([
+              {
+                id: "p1",
+                name: "Addis Corporate Executive Gift Bag",
+                description: "Sleek die-cut handle bag with matte black lamination and silver foil stamping. Ideal for corporate events and high-end gifting.",
+                images: ["/images/photo_17_2026-09-05_00-36-03.jpg"],
+                gsm: 220,
+                handle_type: "Twisted Handle",
+              },
+              {
+                id: "p2",
+                name: "Eco-Friendly Recycled Grocery Sack",
+                description: "Unbranded brown grocery sack for organic markets, zero-waste stores, and delivery services. Our most sustainable carryall.",
+                images: ["/images/photo_15_2026-09-05_00-36-03.jpg"],
+                gsm: 220,
+                handle_type: "Twisted Handle",
+              },
+              {
+                id: "p3",
+                name: "Vero Tiramisu Artisan Sleeve Box",
+                description: "Food-grade specialty sleeve box for premium tiramisu and pastries. Rigid outer sleeve with grease-resistant inner tray.",
+                images: ["/images/photo_16_2026-09-05_00-36-03.jpg"],
+                gsm: 220,
+                handle_type: "Twisted Handle",
+              },
+            ]);
+          }
         }
       } catch (e) {
         console.error("Products fetch error:", e);
@@ -94,9 +123,48 @@ export default function Home() {
         setWorkshopsLoading(true);
         const res = await fetch("/api/classes?upcoming=true&pageSize=2");
         const json = await res.json();
-        if (json.classes) setWorkshops(json.classes);
+        if (json.classes && json.classes.length > 0) {
+          setWorkshops(json.classes);
+        } else {
+          setWorkshops([
+            {
+              id: "ws-1",
+              type: "in_person",
+              title: "Weekend Paper Craft Intensive",
+              location: "Arenguade Workshop, Bole Sub-City, Addis Ababa",
+              price: 600,
+              starts_at: "2026-11-07T09:00:00Z",
+            },
+            {
+              id: "ws-2",
+              type: "live",
+              title: "Paper Bag Making — Beginner Live Workshop",
+              location: "Addis Ababa",
+              price: 450,
+              starts_at: "2026-11-09T14:00:00Z",
+            },
+          ]);
+        }
       } catch (e) {
         console.error("Workshops fetch error:", e);
+        setWorkshops([
+          {
+            id: "ws-1",
+            type: "in_person",
+            title: "Weekend Paper Craft Intensive",
+            location: "Arenguade Workshop, Bole Sub-City, Addis Ababa",
+            price: 600,
+            starts_at: "2026-11-07T09:00:00Z",
+          },
+          {
+            id: "ws-2",
+            type: "live",
+            title: "Paper Bag Making — Beginner Live Workshop",
+            location: "Addis Ababa",
+            price: 450,
+            starts_at: "2026-11-09T14:00:00Z",
+          },
+        ]);
       } finally {
         setWorkshopsLoading(false);
       }
@@ -255,7 +323,7 @@ export default function Home() {
                 </Link>
 
                 <Link 
-                  href="/learn/schedule" 
+                  href="/design-submission" 
                   className="btn-secondary touch-target text-center"
                 >
                   <BookOpen size={18} className="text-[#8C4B31]" />
@@ -428,7 +496,7 @@ export default function Home() {
                       </div>
                       <Link 
                         href={`/products/${product.id}`}
-                        className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-[#E0B382] hover:text-white transition-all text-xs font-bold py-2 px-4 rounded-xl shadow-xs"
+                        className="bg-[#1E3B2E] hover:bg-[#8C4B31] text-white transition-all text-xs font-bold py-2 px-4 rounded-xl shadow-xs"
                       >
                         {t.products_view_details}
                       </Link>

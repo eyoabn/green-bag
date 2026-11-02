@@ -68,9 +68,11 @@ export default function Navbar() {
         <nav className="bg-[#FAF7F2]/95 backdrop-blur-xl border border-stone-300/60 shadow-lg shadow-stone-900/5 rounded-full px-4 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
           
           {/* Brand Logo with reference brand-mark polygon on mobile */}
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
-            <div className="brand-mark md:hidden shrink-0 shadow-xs" aria-hidden="true">
-              <span>አ</span>
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+            <div className="md:hidden shrink-0">
+              <div className="brand-mark shadow-xs" aria-hidden="true">
+                <span>አ</span>
+              </div>
             </div>
             <div className="hidden md:flex w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#FAF7F2] border border-stone-300/80 p-0.5 items-center justify-center shadow-xs group-hover:scale-105 group-hover:border-[#1E3B2E]/40 transition-all shrink-0 overflow-hidden">
               <Image
@@ -82,14 +84,9 @@ export default function Navbar() {
                 priority
               />
             </div>
-            <div className="flex flex-col">
-              <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#1E3B2E] group-hover:text-[#8C4B31] transition-colors leading-none">
-                Arenguade
-              </span>
-              <span className="hidden xs:block text-[9px] sm:text-[10px] font-semibold tracking-wider text-stone-500 uppercase mt-0.5">
-                Artisanal Kraft & Academy
-              </span>
-            </div>
+            <span className="font-serif text-lg sm:text-xl font-bold tracking-tight text-[#1E3B2E] group-hover:text-[#8C4B31] transition-colors leading-none">
+              Arenguade
+            </span>
           </Link>
 
           {/* Desktop Navigation Links */}

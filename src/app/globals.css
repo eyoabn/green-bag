@@ -198,21 +198,29 @@ input[type="file"] {
   --color-paper: #ffffff;
 }
 
-/* 1. Brand Mark Polygon (Geez አ Symbol) */
-.brand-mark {
-  display: grid;
-  width: 36px;
-  height: 40px;
-  place-items: center;
-  color: var(--color-kraft);
-  background: var(--color-forest);
-  clip-path: polygon(50% 0, 92% 18%, 88% 82%, 50% 100%, 12% 82%, 8% 18%);
+/* 1. Brand Mark Polygon (Geez አ Symbol - Mobile Only) */
+@media (min-width: 768px) {
+  .brand-mark {
+    display: none !important;
+  }
 }
 
-.brand-mark span {
-  font-family: var(--font-serif);
-  font-size: 19px;
-  line-height: 1;
+@media (max-width: 767px) {
+  .brand-mark {
+    display: grid;
+    width: 36px;
+    height: 40px;
+    place-items: center;
+    color: var(--color-kraft);
+    background: var(--color-forest);
+    clip-path: polygon(50% 0, 92% 18%, 88% 82%, 50% 100%, 12% 82%, 8% 18%);
+  }
+
+  .brand-mark span {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    line-height: 1;
+  }
 }
 
 .brand-copy {
@@ -497,46 +505,56 @@ input[type="file"] {
   line-height: 1.6;
 }
 
-/* 7. Bottom Navigation Pill */
-.bottom-nav {
-  position: fixed;
-  z-index: 50;
-  right: 12px;
-  bottom: calc(10px + env(safe-area-inset-bottom));
-  left: 12px;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  height: 68px;
-  padding: 5px;
-  border: 1px solid rgb(168 162 158 / 62%);
-  border-radius: 999px;
-  background: rgb(250 247 242 / 94%);
-  box-shadow: 0 12px 34px rgb(46 39 32 / 17%);
-  backdrop-filter: blur(20px);
+/* 7. Bottom Navigation Pill (Mobile Only - Completely Hidden on Desktop >= 768px) */
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
 }
 
-.bottom-nav a,
-.bottom-nav button {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  flex-direction: column;
-  border: 0;
-  border-radius: 999px;
-  color: var(--color-muted);
-  background: transparent;
-  font-size: 8px;
-  font-weight: 600;
-  transition: all 180ms ease;
-}
+@media (max-width: 767px) {
+  .bottom-nav {
+    position: fixed;
+    z-index: 50;
+    right: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 12px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    height: 68px;
+    padding: 5px;
+    border: 1px solid rgb(168 162 158 / 62%);
+    border-radius: 999px;
+    background: rgb(250 247 242 / 94%);
+    box-shadow: 0 12px 34px rgb(46 39 32 / 17%);
+    backdrop-filter: blur(20px);
+  }
 
-.bottom-nav a.active,
-.bottom-nav button.active {
-  color: white;
-  background: var(--color-forest);
-  box-shadow: 0 4px 12px rgb(30 59 46 / 25%);
+  .bottom-nav a,
+  .bottom-nav button {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex-direction: column;
+    border: 0;
+    border-radius: 999px;
+    color: var(--color-muted);
+    background: transparent;
+    font-size: 8px;
+    font-weight: 600;
+    transition: all 180ms ease;
+  }
+
+  .bottom-nav a.active,
+  .bottom-nav button.active {
+    color: white;
+    background: var(--color-forest);
+    box-shadow: 0 4px 12px rgb(30 59 46 / 25%);
+  }
 }
 
 /* 8. Bottom Sheet Modals */

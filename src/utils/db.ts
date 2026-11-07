@@ -1,12 +1,14 @@
 import { Pool } from "pg";
 
-const FALLBACK_DATABASE_URL =
-  "postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
-
 const connectionString =
   process.env.DATABASE_URL ||
-  process.env.DIRECT_URL ||
-  FALLBACK_DATABASE_URL;
+  process.env.DIRECT_URL;
+
+if (!connectionString) {
+  throw new Error(
+    "Missing database connection string. Set DATABASE_URL or DIRECT_URL in your environment or .env.local file."
+  );
+}
 
 // Singleton PostgreSQL pool for direct administrative and schema operations
 declare global {

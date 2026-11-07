@@ -265,7 +265,13 @@ export async function PATCH(
           "SELECT id FROM public.bank_accounts WHERE is_active = true LIMIT 1"
         );
         const bankId = bankRows.length > 0 ? bankRows[0].id : null;
-        const orderNumber = `ARN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+        let orderNumber: string;
+        try {
+          const { rows: seqRows } = await pool.query("SELECT nextval('order_number_seq') as seq");
+          orderNumber = `ARN-${new Date().getFullYear()}-${String(seqRows[0]?.seq).padStart(4, "0")}`;
+        } catch {
+          orderNumber = `ARN-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
+        }
 
         const { rows: orderRows } = await pool.query(
           `INSERT INTO public.orders (order_number, buyer_id, total_price, bank_account_id, delivery_address, phone, notes, status)
@@ -278,22 +284,18 @@ export async function PATCH(
             bankId,
             "Addis Ababa Plant Dispatch",
             "0911000000",
-            `Custom Design Order: ${existing.title || "Custom Bag"} (Ref: #${existing.id.substring(0, 8)})`,
+            `Custom Design Commission: ${existing.title || "Custom Bag"} (Ref: #${existing.id.substring(0, 8)})`,
           ]
         );
         const newOrder = orderRows[0];
         createdOrder = newOrder;
 
-        const { rows: prodRows } = await pool.query(
-          "SELECT id FROM public.products WHERE is_available = true LIMIT 1"
+        // Custom design order item directly references the design specification
+        await pool.query(
+          `INSERT INTO public.order_items (order_id, custom_design_id, product_id, quantity, unit_price_snapshot)
+           VALUES ($1, $2, null, 1, $3)`,
+          [newOrder.id, existing.id, Number(existing.quoted_price)]
         );
-        if (prodRows.length > 0) {
-          await pool.query(
-            `INSERT INTO public.order_items (order_id, product_id, quantity, unit_price_snapshot)
-             VALUES ($1, $2, 1, $3)`,
-            [newOrder.id, prodRows[0].id, Number(existing.quoted_price)]
-          );
-        }
 
         await pool.query(
           `INSERT INTO public.order_status_history (order_id, from_status, to_status, changed_by, note)
@@ -455,7 +457,13 @@ export async function PATCH(
             "SELECT id FROM public.bank_accounts WHERE is_active = true LIMIT 1"
           );
           const bankId = bankRows.length > 0 ? bankRows[0].id : null;
-          const orderNumber = `ARN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+          let orderNumber: string;
+          try {
+            const { rows: seqRows } = await pool.query("SELECT nextval('order_number_seq') as seq");
+            orderNumber = `ARN-${new Date().getFullYear()}-${String(seqRows[0]?.seq).padStart(4, "0")}`;
+          } catch {
+            orderNumber = `ARN-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
+          }
 
           const { rows: orderRows } = await pool.query(
             `INSERT INTO public.orders (order_number, buyer_id, total_price, bank_account_id, delivery_address, phone, notes, status)
@@ -468,23 +476,19 @@ export async function PATCH(
               bankId,
               "Addis Ababa Plant Dispatch",
               user.phone || "0911000000",
-              `Custom Design Order: ${existing.title || "Custom Bag"} (Ref: #${existing.id.substring(0, 8)})`,
+              `Custom Design Commission: ${existing.title || "Custom Bag"} (Ref: #${existing.id.substring(0, 8)})`,
             ]
           );
           const newOrder = orderRows[0];
           createdOrder = newOrder;
           updates.linked_order_id = newOrder.id;
 
-          const { rows: prodRows } = await pool.query(
-            "SELECT id FROM public.products WHERE is_available = true LIMIT 1"
+          // Custom design order item directly references the design specification
+          await pool.query(
+            `INSERT INTO public.order_items (order_id, custom_design_id, product_id, quantity, unit_price_snapshot)
+             VALUES ($1, $2, null, 1, $3)`,
+            [newOrder.id, existing.id, Number(existing.quoted_price)]
           );
-          if (prodRows.length > 0) {
-            await pool.query(
-              `INSERT INTO public.order_items (order_id, product_id, quantity, unit_price_snapshot)
-               VALUES ($1, $2, 1, $3)`,
-              [newOrder.id, prodRows[0].id, Number(existing.quoted_price)]
-            );
-          }
 
           await pool.query(
             `INSERT INTO public.order_status_history (order_id, from_status, to_status, changed_by, note)

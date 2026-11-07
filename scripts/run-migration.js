@@ -2,7 +2,8 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const directUrl = process.env.DIRECT_URL || 'postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
+const { getDirectUrl } = require('./db-config');
+const directUrl = getDirectUrl();
 
 async function run() {
   console.log("Connecting to Supabase PostgreSQL via Direct Pooler...");

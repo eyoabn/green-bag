@@ -8,9 +8,29 @@
 'use strict';
 const { Client } = require('pg');
 
-const DIRECT_URL =
-  process.env.DIRECT_URL ||
-  'postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true';
+const fs = require('fs');
+const path = require('path');
+
+function resolveDbUrl() {
+  if (process.env.DIRECT_URL) return process.env.DIRECT_URL;
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  const envPath = path.resolve(__dirname, '../.env.local');
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('DIRECT_URL=')) {
+        return trimmed.replace(/^DIRECT_URL=/, '').replace(/^["']|["']$/g, '');
+      }
+      if (trimmed.startsWith('DATABASE_URL=')) {
+        return trimmed.replace(/^DATABASE_URL=/, '').replace(/^["']|["']$/g, '');
+      }
+    }
+  }
+  throw new Error('DIRECT_URL or DATABASE_URL must be provided in environment or .env.local');
+}
+
+const DIRECT_URL = resolveDbUrl();
 
 const USERS = [
   { email: 'admin@arenguade.com',            password: 'Password123!', role: 'admin',    full_name: 'Abebe Admin (Owner)',  phone: '+251911000001' },

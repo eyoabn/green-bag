@@ -5,7 +5,11 @@ import { AccessToken } from "livekit-server-sdk";
 
 const directUrl =
   process.env.DIRECT_URL ||
-  "postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres";
+  process.env.DATABASE_URL;
+
+if (!directUrl) {
+  throw new Error("Missing DIRECT_URL or DATABASE_URL in environment or .env.local");
+}
 
 const TEST_USERS = {
   admin: { email: "admin@arenguade.com", password: "Password123!" },
@@ -408,8 +412,11 @@ test.describe("Phase 7: LiveKit Live Sessions", () => {
       expect(invalidAuthRes.status()).toBe(401);
 
       // Case C: Valid signed webhook for room_started using WebhookReceiver
-      const apiKey = process.env.LIVEKIT_API_KEY || "APIR3wML2N82ZS5";
-      const apiSecret = process.env.LIVEKIT_API_SECRET || "uhBCdD3jOVe9OfewgqeneRL7MsoaPgNyNQWGegexGvLd";
+      const apiKey = process.env.LIVEKIT_API_KEY;
+      const apiSecret = process.env.LIVEKIT_API_SECRET;
+      if (!apiKey || !apiSecret) {
+        throw new Error("Missing LIVEKIT_API_KEY or LIVEKIT_API_SECRET in environment");
+      }
 
       const payloadStarted = JSON.stringify({
         event: "room_started",

@@ -1,9 +1,8 @@
 'use strict';
 const { Client } = require('pg');
 
-const DIRECT_URL =
-  process.env.DIRECT_URL ||
-  'postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres';
+const { getDirectUrl } = require('./db-config');
+const DIRECT_URL = getDirectUrl();
 
 async function main() {
   const client = new Client({ connectionString: DIRECT_URL, ssl: { rejectUnauthorized: false } });

@@ -411,8 +411,8 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* 2A. MOBILE TOUCH CAROUSEL (Mobile Only - Completely Hidden on Desktop >= 768px) */}
-          <div className="md:hidden">
+          {/* 2A. MOBILE TOUCH CAROUSEL (Mobile Only - Strictly Hidden on Desktop >= 768px) */}
+          <div className="block md:hidden" data-mobile-carousel="true">
             <div className="case-carousel hide-scrollbar -mx-4 px-4 pb-2">
               {featuredProducts.length > 0 ? (
                 featuredProducts.map((p) => {

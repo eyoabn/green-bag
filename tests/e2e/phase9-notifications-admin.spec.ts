@@ -3,7 +3,11 @@ import { Client } from "pg";
 
 const directUrl =
   process.env.DIRECT_URL ||
-  "postgresql://postgres.heslqxyonklerdcxjohf:2122Eyoab2122@aws-1-eu-west-1.pooler.supabase.com:5432/postgres";
+  process.env.DATABASE_URL;
+
+if (!directUrl) {
+  throw new Error("Missing DIRECT_URL or DATABASE_URL in environment or .env.local");
+}
 
 const TEST_USERS = {
   admin: { email: "admin@arenguade.com", password: "Password123!" },

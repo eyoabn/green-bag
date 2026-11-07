@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category");
     const search = searchParams.get("search")?.trim() || "";
     const featured = searchParams.get("featured") === "true";
-    const all = searchParams.get("all") === "true"; // if true, admin sees unavailable products
+    const requestedAll = searchParams.get("all") === "true";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || searchParams.get("limit") || "12", 10)));
     const offset = (page - 1) * pageSize;
@@ -43,8 +43,18 @@ export async function GET(request: NextRequest) {
     const params: any[] = [];
     let paramIdx = 1;
 
-    // Public users only see available products unless all=true is passed
-    if (!all) {
+    let isAdmin = false;
+    if (requestedAll) {
+      try {
+        const user = await requireRole(["admin"]);
+        isAdmin = Boolean(user && user.role === "admin");
+      } catch {
+        isAdmin = false;
+      }
+    }
+
+    // Public users and non-admins can only see available products
+    if (!isAdmin) {
       conditions.push("is_available = true");
     }
 

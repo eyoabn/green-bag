@@ -45,6 +45,21 @@ input[type="file"] {
   max-width: 100%;
 }
 
+/* Accessible High-Contrast Keyboard Focus Rings for Desktop Ergonomics */
+:focus-visible {
+  outline: 2px solid #1E3B2E !important;
+  outline-offset: 2px !important;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #1E3B2E !important;
+  outline-offset: 2px !important;
+}
+
 
 /* 44px Minimum Touch Target Rule */
 .touch-target {
@@ -308,13 +323,16 @@ input[type="file"] {
 /* 3. Trust Strip & Chips (Mobile Only - Hidden on Desktop >= 768px) */
 @media (min-width: 768px) {
   .trust-strip,
-  .case-carousel {
+  .case-carousel,
+  [data-mobile-carousel] {
     display: none !important;
     visibility: hidden !important;
     overflow: hidden !important;
     height: 0 !important;
+    width: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+    pointer-events: none !important;
   }
 }
 

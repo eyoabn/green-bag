@@ -1,17 +1,14 @@
 import { RoomServiceClient, AccessToken, TrackSource } from "livekit-server-sdk";
 
 export function getLiveKitConfig() {
-  const apiKey =
-    process.env.LIVEKIT_API_KEY || "APIR3wML2N82ZS5";
-  const apiSecret =
-    process.env.LIVEKIT_API_SECRET || "uhBCdD3jOVe9OfewgqeneRL7MsoaPgNyNQWGegexGvLd";
-  const rawUrl =
-    process.env.LIVEKIT_URL ||
-    process.env.NEXT_PUBLIC_LIVEKIT_URL ||
-    "wss://green-live-hhlll1sw.livekit.cloud";
+  const apiKey = process.env.LIVEKIT_API_KEY;
+  const apiSecret = process.env.LIVEKIT_API_SECRET;
+  const rawUrl = process.env.LIVEKIT_URL || process.env.NEXT_PUBLIC_LIVEKIT_URL;
 
   if (!apiKey || !apiSecret || !rawUrl) {
-    throw new Error("Missing LiveKit credentials. Set LIVEKIT_API_KEY, LIVEKIT_API_SECRET, and LIVEKIT_URL in environment or .env.local.");
+    throw new Error(
+      "Missing LiveKit credentials. Set LIVEKIT_API_KEY, LIVEKIT_API_SECRET, and LIVEKIT_URL (or NEXT_PUBLIC_LIVEKIT_URL) in your environment or .env.local."
+    );
   }
 
   // RoomServiceClient requires http/https URL scheme

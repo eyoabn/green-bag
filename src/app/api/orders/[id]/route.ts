@@ -23,21 +23,36 @@ export async function GET(
     const resolvedParams = await params;
     const orderId = resolvedParams.id;
 
-    // Check existence and ownership in DB first to distinguish 404 vs 403 under RLS
-    const { rows: orderRows } = await pool.query("SELECT id, buyer_id FROM public.orders WHERE id = $1", [orderId]);
-    if (orderRows.length === 0) {
+    const supabase = await createClient();
+
+    // Check existence and ownership in DB first with resilient fallback
+    let orderOwnerId: string | null = null;
+    let orderExists = false;
+    try {
+      const { rows: orderRows } = await pool.query("SELECT id, buyer_id FROM public.orders WHERE id = $1", [orderId]);
+      if (orderRows && orderRows.length > 0) {
+        orderExists = true;
+        orderOwnerId = orderRows[0].buyer_id;
+      }
+    } catch {
+      const { data: checkOrder } = await supabase.from("orders").select("id, buyer_id").eq("id", orderId).maybeSingle();
+      if (checkOrder) {
+        orderExists = true;
+        orderOwnerId = checkOrder.buyer_id;
+      }
+    }
+
+    if (!orderExists) {
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
     }
 
-    if (user.role === "customer" && orderRows[0].buyer_id !== user.id) {
+    if (user.role === "customer" && orderOwnerId !== user.id) {
       return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
     }
 
     if (user.role === "teacher") {
       return NextResponse.json({ error: "Forbidden: Teachers do not manage customer orders." }, { status: 403 });
     }
-
-    const supabase = await createClient();
 
     const { data: order, error } = await supabase
       .from("orders")
@@ -85,20 +100,35 @@ export async function PATCH(
     const resolvedParams = await params;
     const orderId = resolvedParams.id;
 
-    // Check existence and ownership in DB first to distinguish 404 vs 403 under RLS
-    const { rows: patchOrderRows } = await pool.query("SELECT id, buyer_id FROM public.orders WHERE id = $1", [orderId]);
-    if (patchOrderRows.length === 0) {
+    const supabase = await createClient();
+
+    // Check existence and ownership in DB first with resilient fallback
+    let patchOwnerId: string | null = null;
+    let patchOrderFound = false;
+    try {
+      const { rows: patchOrderRows } = await pool.query("SELECT id, buyer_id FROM public.orders WHERE id = $1", [orderId]);
+      if (patchOrderRows && patchOrderRows.length > 0) {
+        patchOrderFound = true;
+        patchOwnerId = patchOrderRows[0].buyer_id;
+      }
+    } catch {
+      const { data: checkOrder } = await supabase.from("orders").select("id, buyer_id").eq("id", orderId).maybeSingle();
+      if (checkOrder) {
+        patchOrderFound = true;
+        patchOwnerId = checkOrder.buyer_id;
+      }
+    }
+
+    if (!patchOrderFound) {
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
     }
 
-    if (user.role === "customer" && patchOrderRows[0].buyer_id !== user.id) {
+    if (user.role === "customer" && patchOwnerId !== user.id) {
       return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
     }
 
     const body = await request.json().catch(() => ({}));
     const { action, status, rejectionReason, paymentProofPath, note } = body;
-
-    const supabase = await createClient();
 
     const { data: order, error: fetchErr } = await supabase
       .from("orders")

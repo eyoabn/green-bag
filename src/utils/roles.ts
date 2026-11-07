@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { verifyProxyUser } from "@/utils/proxyAuth";
 
 export type UserRole = "customer" | "teacher" | "admin";
 
@@ -33,8 +34,14 @@ export async function requireUser(): Promise<AuthenticatedUser> {
     const hUserId = headerStore.get("x-user-id");
     const hUserRole = headerStore.get("x-user-role") as UserRole | null;
     const hIsActive = headerStore.get("x-user-active");
+    const hUserSig = headerStore.get("x-user-sig");
 
-    if (hUserId && hUserRole && hIsActive === "true") {
+    if (
+      hUserId &&
+      hUserRole &&
+      hIsActive === "true" &&
+      verifyProxyUser(hUserId, hUserRole, true, hUserSig)
+    ) {
       let decodedName = "Valued User";
       try {
         const rawName = headerStore.get("x-user-name");

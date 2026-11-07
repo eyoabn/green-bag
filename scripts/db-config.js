@@ -13,15 +13,14 @@ function getDirectUrl() {
 
   for (const envFile of envFiles) {
     if (fs.existsSync(envFile)) {
-      const lines = fs.readFileSync(envFile, 'utf8').split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('DIRECT_URL=')) {
-          return trimmed.replace(/^DIRECT_URL=/, '').replace(/^["']|["']$/g, '');
-        }
-        if (trimmed.startsWith('DATABASE_URL=')) {
-          return trimmed.replace(/^DATABASE_URL=/, '').replace(/^["']|["']$/g, '');
-        }
+      const content = fs.readFileSync(envFile, 'utf8');
+      const directMatch = content.match(/^DIRECT_URL=(.*)$/m);
+      if (directMatch) {
+        return directMatch[1].trim().replace(/^["']|["']$/g, '');
+      }
+      const dbMatch = content.match(/^DATABASE_URL=(.*)$/m);
+      if (dbMatch) {
+        return dbMatch[1].trim().replace(/^["']|["']$/g, '');
       }
     }
   }

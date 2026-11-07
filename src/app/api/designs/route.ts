@@ -90,21 +90,23 @@ export async function POST(request: NextRequest) {
     if (error) throw error;
 
     // Notify all admin users
-    const { rows: admins } = await pool.query(
-      "SELECT id FROM public.profiles WHERE role = 'admin'"
-    );
+    try {
+      const { data: admins } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("role", "admin");
 
-    for (const adm of admins) {
-      await pool.query(
-        `INSERT INTO public.notifications (user_id, title, body, link)
-         VALUES ($1, $2, $3, $4)`,
-        [
-          adm.id,
-          "New Custom Design Submitted",
-          `Customer ${user.full_name || user.email} submitted a new packaging design: "${designTitle}".`,
-          `/admin/designs?id=${design.id}`,
-        ]
-      );
+      if (admins && admins.length > 0) {
+        const notifs = admins.map((adm) => ({
+          user_id: adm.id,
+          title: "New Custom Design Submitted",
+          body: `Customer ${user.full_name || user.email} submitted a new packaging design: "${designTitle}".`,
+          link: `/admin/designs?id=${design.id}`,
+        }));
+        await supabase.from("notifications").insert(notifs);
+      }
+    } catch (notifErr) {
+      console.warn("Could not dispatch admin notifications for design submission:", notifErr);
     }
 
     await supabase.from("audit_log").insert({

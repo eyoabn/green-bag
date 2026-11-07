@@ -119,31 +119,52 @@ export async function POST(request: NextRequest) {
 
     let atomicResult: any;
     try {
-      const { rows: rpcRows } = await pool.query(
-        `SELECT public.create_order_atomic(
-          $1::uuid,
-          $2::uuid,
-          $3::text,
-          $4::text,
-          $5::text,
-          $6::text,
-          $7::jsonb,
-          $8::uuid,
-          $9::text
-        ) as result`,
-        [
-          targetBuyerId,
-          bankAccountId,
-          deliveryAddress,
-          phone,
-          notes || "",
-          paymentProofPath || "",
-          JSON.stringify(items),
-          user.id,
-          auditNote,
-        ]
-      );
-      atomicResult = rpcRows[0]?.result;
+      // 1. Primary: Fast Supabase RPC over HTTPS (resilient to TCP port blocking)
+      const { data: rpcData, error: rpcError } = await supabase.rpc("create_order_atomic", {
+        p_buyer_id: targetBuyerId,
+        p_bank_account_id: bankAccountId,
+        p_delivery_address: deliveryAddress,
+        p_phone: phone,
+        p_notes: notes || "",
+        p_payment_proof_path: paymentProofPath || "",
+        p_items: items,
+        p_created_by: user.id,
+        p_audit_note: auditNote,
+      });
+
+      if (!rpcError && rpcData) {
+        atomicResult = rpcData;
+      } else if (rpcError) {
+        // If it's a domain validation error raised by the database function (e.g. out of stock)
+        return NextResponse.json({ error: rpcError.message || "Order placement failed." }, { status: 400 });
+      } else {
+        // Fallback to direct pool if RPC returned empty
+        const { rows: rpcRows } = await pool.query(
+          `SELECT public.create_order_atomic(
+            $1::uuid,
+            $2::uuid,
+            $3::text,
+            $4::text,
+            $5::text,
+            $6::text,
+            $7::jsonb,
+            $8::uuid,
+            $9::text
+          ) as result`,
+          [
+            targetBuyerId,
+            bankAccountId,
+            deliveryAddress,
+            phone,
+            notes || "",
+            paymentProofPath || "",
+            JSON.stringify(items),
+            user.id,
+            auditNote,
+          ]
+        );
+        atomicResult = rpcRows[0]?.result;
+      }
     } catch (dbErr: any) {
       const msg = dbErr?.message || "Order placement failed.";
       return NextResponse.json({ error: msg }, { status: 400 });
@@ -226,17 +247,32 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Order ID is required." }, { status: 400 });
     }
 
-    // Check existence and ownership in DB first to distinguish 404 vs 403 under RLS
-    const { rows: patchOrderRows } = await pool.query("SELECT id, buyer_id FROM public.orders WHERE id = $1", [orderId]);
-    if (patchOrderRows.length === 0) {
+    const supabase = await createClient();
+
+    // Check existence and ownership with resilient pool-to-supabase fallback
+    let patchOrderOwnerId: string | null = null;
+    let orderFound = false;
+    try {
+      const { rows: patchOrderRows } = await pool.query("SELECT id, buyer_id FROM public.orders WHERE id = $1", [orderId]);
+      if (patchOrderRows && patchOrderRows.length > 0) {
+        orderFound = true;
+        patchOrderOwnerId = patchOrderRows[0].buyer_id;
+      }
+    } catch {
+      const { data: checkOrder } = await supabase.from("orders").select("id, buyer_id").eq("id", orderId).maybeSingle();
+      if (checkOrder) {
+        orderFound = true;
+        patchOrderOwnerId = checkOrder.buyer_id;
+      }
+    }
+
+    if (!orderFound) {
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
     }
 
-    if (user.role === "customer" && patchOrderRows[0].buyer_id !== user.id) {
+    if (user.role === "customer" && patchOrderOwnerId !== user.id) {
       return NextResponse.json({ error: "Forbidden: You do not own this order." }, { status: 403 });
     }
-
-    const supabase = await createClient();
 
     // Fetch existing order
     const { data: order, error: fetchErr } = await supabase

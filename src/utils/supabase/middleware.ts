@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { signProxyUser } from '@/utils/proxyAuth'
 
 export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://heslqxyonklerdcxjohf.supabase.co'
@@ -52,9 +53,19 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
+    // Helper to preserve refreshed auth session cookies across redirects
+    const makeRedirect = (url: URL | string, status = 307) => {
+      const redirectRes = NextResponse.redirect(url, status)
+      supabaseResponse.cookies.getAll().forEach((c) => {
+        redirectRes.cookies.set(c.name, c.value, c)
+      })
+      return redirectRes
+    }
+
     // Forward authenticated user identity headers downstream to eliminate auth waterfalls
     const requestHeaders = new Headers(request.headers)
     if (user && isActive) {
+      const sig = signProxyUser(user.id, role, true)
       requestHeaders.set('x-user-id', user.id)
       requestHeaders.set('x-user-email', user.email || '')
       requestHeaders.set('x-user-role', role)
@@ -62,6 +73,7 @@ export async function updateSession(request: NextRequest) {
       requestHeaders.set('x-user-phone', phone)
       requestHeaders.set('x-user-avatar', avatarUrl)
       requestHeaders.set('x-user-active', 'true')
+      requestHeaders.set('x-user-sig', sig)
     } else {
       requestHeaders.delete('x-user-id')
       requestHeaders.delete('x-user-email')
@@ -70,6 +82,7 @@ export async function updateSession(request: NextRequest) {
       requestHeaders.delete('x-user-phone')
       requestHeaders.delete('x-user-avatar')
       requestHeaders.delete('x-user-active')
+      requestHeaders.delete('x-user-sig')
     }
 
     // 1. Deactivated user protection
@@ -79,7 +92,7 @@ export async function updateSession(request: NextRequest) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         url.searchParams.set('error', 'deactivated')
-        const redirectRes = NextResponse.redirect(url)
+        const redirectRes = makeRedirect(url)
         request.cookies.getAll().forEach((cookie) => {
           if (cookie.name.includes('supabase') || cookie.name.includes('sb-')) {
             redirectRes.cookies.delete(cookie.name)
@@ -99,7 +112,7 @@ export async function updateSession(request: NextRequest) {
       } else {
         redirectUrl.pathname = '/dashboard'
       }
-      return NextResponse.redirect(redirectUrl)
+      return makeRedirect(redirectUrl)
     }
 
     // 3. /admin/* route protection (admin only)
@@ -108,12 +121,12 @@ export async function updateSession(request: NextRequest) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         url.searchParams.set('returnTo', pathname)
-        return NextResponse.redirect(url)
+        return makeRedirect(url)
       }
       if (role !== 'admin') {
         const url = request.nextUrl.clone()
         url.pathname = role === 'teacher' ? '/teacher' : '/dashboard'
-        return NextResponse.redirect(url)
+        return makeRedirect(url)
       }
     }
 
@@ -123,12 +136,12 @@ export async function updateSession(request: NextRequest) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         url.searchParams.set('returnTo', pathname)
-        return NextResponse.redirect(url)
+        return makeRedirect(url)
       }
       if (role !== 'teacher' && role !== 'admin') {
         const url = request.nextUrl.clone()
         url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
+        return makeRedirect(url)
       }
     }
 
@@ -138,7 +151,7 @@ export async function updateSession(request: NextRequest) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         url.searchParams.set('returnTo', pathname)
-        return NextResponse.redirect(url)
+        return makeRedirect(url)
       }
     }
 
@@ -152,6 +165,20 @@ export async function updateSession(request: NextRequest) {
     })
     return finalResponse
   } catch (_error) {
-    return NextResponse.next({ request })
+    // Sanitize headers on unexpected middleware failure
+    const safeHeaders = new Headers(request.headers)
+    safeHeaders.delete('x-user-id')
+    safeHeaders.delete('x-user-email')
+    safeHeaders.delete('x-user-role')
+    safeHeaders.delete('x-user-name')
+    safeHeaders.delete('x-user-phone')
+    safeHeaders.delete('x-user-avatar')
+    safeHeaders.delete('x-user-active')
+    safeHeaders.delete('x-user-sig')
+    return NextResponse.next({
+      request: {
+        headers: safeHeaders,
+      },
+    })
   }
 }

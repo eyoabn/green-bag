@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRole } from "@/utils/roles";
+import { createClient } from "@/utils/supabase/server";
 import { pool } from "@/utils/db";
 import { logAuditEvent } from "@/utils/audit";
 
@@ -119,6 +120,79 @@ export async function GET(request: NextRequest) {
       pageSize,
     });
   } catch (err: any) {
+    // Resilient fallback to Supabase Client (HTTPS port 443)
+    try {
+      const { searchParams } = new URL(request.url);
+      const category = searchParams.get("category");
+      const search = searchParams.get("search")?.trim() || "";
+      const featured = searchParams.get("featured") === "true";
+      const requestedAll = searchParams.get("all") === "true";
+      const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+      const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || searchParams.get("limit") || "12", 10)));
+      const offset = (page - 1) * pageSize;
+
+      let isAdmin = false;
+      if (requestedAll) {
+        try {
+          const user = await requireRole(["admin"]);
+          isAdmin = Boolean(user && user.role === "admin");
+        } catch {
+          isAdmin = false;
+        }
+      }
+
+      const supabase = await createClient();
+      let query = supabase
+        .from("products")
+        .select("id, name, description, price, images, image_urls, category, stock_quantity, is_available, is_featured, is_client_work, created_at, updated_at", { count: "exact" });
+
+      query = query.or("is_deleted.is.null,is_deleted.eq.false");
+      if (!isAdmin) {
+        query = query.eq("is_available", true);
+      }
+      if (featured) {
+        query = query.eq("is_featured", true);
+      }
+      if (category && category !== "All" && category.toLowerCase() !== "all products") {
+        query = query.eq("category", category);
+      }
+      if (search) {
+        query = query.ilike("name", `%${search}%`);
+      }
+
+      query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
+      query = query.range(offset, offset + pageSize - 1);
+
+      const { data: sbProducts, count: sbCount, error: sbError } = await query;
+      if (!sbError && sbProducts) {
+        const normalized = sbProducts.map((p) => {
+          const imgList = (p.images && p.images.length > 0) ? p.images : (p.image_urls || []);
+          return {
+            ...p,
+            price: Number(p.price),
+            images: imgList.length > 0 ? imgList : ["/images/photo_6_2026-09-05_00-36-03.jpg"],
+            image_urls: imgList.length > 0 ? imgList : ["/images/photo_6_2026-09-05_00-36-03.jpg"],
+          };
+        });
+
+        const { data: catData } = await supabase
+          .from("products")
+          .select("category")
+          .or("is_deleted.is.null,is_deleted.eq.false");
+        const dbCategories = ["All", ...Array.from(new Set((catData || []).map((r: any) => r.category).filter(Boolean)))];
+
+        return NextResponse.json({
+          success: true,
+          products: normalized,
+          categories: dbCategories,
+          totalCount: sbCount ?? normalized.length,
+          page,
+          pageSize,
+        });
+      }
+    } catch {
+      // Fall through to error response
+    }
     return NextResponse.json({ error: err.message || "Failed to fetch products" }, { status: 500 });
   }
 }

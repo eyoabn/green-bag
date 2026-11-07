@@ -265,18 +265,20 @@ export default function Home() {
         </div>
 
         {/* Mobile Trust Strip */}
-        <div className="trust-strip hide-scrollbar mt-4">
-          <div className="trust-chip">
-            <strong>1.2M+</strong>
-            <span>Bags produced</span>
-          </div>
-          <div className="trust-chip">
-            <strong>50+</strong>
-            <span>Enterprise clients</span>
-          </div>
-          <div className="trust-chip">
-            <strong>100%</strong>
-            <span>Recyclable Kraft</span>
+        <div className="md:hidden">
+          <div className="trust-strip hide-scrollbar mt-4">
+            <div className="trust-chip">
+              <strong>1.2M+</strong>
+              <span>Bags produced</span>
+            </div>
+            <div className="trust-chip">
+              <strong>50+</strong>
+              <span>Enterprise clients</span>
+            </div>
+            <div className="trust-chip">
+              <strong>100%</strong>
+              <span>Recyclable Kraft</span>
+            </div>
           </div>
         </div>
       </section>
@@ -409,42 +411,44 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* 2A. MOBILE TOUCH CAROUSEL (Reference Design) */}
-          <div className="md:hidden case-carousel hide-scrollbar -mx-4 px-4 pb-2">
-            {featuredProducts.length > 0 ? (
-              featuredProducts.map((p) => {
-                const img = (p.images && p.images[0]) || "/images/photo_6_2026-09-05_00-36-03.jpg";
-                return (
-                  <Link href={`/products/${p.id}`} key={p.id} className="case-card shrink-0 block">
-                    <img src={img} alt={p.name} />
+          {/* 2A. MOBILE TOUCH CAROUSEL (Mobile Only - Completely Hidden on Desktop >= 768px) */}
+          <div className="md:hidden">
+            <div className="case-carousel hide-scrollbar -mx-4 px-4 pb-2">
+              {featuredProducts.length > 0 ? (
+                featuredProducts.map((p) => {
+                  const img = (p.images && p.images[0]) || "/images/photo_6_2026-09-05_00-36-03.jpg";
+                  return (
+                    <Link href={`/products/${p.id}`} key={p.id} className="case-card shrink-0 block">
+                      <img src={img} alt={p.name} />
+                      <div className="case-copy">
+                        <span>{p.category || "Specialty Packaging"}</span>
+                        <h3>{p.name}</h3>
+                        <p>{p.description || "Custom biodegradable packaging manufactured with soy ink in Addis Ababa."}</p>
+                      </div>
+                    </Link>
+                  );
+                })
+              ) : (
+                <>
+                  <article className="case-card shrink-0">
+                    <img src="/images/photo_6_2026-09-05_00-36-03.jpg" alt="Premium coffee pouch" />
                     <div className="case-copy">
-                      <span>{p.category || "Specialty Packaging"}</span>
-                      <h3>{p.name}</h3>
-                      <p>{p.description || "Custom biodegradable packaging manufactured with soy ink in Addis Ababa."}</p>
+                      <span>Specialty coffee</span>
+                      <h3>Rare Coffee Roasters</h3>
+                      <p>Valve-sealed pouches, screen printed in two earthy tones.</p>
                     </div>
-                  </Link>
-                );
-              })
-            ) : (
-              <>
-                <article className="case-card shrink-0">
-                  <img src="/images/photo_6_2026-09-05_00-36-03.jpg" alt="Premium coffee pouch" />
-                  <div className="case-copy">
-                    <span>Specialty coffee</span>
-                    <h3>Rare Coffee Roasters</h3>
-                    <p>Valve-sealed pouches, screen printed in two earthy tones.</p>
-                  </div>
-                </article>
-                <article className="case-card shrink-0">
-                  <img src="/images/photo_7_2026-09-05_00-36-03.jpg" alt="Luxury boutique bags" />
-                  <div className="case-copy">
-                    <span>Luxury retail</span>
-                    <h3>Richo Boutique</h3>
-                    <p>Cotton handles and a Tibeb-inspired border for a tactile finish.</p>
-                  </div>
-                </article>
-              </>
-            )}
+                  </article>
+                  <article className="case-card shrink-0">
+                    <img src="/images/photo_7_2026-09-05_00-36-03.jpg" alt="Luxury boutique bags" />
+                    <div className="case-copy">
+                      <span>Luxury retail</span>
+                      <h3>Richo Boutique</h3>
+                      <p>Cotton handles and a Tibeb-inspired border for a tactile finish.</p>
+                    </div>
+                  </article>
+                </>
+              )}
+            </div>
           </div>
 
           {/* 2B. DESKTOP GRID */}

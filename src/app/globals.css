@@ -305,67 +305,81 @@ input[type="file"] {
   box-sizing: content-box;
 }
 
-/* 3. Trust Strip & Chips */
-.trust-strip {
-  display: flex;
-  gap: 8px;
-  padding: 0 16px 24px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
+/* 3. Trust Strip & Chips (Mobile Only - Hidden on Desktop >= 768px) */
+@media (min-width: 768px) {
+  .trust-strip,
+  .case-carousel {
+    display: none !important;
+    visibility: hidden !important;
+    overflow: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }
 
-.trust-chip {
-  display: flex;
-  min-width: 145px;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 14px;
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 75%);
-  scroll-snap-align: start;
-  backdrop-filter: blur(6px);
-}
+@media (max-width: 767px) {
+  .trust-strip {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px 24px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
 
-.trust-chip strong {
-  color: var(--color-forest);
-  font-family: var(--font-serif);
-  font-size: 15px;
-  font-weight: 700;
-}
+  .trust-chip {
+    display: flex;
+    min-width: 145px;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 14px;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 75%);
+    scroll-snap-align: start;
+    backdrop-filter: blur(6px);
+  }
 
-.trust-chip span {
-  color: var(--color-muted);
-  font-size: 9px;
-  font-weight: 600;
-  white-space: nowrap;
-}
+  .trust-chip strong {
+    color: var(--color-forest);
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 700;
+  }
 
-/* 4. Case Carousel & Cards */
-.case-carousel {
-  display: flex;
-  gap: 14px;
-  margin-right: -16px;
-  padding-right: 16px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-}
+  .trust-chip span {
+    color: var(--color-muted);
+    font-size: 9px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
 
-.case-card {
-  min-width: 78vw;
-  max-width: 320px;
-  overflow: hidden;
-  border: 1px solid var(--color-line);
-  border-radius: 14px;
-  background: white;
-  scroll-snap-align: start;
-  box-shadow: 0 4px 14px rgb(0 0 0 / 4%);
-}
+  /* 4. Case Carousel & Cards */
+  .case-carousel {
+    display: flex;
+    gap: 14px;
+    margin-right: -16px;
+    padding-right: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
 
-.case-card img {
-  width: 100%;
-  height: 190px;
-  object-fit: cover;
+  .case-card {
+    min-width: 78vw;
+    max-width: 320px;
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: 14px;
+    background: white;
+    scroll-snap-align: start;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 4%);
+  }
+
+  .case-card img {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+  }
 }
 
 .case-copy {

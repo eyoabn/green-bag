@@ -79,11 +79,19 @@ function assert(condition, message) {
 // ------------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------------
-async function signIn(email, password) {
-  const client = createClient(SUPABASE_URL, ANON_KEY);
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(`Sign-in failed for ${email}: ${error.message}`);
-  return { client, user: data.user, session: data.session };
+async function signIn(email, password, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const client = createClient(SUPABASE_URL, ANON_KEY);
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(`Sign-in failed for ${email}: ${error.message}`);
+      return { client, user: data.user, session: data.session };
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+  throw new Error(`Sign-in failed for ${email} after ${retries} attempts`);
 }
 
 async function pgClient() {

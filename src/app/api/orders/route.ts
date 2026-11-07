@@ -110,118 +110,57 @@ export async function POST(request: NextRequest) {
       targetBuyerId = buyerId;
     }
 
-    // 1. Fetch real products from DB to strictly compute prices on the server
-    const productIds = items.map(i => i.productId);
-    const { rows: dbProducts } = await pool.query(
-      "SELECT id, name, price, is_available, is_client_work FROM public.products WHERE id = ANY($1::uuid[])",
-      [productIds]
-    );
+    // Execute order creation inside an atomic ACID transaction with real-time stock checks & decrement
+    const auditNote = paymentProofPath
+      ? "Order created with payment proof uploaded."
+      : user.role === "admin" && targetBuyerId !== user.id
+      ? `Order created on behalf of customer by Administrator (${user.full_name}).`
+      : "Order initialized awaiting bank transfer payment.";
 
-    if (!dbProducts || dbProducts.length !== productIds.length) {
-      return NextResponse.json({ error: "One or more selected products are invalid or no longer exist." }, { status: 400 });
-    }
-
-    const productMap = new Map(dbProducts.map((p: any) => [p.id, p]));
-
-    let calculatedTotal = 0;
-    const itemSnapshots: Array<{ productId: string; quantity: number; unitPrice: number }> = [];
-
-    for (const item of items) {
-      const dbProd: any = productMap.get(item.productId);
-      if (!dbProd) {
-        return NextResponse.json({ error: `Product not found: ${item.productId}` }, { status: 400 });
-      }
-      if (dbProd.is_client_work) {
-        return NextResponse.json({
-          error: `Product "${dbProd.name}" is an exclusive client showcase deliverable and cannot be purchased directly. Please submit a request through our Custom Design Studio to produce packaging for your own brand.`,
-        }, { status: 400 });
-      }
-      if (!dbProd.is_available) {
-        return NextResponse.json({ error: `Product "${dbProd.name}" is currently unavailable.` }, { status: 400 });
-      }
-
-      const unitPrice = Number(dbProd.price);
-      calculatedTotal += unitPrice * item.quantity;
-      itemSnapshots.push({
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice,
-      });
-    }
-
-    // 2. Validate Bank Account exists and is active
-    const { rows: bankRows } = await pool.query(
-      "SELECT id, bank_name, is_active FROM public.bank_accounts WHERE id = $1",
-      [bankAccountId]
-    );
-    const bank = bankRows[0];
-
-    if (!bank) {
-      return NextResponse.json({ error: "Selected settlement bank account is invalid." }, { status: 400 });
-    }
-    if (!bank.is_active) {
-      return NextResponse.json({ error: "Selected settlement bank account is currently not active." }, { status: 400 });
-    }
-
-    // 3. Generate human-friendly order number (e.g. ARN-2026-NNNN) using database sequence
-    let orderNumber: string;
+    let atomicResult: any;
     try {
-      const { rows: seqRows } = await pool.query("SELECT nextval('order_number_seq') as seq");
-      const seqVal = seqRows[0]?.seq;
-      orderNumber = `ARN-2026-${String(seqVal).padStart(4, "0")}`;
-    } catch {
-      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-      orderNumber = `ARN-2026-${randomSuffix}`;
+      const { rows: rpcRows } = await pool.query(
+        `SELECT public.create_order_atomic(
+          $1::uuid,
+          $2::uuid,
+          $3::text,
+          $4::text,
+          $5::text,
+          $6::text,
+          $7::jsonb,
+          $8::uuid,
+          $9::text
+        ) as result`,
+        [
+          targetBuyerId,
+          bankAccountId,
+          deliveryAddress,
+          phone,
+          notes || "",
+          paymentProofPath || "",
+          JSON.stringify(items),
+          user.id,
+          auditNote,
+        ]
+      );
+      atomicResult = rpcRows[0]?.result;
+    } catch (dbErr: any) {
+      const msg = dbErr?.message || "Order placement failed.";
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
 
-    const initialStatus = paymentProofPath ? "pending_verification" : "pending_payment";
+    if (!atomicResult || !atomicResult.success) {
+      return NextResponse.json({ error: "Failed to place order." }, { status: 500 });
+    }
 
-    // 4. Insert Order
-    const { data: newOrder, error: orderInsertErr } = await supabase
+    const { order_id: orderId, order_number: orderNumber, total_price: calculatedTotal } = atomicResult;
+
+    // Fetch complete order record for response payload
+    const { data: newOrder } = await supabase
       .from("orders")
-      .insert({
-        order_number: orderNumber,
-        buyer_id: targetBuyerId,
-        status: initialStatus,
-        total_price: calculatedTotal,
-        delivery_address: deliveryAddress,
-        phone,
-        notes: notes || "",
-        bank_account_id: bankAccountId,
-        payment_proof_path: paymentProofPath || null,
-      })
-      .select()
+      .select("*, order_items(*, products(*))")
+      .eq("id", orderId)
       .single();
-
-    if (orderInsertErr || !newOrder) {
-      throw orderInsertErr || new Error("Failed to insert order");
-    }
-
-    // 5. Insert Order Items with unit_price_snapshot
-    const orderItemsRows = itemSnapshots.map(item => ({
-      order_id: newOrder.id,
-      product_id: item.productId,
-      quantity: item.quantity,
-      unit_price_snapshot: item.unitPrice,
-    }));
-
-    const { error: itemsErr } = await supabase.from("order_items").insert(orderItemsRows);
-    if (itemsErr) {
-      console.error("Order items error:", itemsErr);
-    }
-
-    // 6. Write to order_status_history
-    await supabase.from("order_status_history").insert({
-      order_id: newOrder.id,
-      from_status: null,
-      to_status: initialStatus,
-      changed_by: user.id,
-      note: paymentProofPath
-        ? "Order created with payment proof uploaded."
-        : user.role === "admin" && targetBuyerId !== user.id
-        ? `Order created on behalf of customer by Administrator (${user.full_name}).`
-        : "Order initialized awaiting bank transfer payment.",
-    });
 
     // 7. If admin created on behalf, log to audit_log
     if (user.role === "admin" && targetBuyerId !== user.id) {
@@ -229,7 +168,7 @@ export async function POST(request: NextRequest) {
         actor_id: user.id,
         action: "ORDER_CREATED_ON_BEHALF",
         entity: "orders",
-        entity_id: newOrder.id,
+        entity_id: orderId,
         metadata: {
           buyer_id: targetBuyerId,
           order_number: orderNumber,
@@ -241,8 +180,8 @@ export async function POST(request: NextRequest) {
       await supabase.from("notifications").insert({
         user_id: targetBuyerId,
         title: `New Order Placed: ${orderNumber}`,
-        body: `An order for ${calculatedTotal.toLocaleString()} ETB was placed on your behalf by Ethiopia Arenguade administrators.`,
-        link: `/dashboard/orders/${newOrder.id}`,
+        body: `An order for ${Number(calculatedTotal).toLocaleString()} ETB was placed on your behalf by Ethiopia Arenguade administrators.`,
+        link: `/dashboard/orders/${orderId}`,
       });
     }
 
@@ -254,11 +193,11 @@ export async function POST(request: NextRequest) {
         .eq("role", "admin");
 
       if (adminProfiles && adminProfiles.length > 0) {
-        const notifications = adminProfiles.map(adm => ({
+        const notifications = adminProfiles.map((adm: any) => ({
           user_id: adm.id,
           title: `New Payment to Verify: ${orderNumber}`,
-          body: `Payment receipt submitted for order ${orderNumber} (${calculatedTotal.toLocaleString()} ETB).`,
-          link: `/admin/payments?order=${newOrder.id}`,
+          body: `Payment receipt submitted for order ${orderNumber} (${Number(calculatedTotal).toLocaleString()} ETB).`,
+          link: `/admin/payments?order=${orderId}`,
         }));
         await supabase.from("notifications").insert(notifications);
       }
@@ -266,9 +205,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      order: newOrder,
+      order: newOrder || { id: orderId, order_number: orderNumber, total_price: calculatedTotal },
       orderNumber,
-      totalPrice: calculatedTotal,
+      totalPrice: Number(calculatedTotal),
     });
   } catch (err: any) {
     const status = err.status || 500;

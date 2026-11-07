@@ -177,7 +177,7 @@ export default function AdminDashboardPage() {
 
             <div className="metrics-grid">
               <article>
-                <span>Today's Orders</span>
+                <span>Today&apos;s Orders</span>
                 <strong>{stats.pendingOrderPayments}</strong>
                 <small>Awaiting settlement</small>
               </article>
@@ -333,16 +333,23 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <div className="h-32 flex items-end gap-1.5 pt-4">
+          <div className="h-36 flex items-end gap-1.5 pt-6">
             {stats.revenueOverTime.map((d, i) => {
               const heightPct = Math.max(8, (d.totalRevenue / maxRevenue) * 100);
               return (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
+                  {/* Interactive Desktop Hover Tooltip */}
+                  <div className="absolute -top-14 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center bg-stone-900 text-white text-[10px] py-1 px-2.5 rounded-xl pointer-events-none z-30 whitespace-nowrap shadow-xl border border-stone-700 animate-in fade-in duration-150">
+                    <span className="font-bold text-[#E0B382]">{d.totalRevenue.toLocaleString()} ETB</span>
+                    <span className="text-[9px] text-stone-300 font-mono">{d.date}: {d.orderCount} orders • {d.enrollmentCount} tuition</span>
+                    <div className="w-2 h-2 bg-stone-900 rotate-45 -mb-1 mt-0.5" />
+                  </div>
+
                   <div
                     style={{ height: `${heightPct}%` }}
-                    className="w-full bg-[#1E3B2E] hover:bg-[#8C4B31] rounded-t-md transition-colors"
+                    className="w-full bg-[#1E3B2E] group-hover:bg-[#8C4B31] group-hover:scale-y-105 origin-bottom rounded-t-md transition-all cursor-pointer shadow-2xs"
                   />
-                  <span className="text-[9px] text-stone-400 font-mono hidden sm:block truncate max-w-full">
+                  <span className="text-[9px] text-stone-400 font-mono hidden sm:block truncate max-w-full group-hover:text-stone-800 transition-colors">
                     {d.date}
                   </span>
                 </div>

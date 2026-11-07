@@ -71,7 +71,7 @@ function inspectMagicBytes(buffer: Buffer): { mime: string; ext: string } | null
 
 export async function POST(request: NextRequest) {
   // Rate limit protection (20 uploads/minute)
-  const rl = checkRateLimit(request, { limit: 20, windowMs: 60000, prefix: "upload" });
+  const rl = await checkRateLimit(request, { limit: 20, windowMs: 60000, prefix: "upload" });
   if (!rl.allowed && rl.response) {
     return rl.response;
   }

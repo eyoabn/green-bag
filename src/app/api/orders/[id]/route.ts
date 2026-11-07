@@ -47,7 +47,7 @@ export async function GET(
         created_at, updated_at,
         bank_accounts(id, bank_name, account_name, account_number, instructions),
         profiles:buyer_id(id, full_name, email, phone),
-        order_items(id, product_id, quantity, unit_price_snapshot, products(id, name, images, category)),
+        order_items(id, product_id, custom_design_id, quantity, unit_price_snapshot, products(id, name, images, category), designs:custom_design_id(id, title, file_path)),
         order_status_history(id, from_status, to_status, changed_by, note, created_at)
       `)
       .eq("id", orderId)

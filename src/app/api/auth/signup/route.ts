@@ -6,7 +6,7 @@ import { SignupSchema } from "@/utils/validation";
 
 export async function POST(request: NextRequest) {
   // Rate limit protection
-  const rl = checkRateLimit(request, { limit: 15, windowMs: 60000, prefix: "auth:signup" });
+  const rl = await checkRateLimit(request, { limit: 15, windowMs: 60000, prefix: "auth:signup" });
   if (!rl.allowed && rl.response) {
     return rl.response;
   }

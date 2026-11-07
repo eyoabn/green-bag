@@ -30,7 +30,8 @@ import {
   Truck,
   Building2,
   QrCode,
-  Weight
+  Weight,
+  Copy
 } from "lucide-react";
 import { uploadFileSafely } from "@/utils/fileUpload";
 import { getCurrentUser } from "@/utils/auth";
@@ -724,6 +725,28 @@ function DesignSubmissionForm() {
     const total = Math.round(unit * effectiveCount);
     return { unitPriceEstimate: unit, totalPriceEstimate: total };
   }, [gsm, handleType, printFinish, paperColor, hasBottomCard, hasFoodLining, effectiveCount, urgency, pricingConfig]);
+
+  const [copiedSpec, setCopiedSpec] = useState(false);
+
+  const handleCopySpec = () => {
+    const specText = `Arenguade Bespoke Packaging Specification
+===================================================
+Project / Brand: ${title.trim() || "Custom Paper Packaging"}
+Dimensions: ${activeDimensions}
+Paper Grammage: ${gsm} GSM (${paperColor})
+Handle Construction: ${handleType}
+Surface & Print Finish: ${printFinish}
+Reinforcements: ${hasBottomCard ? "Reinforced Heavy Bottom Card" : "Standard Fold"} ${hasFoodLining ? "+ Food-Grade Barrier" : ""}
+Turnaround: ${urgency}
+Batch Quantity: ${effectiveCount.toLocaleString()} units
+Unit Price (Est.): ~${unitPriceEstimate.toFixed(2)} ETB / bag
+Total Batch Investment (Est.): ${totalPriceEstimate.toLocaleString()} ETB
+Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
+
+    navigator.clipboard.writeText(specText);
+    setCopiedSpec(true);
+    setTimeout(() => setCopiedSpec(false), 2500);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -1897,6 +1920,25 @@ function DesignSubmissionForm() {
                 <p className="text-[10px] text-stone-500 leading-snug">
                   * Dynamic estimation for {effectiveCount.toLocaleString()} pcs based on chosen GSM, handles, and print technique. Binding formal proof confirmed upon submission.
                 </p>
+
+                <button
+                  type="button"
+                  onClick={handleCopySpec}
+                  className="w-full py-2.5 px-3 rounded-xl border border-stone-300 hover:border-stone-400 bg-white text-stone-700 hover:bg-stone-50 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs mt-1"
+                  title="Copy full technical specification to clipboard"
+                >
+                  {copiedSpec ? (
+                    <>
+                      <Check size={14} className="text-emerald-600" />
+                      <span className="text-emerald-800">Specs Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} className="text-stone-500" />
+                      <span>Copy Spec Sheet (for Procurement)</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Submit CTA */}

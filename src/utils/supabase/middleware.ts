@@ -32,18 +32,44 @@ export async function updateSession(request: NextRequest) {
 
     let role = 'customer'
     let isActive = true
+    let fullName = 'Valued User'
+    let phone = ''
+    let avatarUrl = ''
 
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, is_active')
+        .select('role, is_active, full_name, phone, avatar_url')
         .eq('id', user.id)
         .maybeSingle()
 
       if (profile) {
         role = profile.role || 'customer'
         isActive = profile.is_active ?? true
+        fullName = profile.full_name || (user.user_metadata?.full_name as string) || 'Valued User'
+        phone = profile.phone || (user.user_metadata?.phone as string) || ''
+        avatarUrl = profile.avatar_url || ''
       }
+    }
+
+    // Forward authenticated user identity headers downstream to eliminate auth waterfalls
+    const requestHeaders = new Headers(request.headers)
+    if (user && isActive) {
+      requestHeaders.set('x-user-id', user.id)
+      requestHeaders.set('x-user-email', user.email || '')
+      requestHeaders.set('x-user-role', role)
+      requestHeaders.set('x-user-name', encodeURIComponent(fullName))
+      requestHeaders.set('x-user-phone', phone)
+      requestHeaders.set('x-user-avatar', avatarUrl)
+      requestHeaders.set('x-user-active', 'true')
+    } else {
+      requestHeaders.delete('x-user-id')
+      requestHeaders.delete('x-user-email')
+      requestHeaders.delete('x-user-role')
+      requestHeaders.delete('x-user-name')
+      requestHeaders.delete('x-user-phone')
+      requestHeaders.delete('x-user-avatar')
+      requestHeaders.delete('x-user-active')
     }
 
     // 1. Deactivated user protection
@@ -116,7 +142,15 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    return supabaseResponse
+    const finalResponse = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+    supabaseResponse.cookies.getAll().forEach((c) => {
+      finalResponse.cookies.set(c.name, c.value, c)
+    })
+    return finalResponse
   } catch (_error) {
     return NextResponse.next({ request })
   }

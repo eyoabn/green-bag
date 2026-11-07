@@ -6,7 +6,7 @@ import { logAuditEvent } from "@/utils/audit";
 
 export async function POST(request: NextRequest) {
   // Rate limit protection
-  const rl = checkRateLimit(request, { limit: 20, windowMs: 60000, prefix: "auth:login" });
+  const rl = await checkRateLimit(request, { limit: 20, windowMs: 60000, prefix: "auth:login" });
   if (!rl.allowed && rl.response) {
     return rl.response;
   }

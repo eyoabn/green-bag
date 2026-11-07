@@ -110,6 +110,28 @@ export default function ProductsPage() {
     fetchProducts();
   }, [fetchProducts]);
 
+  // Desktop Lightbox keyboard navigation (Escape to close, ArrowLeft/Right to cycle)
+  useEffect(() => {
+    if (!lightboxProduct) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setLightboxProduct(null);
+      } else if (e.key === "ArrowRight") {
+        const idx = productsList.findIndex((p) => p.id === lightboxProduct.id);
+        if (idx >= 0 && idx < productsList.length - 1) {
+          setLightboxProduct(productsList[idx + 1]);
+        }
+      } else if (e.key === "ArrowLeft") {
+        const idx = productsList.findIndex((p) => p.id === lightboxProduct.id);
+        if (idx > 0) {
+          setLightboxProduct(productsList[idx - 1]);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxProduct, productsList]);
+
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (

@@ -220,6 +220,40 @@ export default function AdminPaymentsPage() {
 
   const activeSignedUrl = activeItem?.paymentProofPath ? signedUrls[activeItem.paymentProofPath] : null;
 
+  // Desktop keyboard shortcuts: J/K/Arrows for navigation, A for approve, R for reject, Esc for close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+
+      if (e.key === "ArrowRight" || e.key === "j" || e.key === "J") {
+        e.preventDefault();
+        setCurrentIndex((prev) => Math.min(unifiedQueue.length - 1, prev + 1));
+      } else if (e.key === "ArrowLeft" || e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        setCurrentIndex((prev) => Math.max(0, prev - 1));
+      } else if (e.key === "a" || e.key === "A") {
+        if (!rejectSheetOpen && !zoomOpen && activeItem) {
+          e.preventDefault();
+          handleApprove();
+        }
+      } else if (e.key === "r" || e.key === "R") {
+        if (!rejectSheetOpen && !zoomOpen && activeItem) {
+          e.preventDefault();
+          setRejectSheetOpen(true);
+        }
+      } else if (e.key === "Escape") {
+        if (zoomOpen) setZoomOpen(false);
+        if (rejectSheetOpen) setRejectSheetOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [unifiedQueue.length, activeItem, rejectSheetOpen, zoomOpen]);
+
   return (
     <div className="flex flex-col max-w-6xl mx-auto space-y-6 pb-28 md:pb-12">
       
@@ -279,24 +313,35 @@ export default function AdminPaymentsPage() {
         </div>
 
         {unifiedQueue.length > 0 && (
-          <div className="flex items-center gap-1.5 shrink-0 text-xs font-bold text-stone-500">
-            <span>{currentIndex + 1} of {unifiedQueue.length}</span>
-            <button
-              onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-              disabled={currentIndex === 0}
-              className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 disabled:opacity-30 touch-target flex items-center justify-center"
-              title="Previous Receipt"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => setCurrentIndex((prev) => Math.min(unifiedQueue.length - 1, prev + 1))}
-              disabled={currentIndex >= unifiedQueue.length - 1}
-              className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 disabled:opacity-30 touch-target flex items-center justify-center"
-              title="Next Receipt"
-            >
-              <ChevronRight size={16} />
-            </button>
+          <div className="flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-2 text-[10px] text-stone-500 bg-stone-100/90 px-3 py-1 rounded-full border border-stone-200">
+              <span className="font-semibold text-stone-700">Shortcuts:</span>
+              <span><kbd className="px-1.5 py-0.5 bg-white border border-stone-300 rounded text-[9px] font-mono font-bold">J</kbd>/<kbd className="px-1.5 py-0.5 bg-white border border-stone-300 rounded text-[9px] font-mono font-bold">K</kbd> Cycle</span>
+              <span>•</span>
+              <span><kbd className="px-1.5 py-0.5 bg-white border border-stone-300 rounded text-[9px] font-mono font-bold">A</kbd> Approve</span>
+              <span>•</span>
+              <span><kbd className="px-1.5 py-0.5 bg-white border border-stone-300 rounded text-[9px] font-mono font-bold">R</kbd> Reject</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0 text-xs font-bold text-stone-500">
+              <span>{currentIndex + 1} of {unifiedQueue.length}</span>
+              <button
+                onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+                disabled={currentIndex === 0}
+                className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 disabled:opacity-30 touch-target flex items-center justify-center cursor-pointer"
+                title="Previous Receipt (K or Left Arrow)"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => setCurrentIndex((prev) => Math.min(unifiedQueue.length - 1, prev + 1))}
+                disabled={currentIndex >= unifiedQueue.length - 1}
+                className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 disabled:opacity-30 touch-target flex items-center justify-center cursor-pointer"
+                title="Next Receipt (J or Right Arrow)"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         )}
       </div>

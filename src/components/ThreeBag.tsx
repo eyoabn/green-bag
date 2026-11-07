@@ -164,14 +164,37 @@ function RealisticPaperBag() {
 }
 
 export default function ThreeBagScene() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(true);
+
+  // IntersectionObserver: automatically throttles Canvas rendering when off-screen
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.05 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="relative w-full h-full min-h-[420px] select-none cursor-grab active:cursor-grabbing flex items-center justify-center">
+    <div
+      ref={containerRef}
+      className="relative w-full h-full min-h-[420px] select-none cursor-grab active:cursor-grabbing flex items-center justify-center"
+    >
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
         dpr={[1, 2]}
         camera={{ position: [0, 0.1, 5.0], fov: 35 }}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         style={{ width: "100%", height: "100%" }}
+        frameloop={isVisible ? "always" : "never"}
       >
         {/* Warm Studio Lighting */}
         <ambientLight intensity={0.95} color="#FFF8F0" />

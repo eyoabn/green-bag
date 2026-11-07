@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 
 export type UserRole = "customer" | "teacher" | "admin";
@@ -23,10 +24,35 @@ export class AuthError extends Error {
 
 /**
  * Server-side helper to require an authenticated active user.
- * Throws AuthError(401) if not authenticated.
- * Throws AuthError(403) if account is deactivated.
+ * Reads fast verified claims from proxy headers to eliminate the 2-hop network waterfall,
+ * falling back to Supabase Auth getUser() if proxy headers are absent.
  */
 export async function requireUser(): Promise<AuthenticatedUser> {
+  try {
+    const headerStore = await headers();
+    const hUserId = headerStore.get("x-user-id");
+    const hUserRole = headerStore.get("x-user-role") as UserRole | null;
+    const hIsActive = headerStore.get("x-user-active");
+
+    if (hUserId && hUserRole && hIsActive === "true") {
+      let decodedName = "Valued User";
+      try {
+        const rawName = headerStore.get("x-user-name");
+        if (rawName) decodedName = decodeURIComponent(rawName);
+      } catch {}
+
+      return {
+        id: hUserId,
+        email: headerStore.get("x-user-email") || "",
+        full_name: decodedName,
+        phone: headerStore.get("x-user-phone") || "",
+        avatar_url: headerStore.get("x-user-avatar") || "",
+        role: hUserRole,
+        is_active: true,
+      };
+    }
+  } catch {}
+
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 

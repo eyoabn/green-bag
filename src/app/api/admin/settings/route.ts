@@ -26,6 +26,49 @@ const settingsSchema = z.object({
   design_pricing: z.record(z.string(), z.any()).optional(),
 });
 
+export const DEFAULT_HOMEPAGE_CMS = {
+  // Hero section - Desktop & Common
+  hero_badge: "Addis Ababa • Artisanal Kraft Guild",
+  hero_headline: "Artisanal Kraft Packaging & Craft Academy",
+  hero_subline: "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses.",
+  hero_image: "/images/photo_3_2026-09-05_00-36-02.jpg",
+  hero_cta1_text: "Explore catalog",
+  hero_cta1_link: "/products",
+  hero_cta2_text: "Book workshop",
+  hero_cta2_link: "/learn/schedule",
+
+  // Mobile-specific UI / UX controls
+  mobile_hero_image: "/images/photo_3_2026-09-05_00-36-02.jpg",
+  mobile_eyebrow: "Packaging with provenance",
+  mobile_headline: "Made by hand. Built for your brand.",
+  mobile_subline: "Biodegradable paper packaging, shaped by Ethiopian craft and engineered for modern retail.",
+  craft_seal_top: "HANDCRAFTED",
+  craft_seal_center: "AA",
+  craft_seal_bottom: "ADDIS ABABA",
+  image_caption: "Made to order in Addis",
+
+  // Trust Strip / Stats
+  stat_1_val: "1.2M+",
+  stat_1_label: "Bags Manufactured",
+  stat_2_val: "50+",
+  stat_2_label: "Enterprise Clients",
+  stat_3_val: "100%",
+  stat_3_label: "Biodegradable Kraft",
+
+  // Showcase section
+  showcase_title: "Engineered for Ethiopian Commerce",
+  showcase_sub: "From boutique coffee roasters in Bole to pharmaceutical packaging across East Africa.",
+
+  // Classes section
+  classes_section_title: "Upcoming Classes Ready for Registration",
+  classes_section_sub: "Join our hands-on packaging and artisan print workshops",
+  classes_section_visible: true,
+
+  // Announcement bar
+  announcement_text: "",
+  announcement_visible: false,
+};
+
 // GET /api/admin/settings - Read company configuration
 export async function GET() {
   try {
@@ -56,13 +99,21 @@ export async function GET() {
       homepage_content: {},
     };
 
-    const content = data.homepage_content || {};
-    const designPricing = content.design_pricing || DEFAULT_DESIGN_PRICING;
+    const rawContent = data.homepage_content || {};
+    // Merge database custom content with live default fallback values
+    const mergedHomepageContent: Record<string, any> = { ...DEFAULT_HOMEPAGE_CMS };
+    for (const [key, val] of Object.entries(rawContent)) {
+      if (val !== undefined && val !== null && val !== "") {
+        mergedHomepageContent[key] = val;
+      }
+    }
+    const designPricing = rawContent.design_pricing || DEFAULT_DESIGN_PRICING;
 
     return NextResponse.json({
       success: true,
       settings: {
         ...data,
+        homepage_content: mergedHomepageContent,
         design_pricing: designPricing,
       },
     });

@@ -41,7 +41,9 @@ async function getInitialHomeData() {
       supabase
         .from("settings")
         .select("*")
-        .eq("id", "company")
+        .in("id", ["company", "default"])
+        .order("updated_at", { ascending: false })
+        .limit(1)
         .maybeSingle(),
     ]);
 

@@ -65,9 +65,47 @@ export default function HomeClient({
     ? { text: cmsContent.announcement_text, visible: true }
     : null;
 
+  // Hero section content from CMS (with robust fallbacks)
+  const heroBadge = cmsContent.hero_badge || "Addis Ababa • Artisanal Kraft Guild";
+  const heroHeadline = cmsContent.hero_headline || "Artisanal Kraft Packaging & Craft Academy";
+  const heroSubline = cmsContent.hero_subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses.";
+  const heroImage = cmsContent.hero_image || "/images/photo_3_2026-09-05_00-36-02.jpg";
+  const heroCta1Text = cmsContent.hero_cta1_text || "Explore catalog";
+  const heroCta1Link = cmsContent.hero_cta1_link || "/products";
+  const heroCta2Text = cmsContent.hero_cta2_text || "Book workshop";
+  const heroCta2Link = cmsContent.hero_cta2_link || "/learn/schedule";
+
+  // Mobile-specific UI / UX controls from CMS
+  const mobileHeroImage = cmsContent.mobile_hero_image || heroImage;
+  const mobileEyebrow = cmsContent.mobile_eyebrow || heroBadge;
+  const mobileHeadline = cmsContent.mobile_headline || "Made by hand. Built for your brand.";
+  const mobileSubline = cmsContent.mobile_subline || "Biodegradable paper packaging, shaped by Ethiopian craft and engineered for modern retail.";
+  const craftSealTop = cmsContent.craft_seal_top || "HANDCRAFTED";
+  const craftSealCenter = cmsContent.craft_seal_center || "AA";
+  const craftSealBottom = cmsContent.craft_seal_bottom || "ADDIS ABABA";
+  const imageCaption = cmsContent.image_caption || "Made to order in Addis";
+
+  // Mobile process section from CMS
+  const processTitle = cmsContent.process_title || "From your sketch to the street";
+  const processSub = cmsContent.process_sub || "Direct factory production pipeline designed for Ethiopian businesses.";
+
+  // Mobile academy banner from CMS
+  const academyBannerEyebrow = cmsContent.academy_banner_eyebrow || "Arenguade craft academy";
+  const academyBannerHeadline = cmsContent.academy_banner_headline || "Learn the craft. Build a livelihood.";
+  const academyBannerSub = cmsContent.academy_banner_sub || "Hands-on studio courses and live masterclasses led by working Ethiopian makers.";
+  const academyBannerImage = cmsContent.academy_banner_image || "/images/photo_2_2026-09-05_00-36-02.jpg";
+
+  // Trust statistics from CMS
+  const stat1Val = cmsContent.stat_1_val || "1.2M+";
+  const stat1Label = cmsContent.stat_1_label || "Bags Produced";
+  const stat2Val = cmsContent.stat_2_val || "50+";
+  const stat2Label = cmsContent.stat_2_label || "Enterprise Clients";
+  const stat3Val = cmsContent.stat_3_val || "100%";
+  const stat3Label = cmsContent.stat_3_label || "Recyclable Kraft";
+
   const heroContent = {
-    headline: cmsContent.hero_headline || undefined,
-    subline: cmsContent.hero_subline || undefined,
+    headline: heroHeadline,
+    subline: heroSubline,
   };
 
   useEffect(() => {
@@ -95,8 +133,8 @@ export default function HomeClient({
       <section className="md:hidden w-full bg-[#F9F6F0]">
         <div className="relative h-[104vw] max-h-[420px] overflow-hidden bg-[#d6c4aa]">
           <Image
-            src="/images/photo_3_2026-09-05_00-36-02.jpg"
-            alt="Unbleached kraft paper shopping bag in a warm studio setting"
+            src={mobileHeroImage}
+            alt={mobileHeadline}
             fill
             priority
             sizes="100vw"
@@ -106,40 +144,40 @@ export default function HomeClient({
           
           {/* Craft Seal Stamp (AA Addis Ababa) */}
           <div className="craft-seal" aria-hidden="true">
-            <span>HANDCRAFTED</span>
-            <strong>AA</strong>
-            <span>ADDIS ABABA</span>
+            <span>{craftSealTop}</span>
+            <strong>{craftSealCenter}</strong>
+            <span>{craftSealBottom}</span>
           </div>
 
           {/* Status Dot Caption */}
           <div className="image-caption">
             <span className="status-dot" />
-            <span>Made to order in Addis</span>
+            <span>{imageCaption}</span>
           </div>
         </div>
 
         <div className="px-5 pt-7 pb-4">
-          <div className="eyebrow">Packaging with provenance</div>
-          <h1 className="font-serif text-[38px] font-semibold leading-[1.02] tracking-tight text-stone-900 mt-2 mb-3">
-            Made by hand.<br />Built for your brand.
+          <div className="eyebrow">{mobileEyebrow}</div>
+          <h1 className="font-serif text-[38px] font-semibold leading-[1.02] tracking-tight text-stone-900 mt-2 mb-3 whitespace-pre-line">
+            {mobileHeadline}
           </h1>
           <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-6">
-            Biodegradable paper packaging, shaped by Ethiopian craft and engineered for modern retail.
+            {mobileSubline}
           </p>
 
           <div className="grid grid-cols-2 gap-2.5">
             <Link 
-              href="/products" 
+              href={heroCta1Link} 
               className="btn-primary text-xs py-3 rounded-xl touch-target text-center shadow-md shadow-[#1E3B2E]/10"
             >
-              <span>Explore catalog</span>
+              <span>{heroCta1Text}</span>
               <ArrowRight size={15} />
             </Link>
             <Link 
-              href="/learn/schedule" 
+              href={heroCta2Link} 
               className="btn-secondary text-xs py-3 rounded-xl touch-target text-center"
             >
-              <span>Book workshop</span>
+              <span>{heroCta2Text}</span>
             </Link>
           </div>
         </div>
@@ -148,16 +186,16 @@ export default function HomeClient({
         <div className="md:hidden">
           <div className="trust-strip hide-scrollbar mt-4">
             <div className="trust-chip">
-              <strong>1.2M+</strong>
-              <span>Bags produced</span>
+              <strong>{stat1Val}</strong>
+              <span>{stat1Label}</span>
             </div>
             <div className="trust-chip">
-              <strong>50+</strong>
-              <span>Enterprise clients</span>
+              <strong>{stat2Val}</strong>
+              <span>{stat2Label}</span>
             </div>
             <div className="trust-chip">
-              <strong>100%</strong>
-              <span>Recyclable Kraft</span>
+              <strong>{stat3Val}</strong>
+              <span>{stat3Label}</span>
             </div>
           </div>
         </div>
@@ -181,48 +219,48 @@ export default function HomeClient({
                   />
                 </div>
                 <span className="text-[11px] font-bold tracking-wider text-stone-700 uppercase">
-                  {lang === "am" ? t.hero_badge : (cmsContent.hero_badge || "Addis Ababa • Artisanal Kraft Guild")}
+                  {cmsContent.hero_badge || (lang === "am" ? t.hero_badge : heroBadge)}
                 </span>
               </div>
 
               <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold leading-[1.12] text-stone-900 tracking-tight">
-                {lang === "am" ? t.hero_headline : (cmsContent.hero_headline || heroContent.headline || "Artisanal Kraft Packaging & Craft Academy")}
+                {cmsContent.hero_headline || (lang === "am" ? t.hero_headline : heroHeadline)}
               </h1>
 
               <p className="text-stone-600 text-sm sm:text-lg max-w-xl leading-relaxed">
-                {lang === "am" ? t.hero_subline : (cmsContent.hero_subline || heroContent.subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses.")}
+                {cmsContent.hero_subline || (lang === "am" ? t.hero_subline : heroSubline)}
               </p>
 
               {/* Actions */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <Link 
-                  href="/products" 
+                  href={heroCta1Link} 
                   className="btn-primary touch-target text-center"
                 >
                   <ShoppingBag size={18} />
-                  <span>{t.hero_cta_portfolio}</span>
+                  <span>{heroCta1Text || t.hero_cta_portfolio}</span>
                   <ArrowRight size={16} />
                 </Link>
 
                 <Link 
-                  href="/design-submission" 
+                  href={heroCta2Link} 
                   className="btn-secondary touch-target text-center"
                 >
                   <BookOpen size={18} className="text-[#8C4B31]" />
-                  <span>{t.hero_cta_design}</span>
+                  <span>{heroCta2Text || t.hero_cta_design}</span>
                 </Link>
               </div>
 
               {/* Trust Badges */}
               <div className="pt-4 mt-2 border-t border-stone-200/90 flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold text-stone-700">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
-                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {lang === "am" ? t.hero_trust_1 : (cmsContent.stat_1_val ? `${cmsContent.stat_1_val} ${cmsContent.stat_1_label}` : "1.2M+ Bags Produced")}
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {stat1Val} {stat1Label}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
-                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {lang === "am" ? t.hero_trust_2 : (cmsContent.stat_2_val ? `${cmsContent.stat_2_val} ${cmsContent.stat_2_label}` : "50+ Enterprise Clients")}
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {stat2Val} {stat2Label}
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-100/90 border border-stone-200/80 shadow-2xs">
-                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {lang === "am" ? t.hero_trust_3 : (cmsContent.stat_3_val ? `${cmsContent.stat_3_val} ${cmsContent.stat_3_label}` : "100% Recyclable Kraft")}
+                  <CheckCircle2 size={14} className="text-[#1E3B2E]" /> {stat3Val} {stat3Label}
                 </span>
               </div>
             </div>
@@ -240,8 +278,8 @@ export default function HomeClient({
                 ) : (
                   <div className="relative w-full h-full">
                     <Image
-                      src="/images/photo_3_2026-09-05_00-36-02.jpg"
-                      alt="Ethiopia Arenguade Luxury Paper Bag"
+                      src={heroImage}
+                      alt={heroHeadline}
                       fill
                       priority
                       sizes="(max-width: 768px) 100vw, 500px"
@@ -381,10 +419,10 @@ export default function HomeClient({
           <div className="max-w-2xl mb-6">
             <span className="eyebrow">Our process</span>
             <h2 className="font-serif text-2xl font-bold text-stone-900 mt-1">
-              From your sketch to the street
+              {processTitle}
             </h2>
             <p className="text-stone-600 text-xs mt-1">
-              Direct factory production pipeline designed for Ethiopian businesses.
+              {processSub}
             </p>
           </div>
 
@@ -425,11 +463,11 @@ export default function HomeClient({
       {/* 2D. ACADEMY MOBILE BANNER */}
       <div className="md:hidden">
         <section className="academy-banner">
-          <img src="/images/photo_2_2026-09-05_00-36-02.jpg" alt="Handmade Ethiopian paper craft artisans" />
+          <img src={academyBannerImage} alt="Ethiopian paper craft artisans" />
           <div className="academy-overlay">
-            <div className="eyebrow">Arenguade craft academy</div>
-            <h2>Learn the craft.<br />Build a livelihood.</h2>
-            <p>Hands-on studio courses and live masterclasses led by working Ethiopian makers.</p>
+            <div className="eyebrow">{academyBannerEyebrow}</div>
+            <h2 className="whitespace-pre-line">{academyBannerHeadline}</h2>
+            <p>{academyBannerSub}</p>
             <Link 
               href="/learn/schedule" 
               className="btn-secondary bg-white/10 hover:bg-white/20 text-white border-white/40 text-xs py-2.5 px-5 rounded-xl inline-flex items-center gap-2"

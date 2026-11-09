@@ -321,14 +321,14 @@ export default function AdminAuditPage() {
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-bold text-[10px] shrink-0">
-                            {log.actor_name?.charAt(0) || "U"}
+                            {(log.actor_name || log.actor_email || "System").charAt(0).toUpperCase()}
                           </div>
                           <div className="flex flex-col">
                             <span className="font-bold text-stone-900 truncate max-w-[140px]">
-                              {log.actor_name || "System"}
+                              {log.actor_name || log.actor_email || "System"}
                             </span>
                             <span className="text-[10px] text-stone-400 font-mono truncate max-w-[140px]">
-                              {log.actor_email || log.actor_id.slice(0, 8)}
+                              {log.actor_email || (log.actor_id ? log.actor_id.slice(0, 8) : "system")}
                             </span>
                           </div>
                           {log.actor_role && (
@@ -388,9 +388,9 @@ export default function AdminAuditPage() {
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-[#1E3B2E] text-[#E0B382] flex items-center justify-center font-bold text-[10px] shrink-0">
-                        {log.actor_name?.charAt(0) || "U"}
+                        {(log.actor_name || log.actor_email || "System").charAt(0).toUpperCase()}
                       </div>
-                      <span className="font-bold text-stone-900">{log.actor_name || "System"}</span>
+                      <span className="font-bold text-stone-900">{log.actor_name || log.actor_email || "System"}</span>
                       {log.actor_role && (
                         <span className="px-1.5 py-0.2 rounded bg-stone-100 text-stone-600 text-[9px] font-bold uppercase">
                           {log.actor_role}
@@ -486,7 +486,7 @@ export default function AdminAuditPage() {
               </div>
               <div className="flex justify-between py-1 border-b border-stone-100">
                 <span className="text-stone-500">Actor:</span>
-                <span className="font-bold text-stone-900">{inspectItem.actor_name || inspectItem.actor_id}</span>
+                <span className="font-bold text-stone-900">{inspectItem.actor_name || inspectItem.actor_email || inspectItem.actor_id || "System"}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-stone-100">
                 <span className="text-stone-500">Timestamp:</span>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireRole } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
@@ -111,14 +112,21 @@ export async function GET(request: NextRequest) {
     );
     const dbCategories = ["All", ...Array.from(new Set(catRes.rows.map((r: any) => r.category).filter(Boolean)))];
 
-    return NextResponse.json({
-      success: true,
-      products: normalized,
-      categories: dbCategories,
-      totalCount,
-      page,
-      pageSize,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        products: normalized,
+        categories: dbCategories,
+        totalCount,
+        page,
+        pageSize,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      }
+    );
   } catch (err: any) {
     // Resilient fallback to Supabase Client (HTTPS port 443)
     try {
@@ -181,14 +189,21 @@ export async function GET(request: NextRequest) {
           .or("is_deleted.is.null,is_deleted.eq.false");
         const dbCategories = ["All", ...Array.from(new Set((catData || []).map((r: any) => r.category).filter(Boolean)))];
 
-        return NextResponse.json({
-          success: true,
-          products: normalized,
-          categories: dbCategories,
-          totalCount: sbCount ?? normalized.length,
-          page,
-          pageSize,
-        });
+        return NextResponse.json(
+          {
+            success: true,
+            products: normalized,
+            categories: dbCategories,
+            totalCount: sbCount ?? normalized.length,
+            page,
+            pageSize,
+          },
+          {
+            headers: {
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            },
+          }
+        );
       }
     } catch {
       // Fall through to error response
@@ -239,6 +254,16 @@ export async function POST(request: NextRequest) {
       entityId: product.id,
       metadata: { name: product.name, price: product.price, is_featured: product.is_featured },
     });
+
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/");
+      revalidatePath("/products");
+      revalidatePath("/portfolio");
+      revalidatePath("/catalog");
+    } catch (e) {
+      console.warn("Revalidation error:", e);
+    }
 
     return NextResponse.json({ success: true, product });
   } catch (err: any) {
@@ -301,6 +326,16 @@ export async function PATCH(request: NextRequest) {
       metadata: { updates: fields, hasNewImages: Boolean(images) },
     });
 
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/");
+      revalidatePath("/products");
+      revalidatePath("/portfolio");
+      revalidatePath("/catalog");
+    } catch (e) {
+      console.warn("Revalidation error:", e);
+    }
+
     return NextResponse.json({ success: true, product });
   } catch (err: any) {
     const status = err.status || 500;
@@ -346,6 +381,16 @@ export async function DELETE(request: NextRequest) {
         metadata: { linked_orders: linkedCount, reason: "Product in existing orders" },
       });
 
+      try {
+        revalidatePath("/", "layout");
+        revalidatePath("/");
+        revalidatePath("/products");
+        revalidatePath("/portfolio");
+        revalidatePath("/catalog");
+      } catch (e) {
+        console.warn("Revalidation error:", e);
+      }
+
       return NextResponse.json({
         success: true,
         softDeleted: true,
@@ -367,6 +412,16 @@ export async function DELETE(request: NextRequest) {
       entityId: id,
       metadata: { deleted: true },
     });
+
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/");
+      revalidatePath("/products");
+      revalidatePath("/portfolio");
+      revalidatePath("/catalog");
+    } catch (e) {
+      console.warn("Revalidation error:", e);
+    }
 
     return NextResponse.json({ success: true, message: "Product deleted successfully." });
   } catch (err: any) {

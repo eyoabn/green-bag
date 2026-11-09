@@ -66,7 +66,10 @@ export default function AdminProductsPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/products?all=true&limit=100");
+      const res = await fetch(`/api/products?all=true&limit=100&_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       const resJson = await res.json();
       if (res.ok && resJson?.success) {
         setProducts(resJson.products || []);

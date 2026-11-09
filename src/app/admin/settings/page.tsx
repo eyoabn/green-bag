@@ -114,7 +114,10 @@ export default function AdminSettingsPage() {
     setIsLoading(true);
     setErrorMsg("");
     try {
-      const res = await fetch("/api/admin/settings");
+      const res = await fetch(`/api/admin/settings?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       const resJson = await res.json();
       if (res.ok && resJson?.success && resJson.settings) {
         const s = resJson.settings;
@@ -135,39 +138,39 @@ export default function AdminSettingsPage() {
 
         // Homepage CMS
         const content = s.homepage_content || {};
-        if (content.hero_badge) setHeroBadge(content.hero_badge);
-        if (content.hero_headline) setHeroHeadline(content.hero_headline);
-        if (content.hero_subline) setHeroSubline(content.hero_subline);
-        if (content.hero_image) setHeroImage(content.hero_image);
-        if (content.hero_cta1_text) setHeroCta1Text(content.hero_cta1_text);
-        if (content.hero_cta1_link) setHeroCta1Link(content.hero_cta1_link);
-        if (content.hero_cta2_text) setHeroCta2Text(content.hero_cta2_text);
-        if (content.hero_cta2_link) setHeroCta2Link(content.hero_cta2_link);
+        if (content.hero_badge !== undefined && content.hero_badge !== null) setHeroBadge(content.hero_badge);
+        if (content.hero_headline !== undefined && content.hero_headline !== null) setHeroHeadline(content.hero_headline);
+        if (content.hero_subline !== undefined && content.hero_subline !== null) setHeroSubline(content.hero_subline);
+        if (content.hero_image !== undefined && content.hero_image !== null) setHeroImage(content.hero_image);
+        if (content.hero_cta1_text !== undefined && content.hero_cta1_text !== null) setHeroCta1Text(content.hero_cta1_text);
+        if (content.hero_cta1_link !== undefined && content.hero_cta1_link !== null) setHeroCta1Link(content.hero_cta1_link);
+        if (content.hero_cta2_text !== undefined && content.hero_cta2_text !== null) setHeroCta2Text(content.hero_cta2_text);
+        if (content.hero_cta2_link !== undefined && content.hero_cta2_link !== null) setHeroCta2Link(content.hero_cta2_link);
 
-        if (content.mobile_hero_image) setMobileHeroImage(content.mobile_hero_image);
-        if (content.mobile_eyebrow) setMobileEyebrow(content.mobile_eyebrow);
-        if (content.mobile_headline) setMobileHeadline(content.mobile_headline);
-        if (content.mobile_subline) setMobileSubline(content.mobile_subline);
-        if (content.craft_seal_top) setCraftSealTop(content.craft_seal_top);
-        if (content.craft_seal_center) setCraftSealCenter(content.craft_seal_center);
-        if (content.craft_seal_bottom) setCraftSealBottom(content.craft_seal_bottom);
-        if (content.image_caption) setImageCaption(content.image_caption);
+        if (content.mobile_hero_image !== undefined && content.mobile_hero_image !== null) setMobileHeroImage(content.mobile_hero_image);
+        if (content.mobile_eyebrow !== undefined && content.mobile_eyebrow !== null) setMobileEyebrow(content.mobile_eyebrow);
+        if (content.mobile_headline !== undefined && content.mobile_headline !== null) setMobileHeadline(content.mobile_headline);
+        if (content.mobile_subline !== undefined && content.mobile_subline !== null) setMobileSubline(content.mobile_subline);
+        if (content.craft_seal_top !== undefined && content.craft_seal_top !== null) setCraftSealTop(content.craft_seal_top);
+        if (content.craft_seal_center !== undefined && content.craft_seal_center !== null) setCraftSealCenter(content.craft_seal_center);
+        if (content.craft_seal_bottom !== undefined && content.craft_seal_bottom !== null) setCraftSealBottom(content.craft_seal_bottom);
+        if (content.image_caption !== undefined && content.image_caption !== null) setImageCaption(content.image_caption);
 
-        if (content.process_title) setProcessTitle(content.process_title);
-        if (content.process_sub) setProcessSub(content.process_sub);
-        if (content.academy_banner_eyebrow) setAcademyBannerEyebrow(content.academy_banner_eyebrow);
-        if (content.academy_banner_headline) setAcademyBannerHeadline(content.academy_banner_headline);
-        if (content.academy_banner_sub) setAcademyBannerSub(content.academy_banner_sub);
-        if (content.academy_banner_image) setAcademyBannerImage(content.academy_banner_image);
+        if (content.process_title !== undefined && content.process_title !== null) setProcessTitle(content.process_title);
+        if (content.process_sub !== undefined && content.process_sub !== null) setProcessSub(content.process_sub);
+        if (content.academy_banner_eyebrow !== undefined && content.academy_banner_eyebrow !== null) setAcademyBannerEyebrow(content.academy_banner_eyebrow);
+        if (content.academy_banner_headline !== undefined && content.academy_banner_headline !== null) setAcademyBannerHeadline(content.academy_banner_headline);
+        if (content.academy_banner_sub !== undefined && content.academy_banner_sub !== null) setAcademyBannerSub(content.academy_banner_sub);
+        if (content.academy_banner_image !== undefined && content.academy_banner_image !== null) setAcademyBannerImage(content.academy_banner_image);
 
-        if (content.showcase_title) setShowcaseTitle(content.showcase_title);
-        if (content.showcase_sub) setShowcaseSub(content.showcase_sub);
-        if (content.stat_1_val) setStat1Val(content.stat_1_val);
-        if (content.stat_1_label) setStat1Label(content.stat_1_label);
-        if (content.stat_2_val) setStat2Val(content.stat_2_val);
-        if (content.stat_2_label) setStat2Label(content.stat_2_label);
-        if (content.stat_3_val) setStat3Val(content.stat_3_val);
-        if (content.stat_3_label) setStat3Label(content.stat_3_label);
+        if (content.showcase_title !== undefined && content.showcase_title !== null) setShowcaseTitle(content.showcase_title);
+        if (content.showcase_sub !== undefined && content.showcase_sub !== null) setShowcaseSub(content.showcase_sub);
+        if (content.stat_1_val !== undefined && content.stat_1_val !== null) setStat1Val(content.stat_1_val);
+        if (content.stat_1_label !== undefined && content.stat_1_label !== null) setStat1Label(content.stat_1_label);
+        if (content.stat_2_val !== undefined && content.stat_2_val !== null) setStat2Val(content.stat_2_val);
+        if (content.stat_2_label !== undefined && content.stat_2_label !== null) setStat2Label(content.stat_2_label);
+        if (content.stat_3_val !== undefined && content.stat_3_val !== null) setStat3Val(content.stat_3_val);
+        if (content.stat_3_label !== undefined && content.stat_3_label !== null) setStat3Label(content.stat_3_label);
 
         if (content.announcement_text !== undefined) setAnnouncementText(content.announcement_text);
         if (content.announcement_visible !== undefined) setAnnouncementVisible(Boolean(content.announcement_visible));

@@ -42,6 +42,7 @@ export async function GET() {
       .from("products")
       .select("id, name, description, price, images, category, created_at")
       .eq("is_available", true)
+      .or("is_deleted.is.null,is_deleted.eq.false")
       .order("created_at", { ascending: false });
 
     if (productsError) {
@@ -82,11 +83,18 @@ export async function GET() {
     // Combine database portfolio records with database products
     const combinedProjects = [...mappedPortfolio, ...dbProductProjects];
 
-    return NextResponse.json({
-      success: true,
-      projects: combinedProjects,
-      total: combinedProjects.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        projects: combinedProjects,
+        total: combinedProjects.length,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json(
       {

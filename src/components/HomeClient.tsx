@@ -51,15 +51,64 @@ export default function HomeClient({
   const [canRender3D, setCanRender3D] = useState(false);
 
   // Dynamic Content States initialized directly from Server SSR/ISR props
-  const [featuredProducts] = useState<any[]>(initialProducts);
-  const [workshops] = useState<any[]>(initialWorkshops);
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>(initialProducts);
+  const [workshops, setWorkshops] = useState<any[]>(initialWorkshops);
+  const [cmsContent, setCmsContent] = useState<any>(initialSettings?.homepage_content || {});
   
-  const cmsContent = initialSettings?.homepage_content || {};
-  const [companySettings] = useState({
+  const [companySettings, setCompanySettings] = useState({
     company_name: initialSettings?.company_name || "Ethiopia Arenguade Paper Product PLC",
     contact_email: initialSettings?.contact_email || "orders@arenguade.et",
     contact_phone: initialSettings?.contact_phone || "+251 911 223 344",
   });
+
+  useEffect(() => {
+    setFeaturedProducts(initialProducts);
+  }, [initialProducts]);
+
+  useEffect(() => {
+    setWorkshops(initialWorkshops);
+  }, [initialWorkshops]);
+
+  useEffect(() => {
+    if (initialSettings?.homepage_content) {
+      setCmsContent(initialSettings.homepage_content);
+    }
+    if (initialSettings?.company_name) {
+      setCompanySettings({
+        company_name: initialSettings.company_name,
+        contact_email: initialSettings.contact_email || "orders@arenguade.et",
+        contact_phone: initialSettings.contact_phone || "+251 911 223 344",
+      });
+    }
+  }, [initialSettings]);
+
+  useEffect(() => {
+    // Client-side instant background revalidation to guarantee real-time reflection of admin modifications
+    fetch("/api/settings", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.settings?.homepage_content) {
+          setCmsContent(data.settings.homepage_content);
+        }
+        if (data?.settings?.company_name) {
+          setCompanySettings({
+            company_name: data.settings.company_name,
+            contact_email: data.settings.contact_email || "orders@arenguade.et",
+            contact_phone: data.settings.contact_phone || "+251 911 223 344",
+          });
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/products?featured=true&pageSize=6", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.products && Array.isArray(data.products)) {
+          setFeaturedProducts(data.products);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const announcement = (cmsContent.announcement_visible && cmsContent.announcement_text)
     ? { text: cmsContent.announcement_text, visible: true }

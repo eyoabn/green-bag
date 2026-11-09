@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireRole } from "@/utils/roles";
 import { pool } from "@/utils/db";
@@ -109,14 +110,21 @@ export async function GET() {
     }
     const designPricing = rawContent.design_pricing || DEFAULT_DESIGN_PRICING;
 
-    return NextResponse.json({
-      success: true,
-      settings: {
-        ...data,
-        homepage_content: mergedHomepageContent,
-        design_pricing: designPricing,
+    return NextResponse.json(
+      {
+        success: true,
+        settings: {
+          ...data,
+          homepage_content: mergedHomepageContent,
+          design_pricing: designPricing,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to load settings" }, { status: 500 });
   }
@@ -202,6 +210,16 @@ export async function PATCH(request: NextRequest) {
         social_links,
       },
     });
+
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/");
+      revalidatePath("/products");
+      revalidatePath("/portfolio");
+      revalidatePath("/catalog");
+    } catch (e) {
+      console.warn("Settings revalidation error:", e);
+    }
 
     return NextResponse.json({ success: true, settings: updated });
   } catch (err: any) {

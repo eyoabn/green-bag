@@ -48,13 +48,20 @@ export async function GET() {
     const homepageContent = (finalSettings as any).homepage_content || {};
     const designPricing = homepageContent.design_pricing || DEFAULT_DESIGN_PRICING;
 
-    return NextResponse.json({
-      success: true,
-      settings: {
-        ...finalSettings,
-        design_pricing: designPricing,
+    return NextResponse.json(
+      {
+        success: true,
+        settings: {
+          ...finalSettings,
+          design_pricing: designPricing,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      }
+    );
   } catch (_err: any) {
     return NextResponse.json({
       success: true,

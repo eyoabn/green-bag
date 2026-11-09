@@ -61,7 +61,11 @@ export default function ProductsPage() {
       if (selectedCategory !== "All") params.set("category", selectedCategory);
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
 
-      const res = await fetch(`/api/products?${params.toString()}`);
+      params.set("_t", String(Date.now()));
+      const res = await fetch(`/api/products?${params.toString()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       const resJson = await res.json();
       if (res.ok && resJson.products) {
         const mappedProducts: Product[] = (resJson.products as any[]).map((p) => {

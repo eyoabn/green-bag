@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { 
   PenTool, 
@@ -8,25 +8,28 @@ import {
   CheckCircle2, 
   Clock, 
   Eye, 
-  EyeOff,
+  EyeOff, 
   Download, 
-  ArrowRight,
-  Sparkles,
-  Check,
-  X,
-  ShoppingBag,
-  AlertCircle,
-  MessageSquare,
-  DollarSign,
-  Filter,
-  ShieldCheck,
-  Layers,
-  Truck,
-  Building2,
-  User,
-  Phone,
-  MapPin,
-  QrCode
+  ArrowRight, 
+  Sparkles, 
+  Check, 
+  X, 
+  ShoppingBag, 
+  AlertCircle, 
+  MessageSquare, 
+  DollarSign, 
+  Filter, 
+  ShieldCheck, 
+  Layers, 
+  Truck, 
+  Building2, 
+  User, 
+  Phone, 
+  MapPin, 
+  QrCode, 
+  Search, 
+  RefreshCw, 
+  Inbox
 } from "lucide-react";
 
 interface DesignItem {
@@ -56,11 +59,11 @@ interface DesignItem {
 }
 
 const STATUS_FILTERS = [
-  { id: "all", label: "All Designs" },
-  { id: "new", label: "New Submissions" },
+  { id: "all", label: "All Requests" },
+  { id: "new", label: "New Needs Quote" },
   { id: "reviewing", label: "In Review" },
-  { id: "quoted", label: "Quoted" },
-  { id: "accepted", label: "Accepted by Client" },
+  { id: "quoted", label: "Awaiting Client Payment" },
+  { id: "accepted", label: "In Production" },
   { id: "declined", label: "Declined" },
 ] as const;
 
@@ -77,6 +80,7 @@ export default function AdminDesignsPage() {
   const [designs, setDesigns] = useState<DesignItem[]>([]);
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
@@ -85,6 +89,9 @@ export default function AdminDesignsPage() {
   const [adminReplies, setAdminReplies] = useState<Record<string, string>>({});
   const [selectedBankAccounts, setSelectedBankAccounts] = useState<Record<string, string>>({});
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  // Active expanded tabs per card ("overview" | "quote" | "production")
+  const [activeCardTabs, setActiveCardTabs] = useState<Record<string, "overview" | "quote" | "production">>({});
 
   // Inline file viewer state: map of designId -> signedUrl
   const [inlineFiles, setInlineFiles] = useState<Record<string, string>>({});
@@ -99,8 +106,8 @@ export default function AdminDesignsPage() {
     try {
       const url = selectedFilter === "all" ? "/api/designs" : `/api/designs?status=${selectedFilter}`;
       const [res, banksRes] = await Promise.all([
-        fetch(url),
-        fetch("/api/bank-accounts").catch(() => null),
+        fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-cache" } }),
+        fetch("/api/bank-accounts", { cache: "no-store", headers: { "Cache-Control": "no-cache" } }).catch(() => null),
       ]);
 
       const data = await res.json();
@@ -122,6 +129,7 @@ export default function AdminDesignsPage() {
       const quotes: Record<string, string> = {};
       const replies: Record<string, string> = {};
       const designatedBanks: Record<string, string> = {};
+      const defaultTabs: Record<string, "overview" | "quote" | "production"> = {};
 
       loadedDesigns.forEach((d) => {
         if (d.quoted_price) quotes[d.id] = String(d.quoted_price);
@@ -133,10 +141,21 @@ export default function AdminDesignsPage() {
         if (specs.designated_bank_account_id) {
           designatedBanks[d.id] = specs.designated_bank_account_id;
         }
+
+        // Set default intelligent tab depending on state
+        if (d.status === "accepted") {
+          defaultTabs[d.id] = "production";
+        } else if (d.status === "new" || d.status === "reviewing") {
+          defaultTabs[d.id] = "quote";
+        } else {
+          defaultTabs[d.id] = "overview";
+        }
       });
+
       setQuotePrices(quotes);
       setAdminReplies(replies);
       setSelectedBankAccounts(designatedBanks);
+      setActiveCardTabs(defaultTabs);
     } catch (err: any) {
       console.error("Load designs error:", err);
       setErrorMsg(err.message || "Failed to load designs");
@@ -148,6 +167,60 @@ export default function AdminDesignsPage() {
   useEffect(() => {
     loadDesigns();
   }, [selectedFilter]);
+
+  // Executive Metrics
+  const metrics = useMemo(() => {
+    let total = designs.length;
+    let needsQuote = 0;
+    let paymentPending = 0;
+    let inProduction = 0;
+    let finished = 0;
+
+    designs.forEach((d) => {
+      let s: any = {};
+      try {
+        s = typeof d.specs_json === "string" ? JSON.parse(d.specs_json) : (d.specs_json || {});
+      } catch {}
+
+      if (d.status === "new" || d.status === "reviewing") {
+        needsQuote++;
+      } else if (d.status === "quoted") {
+        if (s.payment_submitted && !s.payment_verified) {
+          paymentPending++;
+        }
+      } else if (d.status === "accepted") {
+        if (s.production_stage === "ready_for_delivery" || s.production_stage === "delivered") {
+          finished++;
+        } else {
+          inProduction++;
+        }
+      }
+    });
+
+    return { total, needsQuote, paymentPending, inProduction, finished };
+  }, [designs]);
+
+  // Filtered designs by search query
+  const filteredDesigns = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return designs;
+
+    return designs.filter((d) => {
+      let specs: any = {};
+      try {
+        specs = typeof d.specs_json === "string" ? JSON.parse(d.specs_json) : (d.specs_json || {});
+      } catch {}
+
+      const titleMatch = (d.title || "").toLowerCase().includes(q);
+      const idMatch = d.id.toLowerCase().includes(q);
+      const nameMatch = (specs.customerName || d.profiles?.full_name || "").toLowerCase().includes(q);
+      const emailMatch = (d.profiles?.email || "").toLowerCase().includes(q);
+      const phoneMatch = (specs.contactPhone || d.profiles?.phone || "").toLowerCase().includes(q);
+      const brandMatch = (specs.companyBrand || "").toLowerCase().includes(q);
+
+      return titleMatch || idMatch || nameMatch || emailMatch || phoneMatch || brandMatch;
+    });
+  }, [designs, searchQuery]);
 
   const handleUpdateStatusAndQuote = async (id: string, newStatus?: string) => {
     setActionLoadingId(id);
@@ -354,63 +427,171 @@ export default function AdminDesignsPage() {
   };
 
   return (
-    <div className="flex flex-col max-w-6xl mx-auto space-y-8 pb-12">
+    <div className="flex flex-col max-w-7xl mx-auto space-y-8 pb-16">
       
-      {/* Header */}
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">
-          Bespoke Production & Quotations
-        </span>
-        <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
-          Customer Design Submissions & B2B Orders
-        </h1>
-        <p className="text-xs text-stone-500 mt-1">
-          Inspect client CAD artwork, quote binding prices in ETB, verify bank deposit screenshots, and advance live factory manufacturing stages.
-        </p>
-      </div>
+      {/* 1. Header & Summary */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-wider text-[#8C4B31]">
+              Custom Manufacturing & Design Studio Desk
+            </span>
+          </div>
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
+            Customer Design Submissions & B2B Orders
+          </h1>
+          <p className="text-xs text-stone-500 mt-1 max-w-3xl">
+            Review client CAD dielines, issue binding price proposals in ETB, verify bank deposit slips (CBE, Telebirr, Awash), and track active rotary press runs.
+          </p>
+        </div>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-stone-200 pb-3">
-        {STATUS_FILTERS.map((f) => (
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
-            key={f.id}
-            onClick={() => setSelectedFilter(f.id)}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              selectedFilter === f.id
-                ? "bg-[#1E3B2E] text-white shadow-sm"
-                : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
-            }`}
+            onClick={loadDesigns}
+            disabled={loading}
+            className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            {f.label}
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            <span>Refresh Submissions</span>
           </button>
-        ))}
+
+          <Link
+            href="/admin/orders"
+            className="px-4 py-2.5 rounded-xl bg-[#1E3B2E] hover:bg-[#8C4B31] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+          >
+            <ShoppingBag size={14} />
+            <span>Factory Orders</span>
+          </Link>
+        </div>
       </div>
 
+      {/* 2. Executive Status Metric Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-xs">
+          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Total Submissions</span>
+          <span className="font-serif text-2xl font-bold text-stone-900 mt-1 block">{metrics.total}</span>
+          <span className="text-[10px] text-stone-500 block mt-0.5">All customer dielines</span>
+        </div>
+
+        <div className={`p-4 rounded-2xl border shadow-xs transition-all ${
+          metrics.needsQuote > 0 ? "bg-amber-50/70 border-amber-300 ring-1 ring-amber-300" : "bg-white border-stone-200/90"
+        }`}>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider block">Needs Quote</span>
+            {metrics.needsQuote > 0 && <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />}
+          </div>
+          <span className="font-serif text-2xl font-bold text-amber-950 mt-1 block">{metrics.needsQuote}</span>
+          <span className="text-[10px] text-amber-800/80 block mt-0.5">Awaiting engineering review</span>
+        </div>
+
+        <div className={`p-4 rounded-2xl border shadow-xs transition-all ${
+          metrics.paymentPending > 0 ? "bg-blue-50/70 border-blue-300 ring-1 ring-blue-300" : "bg-white border-stone-200/90"
+        }`}>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider block">Deposit Uploaded</span>
+            {metrics.paymentPending > 0 && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />}
+          </div>
+          <span className="font-serif text-2xl font-bold text-blue-950 mt-1 block">{metrics.paymentPending}</span>
+          <span className="text-[10px] text-blue-800/80 block mt-0.5">Bank slip verify required</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-xs">
+          <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">In Production</span>
+          <span className="font-serif text-2xl font-bold text-emerald-950 mt-1 block">{metrics.inProduction}</span>
+          <span className="text-[10px] text-emerald-700/80 block mt-0.5">Platemaking & press run</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-xs col-span-2 sm:col-span-1">
+          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Ready / Delivered</span>
+          <span className="font-serif text-2xl font-bold text-stone-900 mt-1 block">{metrics.finished}</span>
+          <span className="text-[10px] text-stone-500 block mt-0.5">Completed runs</span>
+        </div>
+      </div>
+
+      {/* 3. Search Bar and Status Filters */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-stone-200/90 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+            <input
+              type="text"
+              placeholder="Search by client name, brand, dieline title, phone, email, or #ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-stone-300 text-xs bg-[#FAF7F2] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 font-medium"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs font-bold cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Quick Bank Accounts pill info */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 text-xs shrink-0">
+            <Building2 size={13} className="text-[#1E3B2E]" />
+            <span className="font-bold">{bankAccounts.length} Settlement Banks Active</span>
+          </div>
+        </div>
+
+        {/* Status Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setSelectedFilter(f.id)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                selectedFilter === f.id
+                  ? "bg-[#1E3B2E] text-white shadow-xs"
+                  : "bg-[#FAF7F2] text-stone-700 hover:bg-stone-200/70 border border-stone-300/80"
+              }`}
+            >
+              <span>{f.label}</span>
+              {f.id === "new" && metrics.needsQuote > 0 && (
+                <span className="w-4 h-4 rounded-full bg-amber-400 text-stone-900 text-[10px] font-bold flex items-center justify-center">
+                  {metrics.needsQuote}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Error alert */}
       {errorMsg && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2 font-semibold">
           <AlertCircle size={16} className="shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
+      {/* 4. Submissions List View */}
       {loading ? (
-        <div className="text-center text-stone-500 py-16 flex flex-col items-center justify-center">
-          <Sparkles size={28} className="animate-spin text-[#1E3B2E] mb-2" />
-          <p className="text-xs font-semibold">Loading custom designs from PostgreSQL...</p>
+        <div className="bg-white rounded-3xl border border-stone-200/90 p-16 text-center text-stone-400 text-xs">
+          <div className="w-8 h-8 border-2 border-[#1E3B2E] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          Loading custom design submissions from database...
         </div>
-      ) : designs.length === 0 ? (
-        <div className="bg-white p-12 rounded-3xl border border-stone-200 text-center text-stone-500">
-          <FileText size={36} className="mx-auto text-stone-400 mb-2" />
-          <h4 className="font-serif text-lg font-bold text-stone-800">No Custom Dieline Submissions Found</h4>
-          <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
-            {selectedFilter === "all"
-              ? "Client requests submitted via the custom packaging studio (/design-submission) will appear here."
-              : `No designs currently matched status "${selectedFilter}".`}
+      ) : filteredDesigns.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-stone-200/90 p-16 text-center text-stone-500 space-y-2">
+          <Inbox size={36} className="mx-auto text-stone-300 mb-1" />
+          <h3 className="font-serif text-lg font-bold text-stone-800">No Design Submissions Found</h3>
+          <p className="text-xs text-stone-400 max-w-md mx-auto">
+            {searchQuery 
+              ? `No requests match "${searchQuery}". Try clearing search keywords.`
+              : selectedFilter === "all"
+              ? "When clients submit custom bag requests from /design-submission, they will appear here ready for engineering review."
+              : `No custom requests currently in status "${selectedFilter}".`}
           </p>
         </div>
       ) : (
         <div className="space-y-6">
-          {designs.map((design) => {
+          {filteredDesigns.map((design) => {
             let parsedSpec: any = {};
             try {
               parsedSpec = JSON.parse(design.description || "{}");
@@ -429,430 +610,600 @@ export default function AdminDesignsPage() {
             const isPaymentSubmitted = Boolean(specsObj.payment_submitted);
             const isPaymentVerified = Boolean(specsObj.payment_verified);
             const currentStage = specsObj.production_stage || (design.status === "accepted" ? "quote_accepted" : "new");
+            const activeTab = activeCardTabs[design.id] || "overview";
+
+            // Status color helper
+            const getStatusBadge = (status: string) => {
+              switch (status) {
+                case "new":
+                  return "bg-amber-100 text-amber-900 border-amber-300 animate-pulse";
+                case "reviewing":
+                  return "bg-blue-100 text-blue-900 border-blue-300";
+                case "quoted":
+                  return "bg-purple-100 text-purple-900 border-purple-300";
+                case "accepted":
+                  return "bg-emerald-100 text-emerald-900 border-emerald-300 font-bold";
+                case "declined":
+                  return "bg-stone-200 text-stone-700 border-stone-300";
+                default:
+                  return "bg-stone-100 text-stone-800 border-stone-200";
+              }
+            };
 
             return (
               <div
                 key={design.id}
-                className="bg-white p-6 sm:p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col justify-between space-y-6"
+                className="bg-white rounded-3xl border border-stone-200/90 shadow-xs hover:border-stone-300 transition-all overflow-hidden"
               >
-                {/* Header Information */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-100">
-                  <div>
-                    <div className="flex items-center gap-2.5 mb-1">
-                      <span className="font-mono text-xs font-bold text-stone-500">
-                        Design #{design.id.substring(0, 8)}
-                      </span>
-                      <span
-                        className={`px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          design.status === "new"
-                            ? "bg-amber-100 text-amber-800 animate-pulse font-extrabold"
-                            : design.status === "reviewing"
-                            ? "bg-blue-100 text-blue-800"
-                            : design.status === "quoted"
-                            ? "bg-purple-100 text-purple-800 font-bold"
-                            : design.status === "accepted"
-                            ? "bg-emerald-100 text-emerald-800 font-extrabold"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {design.status}
-                      </span>
-                      {isPaymentVerified && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1E3B2E] text-white flex items-center gap-1">
-                          <ShieldCheck size={11} />
-                          <span>Deposit Confirmed</span>
+                {/* A. Top Urgent Notification Strip if Action Needed */}
+                {design.status === "new" && (
+                  <div className="bg-amber-500/15 border-b border-amber-300/80 px-6 py-2 flex items-center justify-between text-xs text-amber-950 font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-amber-700" />
+                      <span><strong>Action Required:</strong> New customer submission. Inspect dieline and propose binding ETB quote.</span>
+                    </span>
+                    <span className="text-[11px] font-mono font-bold text-amber-900">Step 1 of 4</span>
+                  </div>
+                )}
+
+                {isPaymentSubmitted && !isPaymentVerified && (
+                  <div className="bg-blue-500/15 border-b border-blue-300/80 px-6 py-2 flex items-center justify-between text-xs text-blue-950 font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <QrCode size={14} className="text-blue-700 animate-pulse" />
+                      <span><strong>Deposit Slip Uploaded:</strong> Customer transferred funds. Verify slip below to start production (&ldquo;It Is On Doing&rdquo;).</span>
+                    </span>
+                    <button
+                      onClick={() => handleVerifyPayment(design.id)}
+                      disabled={actionLoadingId === design.id}
+                      className="px-3 py-1 rounded-full bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-bold cursor-pointer"
+                    >
+                      Verify Now
+                    </button>
+                  </div>
+                )}
+
+                {/* B. Main Card Header */}
+                <div className="p-6 sm:p-7 space-y-5">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-stone-500 bg-stone-100 px-2.5 py-0.5 rounded-full border border-stone-200">
+                          #{design.id.substring(0, 8)}
                         </span>
-                      )}
+                        <span className={`px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border ${getStatusBadge(design.status)}`}>
+                          {design.status === "accepted" ? "In Production" : design.status}
+                        </span>
+                        {isPaymentVerified && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#1E3B2E] text-white text-[10px] font-bold">
+                            <ShieldCheck size={11} className="text-emerald-400" />
+                            <span>Deposit Confirmed</span>
+                          </span>
+                        )}
+                        {design.linked_order_id && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold">
+                            Order Linked
+                          </span>
+                        )}
+                      </div>
+
+                      <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 leading-tight">
+                        {design.title || parsedSpec.clientCompany || "Custom Paper Packaging Commission"}
+                      </h2>
+
+                      {/* Customer Info Row */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-stone-600 pt-0.5">
+                        <span className="inline-flex items-center gap-1 font-bold text-stone-900">
+                          <User size={13} className="text-[#1E3B2E]" />
+                          <span>{specsObj.customerName || design.profiles?.full_name || "Valued Client"}</span>
+                        </span>
+                        {specsObj.companyBrand && (
+                          <span className="inline-flex items-center gap-1 font-bold text-[#8C4B31]">
+                            <Building2 size={13} />
+                            <span>{specsObj.companyBrand}</span>
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          <Phone size={13} className="text-stone-400" />
+                          <a href={`tel:${specsObj.contactPhone || design.profiles?.phone || ""}`} className="font-mono hover:underline text-stone-800">
+                            {specsObj.contactPhone || design.profiles?.phone || "No phone"}
+                          </a>
+                        </span>
+                        <span className="text-stone-400 font-mono">
+                          {design.profiles?.email}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-stone-500">
+                          <MapPin size={13} className="text-stone-400" />
+                          <span>{specsObj.deliveryAddress || "Addis Ababa Plant Collection"}</span>
+                        </span>
+                      </div>
                     </div>
 
-                    <h3 className="font-serif text-2xl font-bold text-stone-900">
-                      {design.title || parsedSpec.clientCompany || "Custom Packaging Request"}
-                    </h3>
-                    <p className="text-xs text-stone-500 mt-0.5">
-                      Customer: <strong>{specsObj.customerName || design.profiles?.full_name || "Valued Client"}</strong> ({design.profiles?.email} • {specsObj.contactPhone || design.profiles?.phone || "No phone"})
-                    </p>
-
-                    {/* Customer Contact & Delivery Destination Pills */}
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-800 font-semibold border border-stone-200">
-                        <User size={13} className="text-[#1E3B2E]" />
-                        <span>Contact: <strong>{specsObj.customerName || design.profiles?.full_name || "Client"}</strong></span>
+                    {/* Right summary: Quantity & Quoted Price */}
+                    <div className="text-left md:text-right bg-[#FAF7F2] md:bg-transparent p-4 md:p-0 rounded-2xl border md:border-0 border-stone-200/80 shrink-0 space-y-1">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Target Quantity</span>
+                      <span className="font-serif text-2xl font-bold text-[#8C4B31] block">
+                        {design.quantity || (parsedSpec.quantity ? Number(parsedSpec.quantity).toLocaleString() : "Custom")} Units
                       </span>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-800 font-semibold border border-stone-200">
-                        <Phone size={13} className="text-[#1E3B2E]" />
-                        <a href={`tel:${specsObj.contactPhone || design.profiles?.phone || ""}`} className="font-mono hover:underline font-bold">
-                          {specsObj.contactPhone || design.profiles?.phone || "No phone"}
-                        </a>
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-stone-800 font-semibold border border-stone-200">
-                        <MapPin size={13} className="text-[#8C4B31]" />
-                        <span>Destination: <strong>{specsObj.deliveryAddress || "Addis Ababa Plant Collection"}</strong></span>
-                      </span>
-                      {specsObj.companyBrand && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] font-bold">
-                          <Building2 size={13} />
-                          <span>Brand: {specsObj.companyBrand}</span>
+                      {design.quoted_price ? (
+                        <div className="pt-1">
+                          <span className="text-[10px] text-stone-400 block uppercase font-bold">Binding Quoted Price</span>
+                          <span className="font-mono font-bold text-stone-900 text-lg">
+                            {Number(design.quoted_price).toLocaleString()} ETB
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full inline-block mt-1">
+                          Awaiting Quote
                         </span>
                       )}
+                      <span className="text-[10px] text-stone-400 block mt-1 font-mono">
+                        Submitted {new Date(design.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-xs text-stone-500 block">Target Quantity</span>
-                    <span className="font-serif text-2xl font-bold text-[#8C4B31]">
-                      {design.quantity || (parsedSpec.quantity ? Number(parsedSpec.quantity).toLocaleString() : "Custom")} Units
-                    </span>
-                    <span className="text-[10px] text-stone-400 block mt-0.5">
-                      Submitted on {new Date(design.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
+                  {/* C. Specifications Grid (4 High-Contrast Clean Chips) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200/80">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Dimensions</span>
+                      <span className="font-bold text-stone-900 text-xs sm:text-sm mt-0.5 block truncate">
+                        {design.dimensions || parsedSpec.dimensions || "Standard Size"}
+                      </span>
+                    </div>
 
-                {/* Technical Specifications */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200">
-                    <span className="text-stone-400 text-[10px] uppercase font-bold block">Dimensions</span>
-                    <span className="font-bold text-stone-900">{design.dimensions || parsedSpec.dimensions || "Standard"}</span>
-                  </div>
-                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200">
-                    <span className="text-stone-400 text-[10px] uppercase font-bold block">Paper Weight</span>
-                    <span className="font-bold text-stone-900">{design.gsm ? `${design.gsm} GSM` : parsedSpec.paperWeight || "220 GSM"}</span>
-                  </div>
-                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200">
-                    <span className="text-stone-400 text-[10px] uppercase font-bold block">Handle Type</span>
-                    <span className="font-bold text-stone-900">{design.handle_type || parsedSpec.handleType || "Twisted Cord"}</span>
-                  </div>
-                  <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-stone-200">
-                    <span className="text-stone-400 text-[10px] uppercase font-bold block">Print Finish</span>
-                    <span className="font-bold text-stone-900">{design.print_finish || parsedSpec.printFinish || "Soy Screenprint"}</span>
-                  </div>
-                </div>
+                    <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200/80">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Paper Weight</span>
+                      <span className="font-bold text-stone-900 text-xs sm:text-sm mt-0.5 block">
+                        {design.gsm ? `${design.gsm} GSM Kraft` : parsedSpec.paperWeight || "220 GSM Kraft"}
+                      </span>
+                    </div>
 
-                {/* Client Notes & File Actions */}
-                <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="font-bold text-stone-900 mb-0.5">Customer Instructions:</p>
-                    <p className="text-stone-600 italic leading-relaxed">&ldquo;{parsedSpec.notes || design.description || "Specifications provided."}&rdquo;</p>
+                    <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200/80">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Handle Construction</span>
+                      <span className="font-bold text-stone-900 text-xs sm:text-sm mt-0.5 block truncate">
+                        {design.handle_type || parsedSpec.handleType || "Twisted Kraft Cord"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200/80">
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Print Finish</span>
+                      <span className="font-bold text-stone-900 text-xs sm:text-sm mt-0.5 block truncate">
+                        {design.print_finish || parsedSpec.printFinish || "Precision Soy Screenprint"}
+                      </span>
+                    </div>
                   </div>
 
-                  {design.file_path && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => toggleInlineFile(design.id, design.file_path)}
-                        disabled={loadingFileId === design.id}
-                        className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
-                      >
-                        {fileUrl ? <EyeOff size={14} className="text-stone-600" /> : <Eye size={14} className="text-[#1E3B2E]" />}
-                        <span>{fileUrl ? "Hide Dieline File" : "Inspect Dieline"}</span>
-                      </button>
+                  {/* D. Segmented Section Selector (Focus Switcher) */}
+                  <div className="flex items-center gap-2 border-b border-stone-200 pb-2 pt-2 overflow-x-auto">
+                    <button
+                      type="button"
+                      onClick={() => setActiveCardTabs((prev) => ({ ...prev, [design.id]: "overview" }))}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        activeTab === "overview"
+                          ? "bg-[#1E3B2E] text-white shadow-xs"
+                          : "text-stone-600 hover:bg-stone-100"
+                      }`}
+                    >
+                      <FileText size={13} />
+                      <span>1. Dieline Artwork & Notes</span>
+                      {design.file_path && (
+                        <span className="text-[10px] bg-white/20 text-white px-1.5 py-0.2 rounded-full">
+                          Asset Attached
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveCardTabs((prev) => ({ ...prev, [design.id]: "quote" }))}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        activeTab === "quote"
+                          ? "bg-[#1E3B2E] text-white shadow-xs"
+                          : "text-stone-600 hover:bg-stone-100"
+                      }`}
+                    >
+                      <DollarSign size={13} />
+                      <span>2. Pricing & Quotation Desk</span>
+                      {!design.quoted_price && (
+                        <span className="text-[10px] bg-amber-400 text-stone-900 font-bold px-1.5 py-0.2 rounded-full">
+                          Action
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveCardTabs((prev) => ({ ...prev, [design.id]: "production" }))}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        activeTab === "production"
+                          ? "bg-[#1E3B2E] text-white shadow-xs"
+                          : "text-stone-600 hover:bg-stone-100"
+                      }`}
+                    >
+                      <Layers size={13} />
+                      <span>3. Payment Verification & Factory Stages</span>
+                      {isPaymentSubmitted && !isPaymentVerified && (
+                        <span className="text-[10px] bg-blue-500 text-white font-bold px-1.5 py-0.2 rounded-full animate-pulse">
+                          Deposit Slip
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* ========================================================= */}
+                  {/* TAB 1: DIELINE ARTWORK & CUSTOMER INSTRUCTIONS */}
+                  {/* ========================================================= */}
+                  {activeTab === "overview" && (
+                    <div className="space-y-4 pt-1 animate-in fade-in">
+                      <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-stone-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1 flex-1">
+                          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Customer Instructions & Specifications</span>
+                          <p className="text-xs text-stone-800 italic leading-relaxed">
+                            &ldquo;{parsedSpec.notes || design.description || "No additional custom instructions provided by customer."}&rdquo;
+                          </p>
+                        </div>
+
+                        {design.file_path && (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => toggleInlineFile(design.id, design.file_path)}
+                              disabled={loadingFileId === design.id}
+                              className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-900 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                            >
+                              {fileUrl ? <EyeOff size={14} className="text-stone-500" /> : <Eye size={14} className="text-[#1E3B2E]" />}
+                              <span>{fileUrl ? "Collapse Viewer" : "Inspect Dieline File"}</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Embedded Preflight Dieline File Viewer */}
+                      {fileUrl && (
+                        <div className="p-4 bg-stone-900 rounded-3xl border border-stone-800 space-y-3">
+                          <div className="flex items-center justify-between text-xs text-stone-300">
+                            <span className="font-bold flex items-center gap-1.5">
+                              <FileText size={15} className="text-[#E0B382]" />
+                              <span>Preflight Artwork File ({design.file_path})</span>
+                            </span>
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              download
+                              className="text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1 font-bold text-xs"
+                            >
+                              <Download size={13} />
+                              <span>Download Original Artwork</span>
+                            </a>
+                          </div>
+
+                          <div className="w-full max-h-[520px] rounded-2xl overflow-hidden bg-black/70 flex items-center justify-center p-2 border border-stone-800">
+                            {isPdf ? (
+                              <iframe
+                                src={fileUrl}
+                                className="w-full h-[480px] rounded-xl border-0 bg-white"
+                                title="CAD Dieline PDF Preview"
+                              />
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={fileUrl}
+                                alt="CAD Dieline Preview"
+                                className="max-h-[480px] w-auto object-contain rounded-xl"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
 
-                {/* Inline Dieline File Viewer */}
-                {fileUrl && (
-                  <div className="p-4 bg-stone-900 rounded-2xl border border-stone-800 space-y-3">
-                    <div className="flex items-center justify-between text-xs text-stone-300">
-                      <span className="font-bold flex items-center gap-1.5">
-                        <FileText size={14} className="text-amber-400" />
-                        <span>Preflight Dieline File Preview ({design.file_path})</span>
-                      </span>
-                      <a
-                        href={fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        download
-                        className="text-emerald-400 hover:underline flex items-center gap-1 font-bold"
-                      >
-                        <Download size={13} />
-                        <span>Open Raw Asset</span>
-                      </a>
-                    </div>
+                  {/* ========================================================= */}
+                  {/* TAB 2: PRICING & QUOTATION DESK */}
+                  {/* ========================================================= */}
+                  {activeTab === "quote" && (
+                    <div className="p-5 rounded-2xl bg-[#FAF7F2] border border-stone-200/90 space-y-5 pt-4 animate-in fade-in">
+                      
+                      {/* Price, Bank Selector, and Workflow Status Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 block mb-1">
+                            Binding Quoted Price (ETB):
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              placeholder="e.g. 45000"
+                              value={quotePrices[design.id] ?? ""}
+                              onChange={(e) => setQuotePrices({ ...quotePrices, [design.id]: e.target.value })}
+                              className="w-full p-2.5 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 font-mono font-bold text-stone-900"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-stone-400">
+                              ETB
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-stone-400 mt-1 block">Full run total price including die-plate</span>
+                        </div>
 
-                    <div className="w-full max-h-[500px] rounded-xl overflow-hidden bg-black/60 flex items-center justify-center p-2">
-                      {isPdf ? (
-                        <iframe
-                          src={fileUrl}
-                          className="w-full h-[460px] rounded-lg border-0 bg-white"
-                          title="Dieline PDF Preview"
-                        />
-                      ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={fileUrl}
-                          alt="Dieline Design"
-                          className="max-h-[460px] w-auto object-contain rounded-lg"
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
+                        <div>
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 block mb-1">
+                            Designated Bank for Customer Deposit:
+                          </label>
+                          <select
+                            value={selectedBankAccounts[design.id] || (bankAccounts[0]?.id ?? "")}
+                            onChange={(e) => setSelectedBankAccounts({ ...selectedBankAccounts, [design.id]: e.target.value })}
+                            className="w-full p-2.5 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 font-semibold text-stone-900"
+                          >
+                            {bankAccounts.map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {b.bank_name} — {b.account_number}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="text-[10px] text-stone-400 mt-1 block">Included in customer quotation notification</span>
+                        </div>
 
-                {/* B2B BANK PAYMENT VERIFICATION MODULE */}
-                {isPaymentSubmitted && (
-                  <div className="p-5 bg-amber-50/80 rounded-2xl border border-amber-300 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 block mb-1">
+                            Manual Workflow Override:
+                          </label>
+                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                            {(["new", "reviewing", "quoted", "accepted", "declined"] as const).map((st) => (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => handleUpdateStatusAndQuote(design.id, st)}
+                                disabled={actionLoadingId === design.id}
+                                className={`px-2.5 py-1.5 rounded-full text-[10px] font-bold transition-all uppercase cursor-pointer ${
+                                  design.status === st
+                                    ? "bg-stone-900 text-white shadow-xs"
+                                    : "bg-white text-stone-700 border border-stone-300 hover:bg-stone-100"
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Technical Proposal Message to Customer */}
                       <div>
-                        <div className="flex items-center gap-2">
-                          <Building2 size={16} className="text-[#8C4B31]" />
-                          <h4 className="font-bold text-xs text-amber-950 uppercase tracking-wider">
-                            Customer Bank Transfer Payment Slip
-                          </h4>
-                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                            isPaymentVerified ? "bg-emerald-600 text-white" : "bg-amber-200 text-amber-900 animate-pulse"
-                          }`}>
-                            {isPaymentVerified ? "Deposit & QR Verified" : "QR & Deposit Verification Required"}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-amber-900 mt-1 flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center gap-1 font-bold">
-                            <QrCode size={13} className="text-[#1E3B2E]" />
-                            <span>QR / Slip Reference:</span>
-                          </span>
-                          <strong className="font-mono bg-white px-2 py-0.5 rounded border border-amber-300">
-                            {specsObj.qr_code_ref || specsObj.payment_ref || "None specified"}
-                          </strong>
-                          <span>• Submitted: {specsObj.payment_submitted_at ? new Date(specsObj.payment_submitted_at).toLocaleString() : "Recently"}</span>
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {specsObj.payment_proof_url && (
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-stone-700 block">
+                            Factory Engineering Proposal Note (Customer Sees This):
+                          </label>
                           <button
                             type="button"
-                            onClick={() => togglePaymentProof(design.id, specsObj.payment_proof_url)}
-                            className="px-3.5 py-2 rounded-xl bg-white hover:bg-stone-100 border border-amber-300 text-xs font-bold text-stone-800 flex items-center gap-1.5 cursor-pointer"
+                            onClick={() => {
+                              const priceVal = quotePrices[design.id] || "25000";
+                              const targetBank = bankAccounts.find(b => b.id === (selectedBankAccounts[design.id] || bankAccounts[0]?.id)) || bankAccounts[0];
+                              const bankText = targetBank ? ` to our official ${targetBank.bank_name} (Acc: ${targetBank.account_number})` : "";
+                              const autoText = `We can do it! We have analyzed your custom design dieline and can manufacture your run (${design.dimensions || "Bespoke Size"}, ${design.gsm || 220} GSM kraft, ${design.handle_type || "Twisted Kraft Cord"}, ${design.print_finish || "1-Color Soy"}). Binding quoted price: ${Number(priceVal).toLocaleString()} ETB. Please accept quote and transfer deposit${bankText} to initiate plate engraving.`;
+                              setAdminReplies({ ...adminReplies, [design.id]: autoText });
+                            }}
+                            className="text-[10px] font-bold text-[#8C4B31] hover:underline cursor-pointer flex items-center gap-1"
                           >
-                            <Eye size={13} className="text-[#8C4B31]" />
-                            <span>{paymentProofUrl ? "Hide Slip" : "View Bank / QR Slip"}</span>
+                            <Sparkles size={12} />
+                            <span>Auto-Fill &quot;We Can Do It!&quot; Proposal</span>
                           </button>
-                        )}
-
-                        {!isPaymentVerified && (
-                          <button
-                            type="button"
-                            disabled={actionLoadingId === design.id}
-                            onClick={() => handleVerifyPayment(design.id)}
-                            className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <CheckCircle2 size={14} />
-                            <span>Confirm QR & Start Production (&ldquo;It Is On Doing&rdquo;)</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Inline Payment Screenshot Preview */}
-                    {paymentProofUrl && (
-                      <div className="p-3 bg-stone-900 rounded-xl border border-stone-800 space-y-2">
-                        <div className="flex items-center justify-between text-[11px] text-stone-300">
-                          <span className="font-bold">Bank Payment Confirmation Slip</span>
-                          <a href={paymentProofUrl} target="_blank" rel="noreferrer" download className="text-emerald-400 hover:underline">
-                            Open Full Resolution
-                          </a>
                         </div>
-                        <div className="max-h-72 overflow-hidden flex items-center justify-center bg-black/60 rounded-lg p-2">
-                          <img src={paymentProofUrl} alt="Bank Deposit Slip" className="max-h-68 w-auto object-contain rounded" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* MANUFACTURING STAGES ADVANCEMENT CONTROLS */}
-                {design.status === "accepted" && (
-                  <div className="p-5 bg-white rounded-2xl border border-stone-200 shadow-xs space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Layers size={16} className="text-[#1E3B2E]" />
-                        <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider">
-                          Advance Live Factory Production Stage
-                        </h4>
-                      </div>
-                      <span className="text-[10px] font-bold text-[#8C4B31] bg-[#8C4B31]/10 px-2.5 py-0.5 rounded-full">
-                        Current: {currentStage}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      {MANUFACTURING_STAGES.map((st) => (
-                        <button
-                          key={st.id}
-                          type="button"
-                          onClick={() => handleAdvanceStage(design.id, st.id)}
-                          disabled={actionLoadingId === design.id}
-                          className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
-                            currentStage === st.id
-                              ? "bg-[#1E3B2E] text-white shadow-xs"
-                              : "bg-[#FAF7F2] text-stone-700 hover:bg-stone-200 border border-stone-300"
-                          }`}
-                        >
-                          {st.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-stone-100">
-                      {currentStage !== "ready_for_delivery" && currentStage !== "delivered" && (
-                        <button
-                          type="button"
-                          onClick={() => handleMarkFinished(design.id)}
-                          disabled={actionLoadingId === design.id}
-                          className="px-4 py-2 rounded-xl bg-[#8C4B31] hover:bg-[#6D3823] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Truck size={14} />
-                          <span>Mark Finished & Request Delivery Option</span>
-                        </button>
-                      )}
-
-                      {specsObj.delivery_preference && (
-                        <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 flex flex-wrap items-center gap-2">
-                          <Truck size={14} className="text-emerald-700" />
-                          <span>
-                            Client Delivery Preference: <strong>{specsObj.delivery_preference.option === "pickup" ? "Factory Pickup at Bole Showroom" : `Direct Van Delivery to ${specsObj.delivery_preference.address}`}</strong> (Phone: {specsObj.delivery_preference.phone})
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Admin Quotation, Feedback, and Status Controls */}
-                <div className="p-5 bg-[#FAF7F2] rounded-2xl border border-stone-200 space-y-4">
-                  
-                  {/* Top row: Quote Price, Designated Bank, & Status Selector */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
-                        Binding Quoted Price (ETB):
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          placeholder="e.g. 45000"
-                          value={quotePrices[design.id] ?? ""}
-                          onChange={(e) => setQuotePrices({ ...quotePrices, [design.id]: e.target.value })}
-                          className="w-full p-2.5 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 font-mono font-bold"
+                        <textarea
+                          rows={2}
+                          placeholder="E.g. We can produce 5,000 units on 220 GSM kraft with hot gold foil stamping. Estimated dispatch 10 business days."
+                          value={adminReplies[design.id] ?? ""}
+                          onChange={(e) => setAdminReplies({ ...adminReplies, [design.id]: e.target.value })}
+                          className="w-full p-3 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 font-medium"
                         />
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
-                        Designated Bank Account for Deposit:
-                      </label>
-                      <select
-                        value={selectedBankAccounts[design.id] || (bankAccounts[0]?.id ?? "")}
-                        onChange={(e) => setSelectedBankAccounts({ ...selectedBankAccounts, [design.id]: e.target.value })}
-                        className="w-full p-2.5 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30 font-semibold text-stone-900"
-                      >
-                        {bankAccounts.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.bank_name} — {b.account_number}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
-                        Workflow State:
-                      </label>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {(["new", "reviewing", "quoted", "accepted", "declined"] as const).map((st) => (
+                      {/* Action Submission Buttons */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-stone-200">
+                        <div className="flex flex-wrap items-center gap-2.5">
                           <button
-                            key={st}
-                            type="button"
-                            onClick={() => handleUpdateStatusAndQuote(design.id, st)}
-                            disabled={actionLoadingId === design.id}
-                            className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold transition-all uppercase cursor-pointer ${
-                              design.status === st
-                                ? "bg-stone-900 text-white shadow-xs"
-                                : "bg-white text-stone-700 border border-stone-300 hover:bg-stone-100"
-                            }`}
+                            onClick={() => handleAcceptAndQuote(design.id)}
+                            disabled={actionLoadingId === design.id || !quotePrices[design.id]}
+                            className="px-5 py-2.5 rounded-xl bg-[#1E3B2E] hover:bg-[#8C4B31] disabled:opacity-40 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer"
                           >
-                            {st}
+                            <CheckCircle2 size={15} />
+                            <span>Accept Design (&ldquo;We Can Do It!&rdquo;) & Send Quote</span>
                           </button>
-                        ))}
+
+                          <button
+                            onClick={() => handleUpdateStatusAndQuote(design.id)}
+                            disabled={actionLoadingId === design.id}
+                            className="px-4 py-2.5 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Check size={14} />
+                            <span>Save Reply & Price Only</span>
+                          </button>
+                        </div>
+
+                        {/* Order Conversion Button */}
+                        <div>
+                          {design.linked_order_id ? (
+                            <Link
+                              href="/admin/orders"
+                              className="px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-bold transition-all flex items-center gap-1.5"
+                            >
+                              <ShoppingBag size={14} className="text-emerald-700" />
+                              <span>View Converted Order (#{design.linked_order_id.substring(0, 8)})</span>
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={() => handleCreateOrderFromDesign(design.id)}
+                              disabled={actionLoadingId === design.id || !design.quoted_price}
+                              className="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-40 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                              title={!design.quoted_price ? "Enter a quoted price before converting to order" : ""}
+                            >
+                              <ShoppingBag size={14} />
+                              <span>Generate Factory Order</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Admin Reply Note to Customer */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block">
-                        Factory Technical Reply / Quotation Note (Customer Notified):
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const priceVal = quotePrices[design.id] || "25000";
-                          const targetBank = bankAccounts.find(b => b.id === (selectedBankAccounts[design.id] || bankAccounts[0]?.id)) || bankAccounts[0];
-                          const bankText = targetBank ? ` to our official ${targetBank.bank_name} (Acc: ${targetBank.account_number})` : "";
-                          const autoText = `We can do it! We have analyzed your custom design dieline and can manufacture your run (${design.dimensions || "Bespoke Size"}, ${design.gsm || 220} GSM kraft, ${design.handle_type || "Twisted Kraft Cord"}, ${design.print_finish || "1-Color Soy"}). Binding quoted price: ${Number(priceVal).toLocaleString()} ETB. Please accept quote and transfer deposit${bankText} to initiate plate engraving.`;
-                          setAdminReplies({ ...adminReplies, [design.id]: autoText });
-                        }}
-                        className="text-[10px] font-bold text-[#8C4B31] hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        <Sparkles size={11} />
-                        <span>Auto-Fill &quot;We Can Do It!&quot; Proposal</span>
-                      </button>
                     </div>
-                    <textarea
-                      rows={2}
-                      placeholder="E.g. We can produce 5,000 units on 220 GSM kraft with hot gold foil stamping. Estimated dispatch 10 business days."
-                      value={adminReplies[design.id] ?? ""}
-                      onChange={(e) => setAdminReplies({ ...adminReplies, [design.id]: e.target.value })}
-                      className="w-full p-2.5 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C4B31]/30"
-                    />
-                  </div>
+                  )}
 
-                  {/* Actions Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-stone-200">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={() => handleAcceptAndQuote(design.id)}
-                        disabled={actionLoadingId === design.id || !quotePrices[design.id]}
-                        className="px-5 py-2.5 rounded-xl bg-[#1E3B2E] hover:bg-[#152a21] disabled:opacity-40 text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <CheckCircle2 size={14} />
-                        <span>Accept Design (&ldquo;We Can Do It!&rdquo;) & Send Quote</span>
-                      </button>
+                  {/* ========================================================= */}
+                  {/* TAB 3: PAYMENT VERIFICATION & PRODUCTION TELEMETRY */}
+                  {/* ========================================================= */}
+                  {activeTab === "production" && (
+                    <div className="space-y-5 pt-1 animate-in fade-in">
+                      
+                      {/* B2B Customer Bank Transfer Proof Module */}
+                      <div className={`p-5 rounded-2xl border space-y-4 ${
+                        isPaymentSubmitted ? "bg-amber-50/70 border-amber-300" : "bg-stone-50 border-stone-200"
+                      }`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Building2 size={16} className="text-[#8C4B31]" />
+                              <h4 className="font-bold text-xs text-stone-900 uppercase tracking-wider">
+                                Customer Bank Transfer & QR Deposit Slip
+                              </h4>
+                              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                                isPaymentVerified 
+                                  ? "bg-emerald-600 text-white" 
+                                  : isPaymentSubmitted 
+                                  ? "bg-amber-400 text-stone-900 animate-pulse font-extrabold"
+                                  : "bg-stone-200 text-stone-600"
+                              }`}>
+                                {isPaymentVerified 
+                                  ? "Deposit & QR Confirmed" 
+                                  : isPaymentSubmitted 
+                                  ? "Deposit Verification Required" 
+                                  : "Awaiting Customer Deposit"}
+                              </span>
+                            </div>
 
-                      <button
-                        onClick={() => handleUpdateStatusAndQuote(design.id)}
-                        disabled={actionLoadingId === design.id}
-                        className="px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Check size={14} />
-                        <span>Save Status / Reply Only</span>
-                      </button>
+                            <p className="text-xs text-stone-600 mt-1 flex flex-wrap items-center gap-2">
+                              <span className="font-bold">Slip / QR Reference:</span>
+                              <strong className="font-mono bg-white px-2 py-0.5 rounded border border-stone-300 text-stone-900">
+                                {specsObj.qr_code_ref || specsObj.payment_ref || "None entered"}
+                              </strong>
+                              <span>• Submitted: {specsObj.payment_submitted_at ? new Date(specsObj.payment_submitted_at).toLocaleString() : "Pending"}</span>
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {specsObj.payment_proof_url && (
+                              <button
+                                type="button"
+                                onClick={() => togglePaymentProof(design.id, specsObj.payment_proof_url)}
+                                className="px-3.5 py-2 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-xs font-bold text-stone-800 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                              >
+                                <Eye size={13} className="text-[#8C4B31]" />
+                                <span>{paymentProofUrl ? "Collapse Slip" : "Inspect Slip Image"}</span>
+                              </button>
+                            )}
+
+                            {!isPaymentVerified && isPaymentSubmitted && (
+                              <button
+                                type="button"
+                                disabled={actionLoadingId === design.id}
+                                onClick={() => handleVerifyPayment(design.id)}
+                                className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <CheckCircle2 size={14} />
+                                <span>Confirm Payment & Start (&ldquo;It Is On Doing&rdquo;)</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Payment Screenshot Preview */}
+                        {paymentProofUrl && (
+                          <div className="p-3 bg-stone-900 rounded-2xl border border-stone-800 space-y-2">
+                            <div className="flex items-center justify-between text-[11px] text-stone-300">
+                              <span className="font-bold">Bank Deposit Screenshot / QR Receipt</span>
+                              <a href={paymentProofUrl} target="_blank" rel="noreferrer" download className="text-emerald-400 hover:underline">
+                                Open Original File
+                              </a>
+                            </div>
+                            <div className="max-h-80 overflow-hidden flex items-center justify-center bg-black/60 rounded-xl p-2">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={paymentProofUrl} alt="Bank Deposit Slip" className="max-h-76 w-auto object-contain rounded-lg" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 6-Stage Live Manufacturing Stepper */}
+                      <div className="p-5 bg-white rounded-2xl border border-stone-200/90 shadow-xs space-y-4">
+                        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                          <div className="flex items-center gap-2">
+                            <Layers size={16} className="text-[#1E3B2E]" />
+                            <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider">
+                              Live Factory Production Stage Tracker
+                            </h4>
+                          </div>
+                          <span className="text-[11px] font-bold text-[#8C4B31] bg-[#8C4B31]/10 px-3 py-0.5 rounded-full">
+                            Current Stage: {currentStage}
+                          </span>
+                        </div>
+
+                        {/* Interactive Stage Stepper Chips */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                          {MANUFACTURING_STAGES.map((st, idx) => {
+                            const isCurrent = currentStage === st.id;
+                            return (
+                              <button
+                                key={st.id}
+                                type="button"
+                                onClick={() => handleAdvanceStage(design.id, st.id)}
+                                disabled={actionLoadingId === design.id}
+                                className={`p-2.5 rounded-2xl text-left border text-xs transition-all cursor-pointer flex flex-col justify-between ${
+                                  isCurrent
+                                    ? "bg-[#1E3B2E] text-white border-[#1E3B2E] shadow-sm font-bold ring-2 ring-[#1E3B2E]/20"
+                                    : "bg-[#FAF7F2] hover:bg-stone-100 text-stone-700 border-stone-200"
+                                }`}
+                              >
+                                <span className="text-[10px] font-mono opacity-60 block">Phase {idx + 1}</span>
+                                <span className="font-bold text-[11px] leading-tight mt-1">{st.label.replace(/^\d+\.\s*/, "")}</span>
+                                {isCurrent && (
+                                  <span className="text-[9px] bg-emerald-500 text-white font-bold px-1.5 py-0.2 rounded mt-2 self-start">
+                                    Active Now
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Completion and Delivery Preference */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-stone-100">
+                          {currentStage !== "ready_for_delivery" && currentStage !== "delivered" && (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkFinished(design.id)}
+                              disabled={actionLoadingId === design.id}
+                              className="px-4 py-2.5 rounded-xl bg-[#8C4B31] hover:bg-[#6D3823] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Truck size={14} />
+                              <span>Mark Finished & QC Approved</span>
+                            </button>
+                          )}
+
+                          {specsObj.delivery_preference ? (
+                            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 flex flex-wrap items-center gap-2">
+                              <Truck size={14} className="text-emerald-700" />
+                              <span>
+                                Client Delivery Choice: <strong>{specsObj.delivery_preference.option === "pickup" ? "Factory Pickup at Bole Showroom" : `Direct Van Delivery to ${specsObj.delivery_preference.address}`}</strong> (Phone: {specsObj.delivery_preference.phone})
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-stone-400">
+                              Customer will choose delivery option once QC approved.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
                     </div>
-
-                    {/* Create Order From Design Button */}
-                    <div className="flex items-center gap-2">
-                      {design.linked_order_id ? (
-                        <Link
-                          href="/admin/orders"
-                          className="px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-colors flex items-center gap-1.5 border border-stone-300"
-                        >
-                          <ShoppingBag size={14} className="text-emerald-700" />
-                          <span>View Converted Order (#{design.linked_order_id.substring(0, 8)})</span>
-                        </Link>
-                      ) : (
-                        <button
-                          onClick={() => handleCreateOrderFromDesign(design.id)}
-                          disabled={actionLoadingId === design.id || !design.quoted_price}
-                          className="px-5 py-2.5 rounded-xl bg-[#1E3B2E] hover:bg-emerald-900 disabled:opacity-40 text-white text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
-                          title={!design.quoted_price ? "Enter a quoted price before converting to order" : ""}
-                        >
-                          <ShoppingBag size={14} />
-                          <span>Create Order from Design</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  )}
 
                 </div>
 

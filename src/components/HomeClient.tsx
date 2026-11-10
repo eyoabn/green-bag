@@ -13,6 +13,7 @@ import {
   CheckCircle2, 
   Video, 
   Calendar,
+  Clock,
   Sparkles,
   MapPin,
   Phone,
@@ -100,10 +101,10 @@ export default function HomeClient({
       })
       .catch(() => {});
 
-    fetch("/api/products?featured=true&pageSize=6", { cache: "no-store" })
+    fetch("/api/products?pageSize=6", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
-        if (data?.products && Array.isArray(data.products)) {
+        if (data?.products && Array.isArray(data.products) && data.products.length > 0) {
           setFeaturedProducts(data.products);
         }
       })
@@ -529,123 +530,315 @@ export default function HomeClient({
       </div>
 
       {/* 3. HOW LEARNING WORKS (ACADEMY & WORKSHOPS) */}
-      <section className="py-16 bg-white border-y border-stone-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+      <section className="py-20 bg-[#FAF7F2] border-y border-stone-300/80 relative overflow-hidden">
+        {/* Subtle decorative background blur */}
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-[#8C4B31]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-[#1E3B2E]/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
+          
+          {/* Section Heading */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
-              <span className="text-xs font-bold tracking-widest text-[#8C4B31] uppercase">
-                {t.academy_badge}
-              </span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mt-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8C4B31]/10 border border-[#8C4B31]/20 text-[#8C4B31] text-xs font-bold uppercase tracking-widest mb-3">
+                <Sparkles size={13} />
+                <span>{t.academy_badge}</span>
+              </div>
+              <h2 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900 tracking-tight">
                 {t.academy_heading}
               </h2>
+              <p className="text-stone-600 text-sm sm:text-base mt-2 max-w-2xl leading-relaxed">
+                {lang === "am" 
+                  ? "በአዲስ አበባ ዋናው ፋብሪካችን ውስጥ ከዋና የእጅ ጥበብ ባለሙያዎች ጋር ይስሩ ወይም በዓለም ዙሪያ በሚተላለፍ የቀጥታ ስርጭት ስልጠና ይሳተፉ።"
+                  : "Empowering Ethiopian makers, retail entrepreneurs, and global designers with hands-on studio apprenticeships in Addis Ababa and real-time interactive masterclasses streaming worldwide."}
+              </p>
             </div>
 
             <Link 
               href="/learn/schedule" 
-              className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
+              className="inline-flex items-center gap-2 text-xs font-bold text-white bg-[#1E3B2E] hover:bg-[#8C4B31] px-5 py-3 rounded-full transition-all shadow-sm hover:shadow-md self-start md:self-auto shrink-0"
             >
               <span>{t.catalog_workshops}</span>
               <ArrowRight size={14} />
             </Link>
           </div>
 
-          {/* 2 Formats: In-Person vs Live Online */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            <div className="app-card border-stone-200">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8C4B31]/10 text-[#8C4B31] text-xs font-bold mb-3">
-                <MapPin size={13} />
-                <span>{lang === "am" ? "የአዲስ አበባ ስቱዲዮ (በአካል)" : "In-Person Addis Ababa Studio"}</span>
+          {/* Desktop Rich Editorial 2-Column Tracks */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-14">
+            
+            {/* Track 1: In-Person Addis Ababa Studio */}
+            <div className="group rounded-3xl bg-white border border-stone-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-stone-300 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                {/* Visual Header with Real Studio Photography */}
+                <div className="relative h-60 w-full overflow-hidden bg-stone-200">
+                  <Image
+                    src="/images/photo_2_2026-09-05_00-36-02.jpg"
+                    alt="Artisans at work in Addis Ababa studio"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-stone-950/20 to-transparent" />
+                  
+                  {/* Floating Badges */}
+                  <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8C4B31] text-white text-[10px] font-bold uppercase tracking-wider shadow-md">
+                      <MapPin size={11} />
+                      <span>{lang === "am" ? "የአዲስ አበባ ስቱዲዮ" : "Bole Studio • Addis Ababa"}</span>
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-xs text-stone-900 text-[10px] font-bold shadow-xs">
+                      {lang === "am" ? "ሙሉ ቁሳቁስ ተዘጋጅቷል" : "All Materials Included"}
+                    </span>
+                  </div>
+
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <span className="text-[11px] font-bold text-[#E0B382] uppercase tracking-wider block mb-0.5">
+                      {lang === "am" ? "በአካል ስልጠና" : "Physical Studio Apprenticeship"}
+                    </span>
+                    <h3 className="font-serif text-2xl font-bold text-white drop-shadow-xs">
+                      {lang === "am" ? "የእጅ ሙያ ስልጠና" : "Hands-On Craft Apprenticeship"}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Description & Syllabus Highlights */}
+                <div className="p-6 sm:p-8 space-y-4">
+                  <p className="text-stone-600 text-xs sm:text-sm leading-relaxed">
+                    {lang === "am" 
+                      ? "በቦሌ ክፍለ ከተማ ከሚገኘው የዕደ-ጥበብ ባለሙያዎቻችን ጋር አብረው ይስሩ። የወረቀት መቁረጥ፣ ማጠፍ፣ የታችኛውን ክፍል ማጠናከር እና የማሸጊያ ሳጥን ዲዛይን ይማሩ።" 
+                      : "Work alongside veteran master artisans inside our working plant in Bole Sub-City. Master tactile creasing, rotary scoring, heavy-duty bottom gusset reinforcement, and twisted cord handle attachment."}
+                  </p>
+
+                  <div className="space-y-2 pt-2 border-t border-stone-100">
+                    <div className="flex items-center gap-2.5 text-xs text-stone-700 font-medium">
+                      <CheckCircle2 size={15} className="text-[#8C4B31] shrink-0" />
+                      <span>{lang === "am" ? "በእጅዎ የሰሩትን 20 ቦርሳዎች ይዘው ይሄዳሉ" : "Build and take home 20+ custom boutique bags made by your own hands"}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-xs text-stone-700 font-medium">
+                      <CheckCircle2 size={15} className="text-[#8C4B31] shrink-0" />
+                      <span>{lang === "am" ? "የወረቀት መቁረጫ እና ማጠፊያ ማሽኖችን መጠቀም" : "Hands-on instruction on industrial rotary slitting and die-cutting tooling"}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-xs text-stone-700 font-medium">
+                      <CheckCircle2 size={15} className="text-[#8C4B31] shrink-0" />
+                      <span>{lang === "am" ? "የእደ-ጥበብ ሰርተፍኬት ይሰጣል" : "Official Ethiopian Packaging Guild Certificate of Craftsmanship"}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">
-                {lang === "am" ? "የእጅ ሙያ ስልጠና" : "Hands-On Apprenticeship"}
-              </h3>
-              <p className="text-xs text-stone-600 leading-relaxed mb-4">
-                {lang === "am" 
-                  ? "በቦሌ ክፍለ ከተማ ከሚገኘው የዕደ-ጥበብ ባለሙያዎቻችን ጋር አብረው ይስሩ። የወረቀት መቁረጥ፣ ማጠፍ፣ የታችኛውን ክፍል ማጠናከር እና የማሸጊያ ሳጥን ዲዛይን ይማሩ። ሁሉም ቁሳቁሶች ተዘጋጅተዋል።" 
-                  : "Work alongside master artisans inside our plant in Bole Sub-City. Learn paper cutting, scoring, bottom reinforcement, cord handle attachment, and box die-making. All materials included."}
-              </p>
-              <Link href="/learn/schedule" className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1">
-                {lang === "am" ? "የስቱዲዮ ቀናትን ይመልከቱ" : "View Studio Dates"} <ArrowRight size={13} />
-              </Link>
+
+              {/* Card Footer Link */}
+              <div className="px-6 sm:px-8 pb-6 sm:pb-8 pt-2">
+                <Link 
+                  href="/learn/schedule" 
+                  className="w-full py-3 px-5 rounded-2xl bg-stone-100 hover:bg-[#8C4B31] text-stone-800 hover:text-white text-xs font-bold transition-all flex items-center justify-between group-hover:bg-[#8C4B31] group-hover:text-white"
+                >
+                  <span>{lang === "am" ? "የስቱዲዮ ቀናትን ይመልከቱ" : "View In-Person Studio Schedule"}</span>
+                  <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
             </div>
 
-            <div className="app-card border-stone-200">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold mb-3">
-                <Video size={13} />
-                <span>{lang === "am" ? "በቀጥታ ስርጭት (LiveKit)" : "LiveKit Interactive Online"}</span>
+            {/* Track 2: LiveKit Interactive WebRTC Masterclass */}
+            <div className="group rounded-3xl bg-white border border-stone-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-stone-300 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                {/* Visual Header with Real Workshop Setup */}
+                <div className="relative h-60 w-full overflow-hidden bg-stone-200">
+                  <Image
+                    src="/images/photo_1_2026-09-05_00-36-02.jpg"
+                    alt="LiveKit interactive workshop broadcast"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-stone-950/20 to-transparent" />
+                  
+                  {/* Floating Badges */}
+                  <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E] text-[#E0B382] text-[10px] font-bold uppercase tracking-wider shadow-md border border-[#E0B382]/30">
+                      <Video size={11} className="text-emerald-400 animate-pulse" />
+                      <span>{lang === "am" ? "በቀጥታ ስርጭት" : "LiveKit WebRTC HD Stream"}</span>
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-xs text-stone-900 text-[10px] font-bold shadow-xs">
+                      {lang === "am" ? "የሁለትዮሽ ድምፅና ምስል" : "Live 2-Way Audio & Video"}
+                    </span>
+                  </div>
+
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <span className="text-[11px] font-bold text-[#D7A977] uppercase tracking-wider block mb-0.5">
+                      {lang === "am" ? "የቀጥታ ስርጭት ማስተርክላስ" : "Global Interactive Video Classroom"}
+                    </span>
+                    <h3 className="font-serif text-2xl font-bold text-white drop-shadow-xs">
+                      {lang === "am" ? "የቀጥታ ስርጭት ማስተርክላስ" : "Real-Time Masterclasses"}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Description & Syllabus Highlights */}
+                <div className="p-6 sm:p-8 space-y-4">
+                  <p className="text-stone-600 text-xs sm:text-sm leading-relaxed">
+                    {lang === "am"
+                      ? "በዝቅተኛ መዘግየት ባለው LiveKit WebRTC የሚሰራ የቀጥታ ቪዲዮ ክፍል። ጥያቄዎችን በቅጽበት ይጠይቁ፣ ከአስተማሪው ጋር ይነጋገሩ እና ሲያጠናቅቁ ዲጂታል ሰርተፍኬት ይቀበሉ።"
+                      : "Interactive digital video masterclasses powered by sub-second latency LiveKit WebRTC. Ask questions in real time, unmute to speak with master instructors, and inspect CAD dieline vector geometry from your laptop."}
+                  </p>
+
+                  <div className="space-y-2 pt-2 border-t border-stone-100">
+                    <div className="flex items-center gap-2.5 text-xs text-stone-700 font-medium">
+                      <CheckCircle2 size={15} className="text-[#1E3B2E] shrink-0" />
+                      <span>{lang === "am" ? "የቀጥታ ጥያቄ እና መልስ ከመምህሩ ጋር" : "Live two-way microphone Q&A and multi-angle camera feeds"}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-xs text-stone-700 font-medium">
+                      <CheckCircle2 size={15} className="text-[#1E3B2E] shrink-0" />
+                      <span>{lang === "am" ? "የሚወርዱ የዲዛይን ፋይሎች (CAD/PDF)" : "Downloadable production dielines, vector dieline guides, and cutting templates"}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-xs text-stone-700 font-medium">
+                      <CheckCircle2 size={15} className="text-[#1E3B2E] shrink-0" />
+                      <span>{lang === "am" ? "የዲጂታል ሰርተፍኬት" : "Digital verification badge & verifiable online completion credential"}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">
-                {lang === "am" ? "የቀጥታ ስርጭት ማስተርክላስ" : "Real-Time Global Masterclasses"}
-              </h3>
-              <p className="text-xs text-stone-600 leading-relaxed mb-4">
-                {lang === "am"
-                  ? "በዝቅተኛ መዘግየት ባለው LiveKit WebRTC የሚሰራ የቀጥታ ቪዲዮ ክፍል። ጥያቄዎችን በቅጽበት ይጠይቁ፣ ከአስተማሪው ጋር ይነጋገሩ እና ሲያጠናቅቁ ዲጂታል ሰርተፍኬት ይቀበሉ።"
-                  : "Interactive video classrooms powered by low-latency LiveKit WebRTC. Ask questions in real time, unmute to speak with the teacher, and receive digital certification upon completion."}
-              </p>
-              <Link href="/learn/schedule" className="text-xs font-bold text-[#1E3B2E] hover:underline inline-flex items-center gap-1">
-                {lang === "am" ? "የቀጥታ ስርጭቶችን ይመልከቱ" : "View Live Streams"} <ArrowRight size={13} />
-              </Link>
+
+              {/* Card Footer Link */}
+              <div className="px-6 sm:px-8 pb-6 sm:pb-8 pt-2">
+                <Link 
+                  href="/learn/schedule" 
+                  className="w-full py-3 px-5 rounded-2xl bg-stone-100 hover:bg-[#1E3B2E] text-stone-800 hover:text-white text-xs font-bold transition-all flex items-center justify-between group-hover:bg-[#1E3B2E] group-hover:text-white"
+                >
+                  <span>{lang === "am" ? "የቀጥታ ስርጭቶችን ይመልከቱ" : "View Live Stream Class Dates"}</span>
+                  <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
             </div>
+
           </div>
 
-          {/* Upcoming Class Sessions */}
+          {/* Upcoming Class Sessions Schedule Board */}
           {(cmsContent?.classes_section_visible !== false) && (
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider">
-                  {lang === "am" ? t.academy_upcoming_title : (cmsContent?.classes_section_title || "Upcoming Classes Ready for Registration")}
-                </h4>
-                {cmsContent?.classes_section_sub && (
-                  <p className="text-xs text-stone-500 mt-1">
-                    {cmsContent.classes_section_sub}
-                  </p>
-                )}
+            <div className="bg-white rounded-3xl border border-stone-200/90 p-6 sm:p-10 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-bold text-stone-500 uppercase tracking-wider font-mono">
+                      {lang === "am" ? "የቀን መቁጠሪያ" : "Open Registration Calendar"}
+                    </span>
+                  </div>
+                  <h3 className="font-serif text-2xl font-bold text-stone-900 mt-1">
+                    {lang === "am" ? t.academy_upcoming_title : (cmsContent?.classes_section_title || "Upcoming Studio & Virtual Masterclasses")}
+                  </h3>
+                  {cmsContent?.classes_section_sub && (
+                    <p className="text-xs text-stone-500 mt-1">
+                      {cmsContent.classes_section_sub}
+                    </p>
+                  )}
+                </div>
+
+                <Link
+                  href="/learn/schedule"
+                  className="text-xs font-bold text-[#8C4B31] hover:underline inline-flex items-center gap-1 self-start sm:self-auto"
+                >
+                  <span>{lang === "am" ? "ሁሉንም ቀናት ይመልከቱ" : "Full Schedule & Calendar"}</span>
+                  <ArrowRight size={13} />
+                </Link>
               </div>
 
               {workshops.length > 0 ? (
-                workshops.map((session) => {
-                  const isLive = session.type === "live";
-                  const dateStr = session.starts_at 
-                    ? new Date(session.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                    : "Upcoming";
+                <div className="space-y-3">
+                  {workshops.map((session) => {
+                    const isLive = session.type === "live";
+                    const startDateObj = session.starts_at ? new Date(session.starts_at) : null;
+                    const monthStr = startDateObj ? startDateObj.toLocaleDateString("en-US", { month: "short" }) : "TBA";
+                    const dayStr = startDateObj ? startDateObj.toLocaleDateString("en-US", { day: "numeric" }) : "--";
+                    const timeStr = startDateObj ? startDateObj.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
 
-                  return (
-                    <div key={session.id} className="app-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            isLive ? "bg-[#1E3B2E] text-white" : "bg-[#8C4B31] text-white"
-                          }`}>
-                            {isLive ? (lang === "am" ? "በቀጥታ ስርጭት" : "LiveKit Online") : (lang === "am" ? "በአካል ስቱዲዮ" : "In-Person Studio")}
-                          </span>
-                          <span className="text-[11px] text-stone-500 flex items-center gap-1 font-medium">
-                            <Calendar size={12} /> {dateStr}
-                          </span>
+                    return (
+                      <div 
+                        key={session.id} 
+                        className="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] hover:bg-stone-50 border border-stone-200/80 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      >
+                        <div className="flex items-start sm:items-center gap-4">
+                          {/* Calendar date tile */}
+                          <div className="w-14 h-14 rounded-2xl bg-white border border-stone-300 shadow-2xs flex flex-col items-center justify-center shrink-0 text-center">
+                            <span className="text-[10px] font-bold text-[#8C4B31] uppercase tracking-wider leading-none">
+                              {monthStr}
+                            </span>
+                            <span className="font-serif text-xl font-bold text-stone-900 leading-none mt-0.5">
+                              {dayStr}
+                            </span>
+                          </div>
+
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                                isLive ? "bg-[#1E3B2E] text-[#E0B382]" : "bg-[#8C4B31] text-white"
+                              }`}>
+                                {isLive ? (lang === "am" ? "በቀጥታ ስርጭት" : "LiveKit Online") : (lang === "am" ? "በአካል ስቱዲዮ" : "Bole Plant Studio")}
+                              </span>
+                              {timeStr && (
+                                <span className="text-[11px] text-stone-500 font-mono flex items-center gap-1">
+                                  <Clock size={11} />
+                                  <span>{timeStr}</span>
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="font-serif text-base sm:text-lg font-bold text-stone-900">
+                              {session.title}
+                            </h4>
+                            <p className="text-xs text-stone-500 mt-0.5 flex items-center gap-1">
+                              <MapPin size={11} className="text-[#8C4B31]" />
+                              <span>{session.location || "Bole Sub-City, Addis Ababa"}</span>
+                            </p>
+                          </div>
                         </div>
-                        <h4 className="font-serif text-base font-bold text-stone-900">{session.title}</h4>
-                        <p className="text-xs text-stone-500 mt-0.5">{session.location || "Addis Ababa"}</p>
-                      </div>
 
-                      <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0">
-                        <span className="font-bold text-[#8C4B31] text-sm">{formatPrice(session.price || 0)}</span>
-                        <Link 
-                          href="/learn/schedule"
-                          className="btn-primary touch-target text-xs py-2 px-5"
-                        >
-                          {t.academy_register_btn}
-                        </Link>
+                        <div className="flex items-center justify-between sm:justify-end gap-5 border-t sm:border-t-0 pt-3 sm:pt-0">
+                          <div className="text-right">
+                            <span className="text-[10px] text-stone-400 block uppercase font-bold">Tuition Fee</span>
+                            <span className="font-serif font-bold text-[#8C4B31] text-base sm:text-lg">
+                              {formatPrice(session.price || 0)}
+                            </span>
+                          </div>
+                          
+                          <Link 
+                            href="/learn/schedule"
+                            className="btn-primary touch-target text-xs py-2.5 px-6 shadow-sm hover:shadow-md"
+                          >
+                            <span>{t.academy_register_btn}</span>
+                            <ArrowRight size={13} />
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </div>
               ) : (
-                <div className="app-card text-center py-6 text-xs text-stone-500">
-                  {lang === "am" ? "አዳዲስ ስልጠናዎች በቅርቡ ይፋ ይሆናሉ።" : "New sessions will be announced soon."}
+                <div className="text-center py-10 text-stone-500 text-xs">
+                  {lang === "am" ? "አዳዲስ ስልጠናዎች በቅርቡ ይፋ ይሆናሉ።" : "New masterclasses will be published soon. Contact factory desk for private bookings."}
                 </div>
               )}
+
+              {/* Guild Guarantee Banner */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-stone-100 text-xs text-stone-600">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] flex items-center justify-center font-bold text-xs shrink-0">
+                    ✓
+                  </div>
+                  <span><strong>Guild Certification:</strong> Recognized by Ethiopian packaging guilds</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#8C4B31]/10 text-[#8C4B31] flex items-center justify-center font-bold text-xs shrink-0">
+                    🌿
+                  </div>
+                  <span><strong>100% Eco-Kraft:</strong> Biodegradable materials & soy-based inks</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-800 flex items-center justify-center font-bold text-xs shrink-0">
+                    🏭
+                  </div>
+                  <span><strong>Factory Readiness:</strong> Direct pathways to commercial production</span>
+                </div>
+              </div>
             </div>
           )}
+
         </div>
       </section>
 

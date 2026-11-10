@@ -4,7 +4,12 @@ import { z } from "zod";
 import { requireRole } from "@/utils/roles";
 import { pool } from "@/utils/db";
 import { logAuditEvent } from "@/utils/audit";
-import { DEFAULT_DESIGN_PRICING } from "@/utils/designPricing";
+import { 
+  DEFAULT_DESIGN_PRICING, 
+  DEFAULT_STUDIO_CONFIG, 
+  mergeStudioConfig, 
+  extractDesignPricing 
+} from "@/utils/designPricing";
 
 const settingsSchema = z.object({
   company_name: z.string().min(2, "Company name must be at least 2 characters"),
@@ -25,6 +30,7 @@ const settingsSchema = z.object({
   settlement_days: z.number().int().min(1).max(30).optional(),
   homepage_content: z.record(z.string(), z.any()).optional(),
   design_pricing: z.record(z.string(), z.any()).optional(),
+  studio_config: z.record(z.string(), z.any()).optional(),
 });
 
 export const DEFAULT_HOMEPAGE_CMS = {
@@ -74,7 +80,7 @@ export const DEFAULT_HOMEPAGE_CMS = {
 export async function GET() {
   try {
     const res = await pool.query(`
-      SELECT id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, updated_at
+      SELECT id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, studio_config, updated_at
       FROM public.settings
       WHERE id = 'default' OR id = 'company'
       ORDER BY updated_at DESC
@@ -98,6 +104,7 @@ export async function GET() {
       tax_id: "ETH-TIN-2024-001",
       settlement_days: 3,
       homepage_content: {},
+      studio_config: null,
     };
 
     const rawContent = data.homepage_content || {};
@@ -108,7 +115,11 @@ export async function GET() {
         mergedHomepageContent[key] = val;
       }
     }
-    const designPricing = rawContent.design_pricing || DEFAULT_DESIGN_PRICING;
+
+    // Merge studio config (support both studio_config column and homepage_content.studio_config)
+    const rawStudioConfig = data.studio_config || rawContent.studio_config;
+    const studioConfig = mergeStudioConfig(rawStudioConfig);
+    const derivedPricing = extractDesignPricing(studioConfig);
 
     return NextResponse.json(
       {
@@ -116,7 +127,8 @@ export async function GET() {
         settings: {
           ...data,
           homepage_content: mergedHomepageContent,
-          design_pricing: designPricing,
+          studio_config: studioConfig,
+          design_pricing: rawContent.design_pricing || derivedPricing,
         },
       },
       {
@@ -142,17 +154,37 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: msg }, { status: 400 });
     }
 
-    const { company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, design_pricing } = parsed.data;
+    const { 
+      company_name, 
+      contact_phone, 
+      contact_email, 
+      address, 
+      social_links, 
+      tax_id, 
+      settlement_days, 
+      homepage_content, 
+      design_pricing,
+      studio_config 
+    } = parsed.data;
+
+    // Merge studio configuration if present
+    const cleanStudioConfig = studio_config ? mergeStudioConfig(studio_config) : undefined;
+    const derivedPricing = cleanStudioConfig ? extractDesignPricing(cleanStudioConfig) : design_pricing;
 
     const mergedContent = {
       ...(homepage_content || {}),
-      ...(design_pricing ? { design_pricing } : {}),
+      ...(derivedPricing ? { design_pricing: derivedPricing } : {}),
+      ...(cleanStudioConfig ? { studio_config: cleanStudioConfig } : {}),
     };
 
     const res = await pool.query(
       `
-      INSERT INTO public.settings (id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, updated_at)
-      VALUES ('default', $1, $2, $3, $4, $5::jsonb, $6, $7, $8::jsonb, NOW())
+      INSERT INTO public.settings (
+        id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, studio_config, updated_at
+      )
+      VALUES (
+        'default', $1, $2, $3, $4, $5::jsonb, $6, $7, $8::jsonb, $9::jsonb, NOW()
+      )
       ON CONFLICT (id) DO UPDATE SET
         company_name = EXCLUDED.company_name,
         contact_phone = EXCLUDED.contact_phone,
@@ -162,8 +194,9 @@ export async function PATCH(request: NextRequest) {
         tax_id = COALESCE(EXCLUDED.tax_id, public.settings.tax_id),
         settlement_days = COALESCE(EXCLUDED.settlement_days, public.settings.settlement_days),
         homepage_content = COALESCE(EXCLUDED.homepage_content, public.settings.homepage_content),
+        studio_config = COALESCE(EXCLUDED.studio_config, public.settings.studio_config),
         updated_at = NOW()
-      RETURNING id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, updated_at;
+      RETURNING id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, studio_config, updated_at;
     `,
       [
         company_name.trim(),
@@ -174,6 +207,7 @@ export async function PATCH(request: NextRequest) {
         tax_id?.trim() || "",
         settlement_days ?? 3,
         JSON.stringify(mergedContent),
+        cleanStudioConfig ? JSON.stringify(cleanStudioConfig) : null,
       ]
     );
 
@@ -183,7 +217,15 @@ export async function PATCH(request: NextRequest) {
     await pool.query(
       `
       UPDATE public.settings
-      SET company_name = $1, contact_phone = $2, contact_email = $3, address = $4, social_links = $5::jsonb, homepage_content = $6::jsonb, updated_at = NOW()
+      SET 
+        company_name = $1, 
+        contact_phone = $2, 
+        contact_email = $3, 
+        address = $4, 
+        social_links = $5::jsonb, 
+        homepage_content = $6::jsonb,
+        studio_config = $7::jsonb,
+        updated_at = NOW()
       WHERE id = 'company';
     `,
       [
@@ -192,7 +234,8 @@ export async function PATCH(request: NextRequest) {
         contact_email.trim(), 
         address.trim(), 
         JSON.stringify(social_links || {}),
-        JSON.stringify(mergedContent)
+        JSON.stringify(mergedContent),
+        cleanStudioConfig ? JSON.stringify(cleanStudioConfig) : null,
       ]
     );
 
@@ -208,6 +251,7 @@ export async function PATCH(request: NextRequest) {
         contact_email,
         address,
         social_links,
+        studio_updated: !!cleanStudioConfig,
       },
     });
 
@@ -217,11 +261,20 @@ export async function PATCH(request: NextRequest) {
       revalidatePath("/products");
       revalidatePath("/portfolio");
       revalidatePath("/catalog");
+      revalidatePath("/design-submission");
+      revalidatePath("/api/settings");
     } catch (e) {
       console.warn("Settings revalidation error:", e);
     }
 
-    return NextResponse.json({ success: true, settings: updated });
+    return NextResponse.json({ 
+      success: true, 
+      settings: {
+        ...updated,
+        studio_config: cleanStudioConfig || mergeStudioConfig(updated.studio_config),
+        design_pricing: derivedPricing,
+      } 
+    });
   } catch (err: any) {
     const status = err.status || 500;
     return NextResponse.json({ error: err.message || "Failed to update settings" }, { status });

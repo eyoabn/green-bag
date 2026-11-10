@@ -36,140 +36,36 @@ import {
 import { uploadFileSafely } from "@/utils/fileUpload";
 import { getCurrentUser } from "@/utils/auth";
 import StickyBottomBar from "@/components/StickyBottomBar";
-import { DEFAULT_DESIGN_PRICING, DesignPricingConfig } from "@/utils/designPricing";
+import { 
+  DEFAULT_DESIGN_PRICING, 
+  DEFAULT_STUDIO_CONFIG, 
+  DesignPricingConfig,
+  StudioConfig,
+  SizePresetConfig,
+  GsmOptionConfig,
+  HandleOptionConfig,
+  PrintOptionConfig,
+  PaperColorConfig,
+  QuantityTierConfig,
+  TurnaroundOptionConfig,
+  mergeStudioConfig
+} from "@/utils/designPricing";
 
-// Preset Bag Sizes
-interface SizePreset {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  gusset: number;
-  description: string;
-  category: string;
-}
+// Type Aliases for Backward Compatibility
+export type SizePreset = SizePresetConfig;
+export type QuantityOption = QuantityTierConfig;
+export type GsmOption = GsmOptionConfig;
+export type HandleOption = HandleOptionConfig;
+export type PrintOption = PrintOptionConfig;
+export type PaperColor = PaperColorConfig;
 
-const SIZE_PRESETS: SizePreset[] = [
-  {
-    id: "small-boutique",
-    name: "Small Boutique / Gift",
-    width: 20,
-    height: 24,
-    gusset: 8,
-    description: "Cosmetics, perfumes, jewelry, pharmacy & accessories",
-    category: "Boutique",
-  },
-  {
-    id: "medium-retail",
-    name: "Medium Retail Standard",
-    width: 26,
-    height: 32,
-    gusset: 10,
-    description: "Apparel, books, accessories, retail merchandise & gifts (Most Popular)",
-    category: "Retail",
-  },
-  {
-    id: "large-department",
-    name: "Large Department / Fashion",
-    width: 32,
-    height: 40,
-    gusset: 12,
-    description: "Bulky fashion, shoe boxes, winter clothing & department retail",
-    category: "Department",
-  },
-  {
-    id: "coffee-gusset",
-    name: "Specialty Coffee Gusset",
-    width: 24,
-    height: 28,
-    gusset: 10,
-    description: "250g / 500g / 1kg roasted coffee beans, tea & dry gourmet goods",
-    category: "Coffee",
-  },
-  {
-    id: "bakery-flat-bottom",
-    name: "Bakery & Food Flat-Bottom",
-    width: 26,
-    height: 22,
-    gusset: 16,
-    description: "Pastry boxes, takeaway meal containers, cakes & bakery goods",
-    category: "Bakery",
-  },
-];
-
-// Quantity Tiers
-interface QuantityOption {
-  value: string;
-  count: number;
-  label: string;
-  discountBadge?: string;
-  unitMultiplier: number;
-}
-
-const QUANTITY_OPTIONS: QuantityOption[] = [
-  { value: "500 pcs", count: 500, label: "500 pcs (Starter Batch)", unitMultiplier: 1.15 },
-  { value: "1,000 pcs", count: 1000, label: "1,000 pcs (Standard Run)", discountBadge: "Most Popular", unitMultiplier: 1.0 },
-  { value: "2,500 pcs", count: 2500, label: "2,500 pcs (Commercial Volume)", discountBadge: "8% Savings", unitMultiplier: 0.92 },
-  { value: "5,000 pcs", count: 5000, label: "5,000 pcs (Wholesale Enterprise)", discountBadge: "15% Savings", unitMultiplier: 0.85 },
-  { value: "10,000+ pcs", count: 10000, label: "10,000+ pcs (Industrial Scale)", discountBadge: "Direct Factory Tier", unitMultiplier: 0.78 },
-];
-
-// Paper GSM Options
-interface GsmOption {
-  value: number;
-  label: string;
-  description: string;
-  baseCost: number;
-}
-
-const GSM_OPTIONS: GsmOption[] = [
-  { value: 160, label: "160 GSM Light Kraft", description: "Eco-lightweight, ideal for bakeries, pharmacies & light gift bags", baseCost: 15.0 },
-  { value: 180, label: "180 GSM Standard Kraft", description: "Durable everyday retail kraft bag, balanced weight & tear-resistance", baseCost: 17.5 },
-  { value: 220, label: "220 GSM Reinforced Kraft", description: "Heavyweight kraft for coffee roasters, apparel & premium retail", baseCost: 20.0 },
-  { value: 250, label: "250 GSM Luxury Cardboard", description: "Rigid luxury matte board for high-end boutique & luxury gifts", baseCost: 24.0 },
-  { value: 280, label: "280 GSM Industrial Extra-Duty", description: "Maximum tensile strength for heavy gourmet goods & industrial items", baseCost: 27.5 },
-];
-
-// Handle Constructions
-interface HandleOption {
-  id: string;
-  name: string;
-  description: string;
-  costDelta: number;
-}
-
-const HANDLE_OPTIONS: HandleOption[] = [
-  { id: "Twisted Kraft Cord", name: "Twisted Kraft Paper Cord", description: "100% recyclable kraft cord, classic retail look", costDelta: 0 },
-  { id: "Woven Cotton Rope", name: "Woven Cotton Rope + Eyelets", description: "Soft luxurious grip with brass eyelet reinforcement", costDelta: 3.5 },
-  { id: "Flat-Fold Kraft", name: "Flat-Fold Kraft Handle", description: "Traditional grocery & bakery fold-in handle", costDelta: -0.5 },
-  { id: "Die-Cut Oval Handle", name: "Die-Cut Reinforced Handle", description: "Sleek punch-hole handle, modern minimalist profile", costDelta: -1.0 },
-  { id: "Luxury Satin Ribbon", name: "Luxury Satin Ribbon", description: "Silky premium ribbon for cosmetics & bridal retail", costDelta: 4.5 },
-  { id: "No Handles (Fold-Over)", name: "No Handle / Fold-Over Sack", description: "Bakery sack or coffee roll-down pouch", costDelta: -2.0 },
-];
-
-// Print Finishes
-interface PrintOption {
-  id: string;
-  name: string;
-  description: string;
-  costDelta: number;
-}
-
-const PRINT_OPTIONS: PrintOption[] = [
-  { id: "1-Color Soy Screenprint", name: "1-Color Soy Screenprint", description: "Minimalist eco-craft ink, sharp logo placement", costDelta: 0 },
-  { id: "2-Color Traditional Tibeb", name: "2-Color Traditional Ethiopian Tibeb", description: "Heritage border patterns + company logo in dual inks", costDelta: 2.5 },
-  { id: "Full-Color Process (CMYK)", name: "Full-Color CMYK Process", description: "Vibrant multi-colored photographic branding", costDelta: 4.0 },
-  { id: "Gold / Copper Foil Stamping", name: "Hot Metallic Foil Stamping (Gold/Bronze)", description: "Luxurious reflective metallic foil logo & accents", costDelta: 5.5 },
-  { id: "Debossed / Embossed 3D Logo", name: "Tactile Blind Debossing / Embossing", description: "3D raised or recessed tactile impression without ink", costDelta: 3.5 },
-  { id: "Spot UV Gloss Coating", name: "Spot UV Gloss Highlight", description: "High-gloss protective coating over matte kraft", costDelta: 3.0 },
-];
-
-// Paper Colors
-const PAPER_COLORS = [
-  { id: "Natural Brown Kraft", name: "Natural Brown Kraft", bgHex: "#C4A57B", borderHex: "#9C7E57", textClass: "text-[#5A412A]" },
-  { id: "Bleached White Kraft", name: "Bleached Pure White Kraft", bgHex: "#F5F3EF", borderHex: "#D8D4CC", textClass: "text-stone-800" },
-  { id: "Charcoal Black Kraft", name: "Charcoal Black Kraft", bgHex: "#353432", borderHex: "#1E1E1E", textClass: "text-stone-100" },
-];
+// Defaults provided as fallbacks
+export const SIZE_PRESETS = DEFAULT_STUDIO_CONFIG.presets;
+export const QUANTITY_OPTIONS = DEFAULT_STUDIO_CONFIG.quantity_tiers;
+export const GSM_OPTIONS = DEFAULT_STUDIO_CONFIG.gsm_options;
+export const HANDLE_OPTIONS = DEFAULT_STUDIO_CONFIG.handle_options;
+export const PRINT_OPTIONS = DEFAULT_STUDIO_CONFIG.print_options;
+export const PAPER_COLORS = DEFAULT_STUDIO_CONFIG.paper_colors;
 
 function GsmVisualCard({
   opt,
@@ -575,15 +471,32 @@ function DesignSubmissionForm() {
   const [paperColor, setPaperColor] = useState<string>("Natural Brown Kraft");
   const [hasBottomCard, setHasBottomCard] = useState<boolean>(true);
   const [hasFoodLining, setHasFoodLining] = useState<boolean>(false);
-  const [urgency, setUrgency] = useState<string>("Standard (7-10 Days)");
+  const [studioConfig, setStudioConfig] = useState<StudioConfig>(DEFAULT_STUDIO_CONFIG);
+  const [urgency, setUrgency] = useState<string>("Standard Production (7-10 Days)");
   const [pricingConfig, setPricingConfig] = useState<DesignPricingConfig>(DEFAULT_DESIGN_PRICING);
 
-  // Fetch admin configured pricing matrix
+  // Active configurations derived from studioConfig
+  const activePresets = useMemo(() => studioConfig.presets.filter((p) => p.enabled !== false), [studioConfig.presets]);
+  const activeGsmOptions = useMemo(() => studioConfig.gsm_options.filter((g) => g.enabled !== false), [studioConfig.gsm_options]);
+  const activeHandleOptions = useMemo(() => studioConfig.handle_options.filter((h) => h.enabled !== false), [studioConfig.handle_options]);
+  const activePrintOptions = useMemo(() => studioConfig.print_options.filter((p) => p.enabled !== false), [studioConfig.print_options]);
+  const activeColors = useMemo(() => studioConfig.paper_colors.filter((c) => c.enabled !== false), [studioConfig.paper_colors]);
+  const activeQuantities = useMemo(() => studioConfig.quantity_tiers.filter((q) => q.enabled !== false), [studioConfig.quantity_tiers]);
+  const activeTurnarounds = useMemo(() => studioConfig.turnaround_options.filter((t) => t.enabled !== false), [studioConfig.turnaround_options]);
+
+  // Fetch admin configured pricing matrix and studio options
   useEffect(() => {
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
-        if (data?.design_pricing) {
+        if (data?.settings?.studio_config) {
+          setStudioConfig(mergeStudioConfig(data.settings.studio_config));
+        } else if (data?.studio_config) {
+          setStudioConfig(mergeStudioConfig(data.studio_config));
+        }
+        if (data?.settings?.design_pricing) {
+          setPricingConfig(data.settings.design_pricing);
+        } else if (data?.design_pricing) {
           setPricingConfig(data.design_pricing);
         }
       })
@@ -642,7 +555,7 @@ function DesignSubmissionForm() {
   // If URL dimensions provided, match or set custom
   useEffect(() => {
     if (dimensionsParam) {
-      const matched = SIZE_PRESETS.find(
+      const matched = activePresets.find(
         (p) => `${p.width}cm × ${p.height}cm + ${p.gusset}cm`.toLowerCase() === dimensionsParam.toLowerCase() ||
                dimensionsParam.toLowerCase().includes(p.name.toLowerCase())
       );
@@ -653,7 +566,7 @@ function DesignSubmissionForm() {
         setIsCustomSize(true);
       }
     }
-  }, [dimensionsParam]);
+  }, [dimensionsParam, activePresets]);
 
   // Save draft whenever key fields change
   useEffect(() => {
@@ -679,52 +592,63 @@ function DesignSubmissionForm() {
     if (isCustomSize) {
       return `Custom: ${customWidth}cm W × ${customHeight}cm H + ${customGusset}cm Gusset`;
     }
-    const preset = SIZE_PRESETS.find((p) => p.id === selectedSizePreset) || SIZE_PRESETS[1];
+    const preset = activePresets.find((p) => p.id === selectedSizePreset) || activePresets[0] || studioConfig.presets[0];
     return `${preset.name} (${preset.width}cm × ${preset.height}cm + ${preset.gusset}cm)`;
-  }, [isCustomSize, selectedSizePreset, customWidth, customHeight, customGusset]);
+  }, [isCustomSize, selectedSizePreset, customWidth, customHeight, customGusset, activePresets, studioConfig.presets]);
 
   // Effective count for calculation
   const effectiveCount = useMemo(() => {
     if (isCustomQuantity) return Math.max(250, customQuantityNum);
-    const q = QUANTITY_OPTIONS.find((opt) => opt.value === quantity);
+    const q = activeQuantities.find((opt) => opt.value === quantity);
     return q ? q.count : 1000;
-  }, [isCustomQuantity, customQuantityNum, quantity]);
+  }, [isCustomQuantity, customQuantityNum, quantity, activeQuantities]);
 
   // Dynamic price calculation
   const { unitPriceEstimate, totalPriceEstimate } = useMemo(() => {
     const gsmKey = String(gsm);
     const gsmCfg = pricingConfig.gsm_rates[gsmKey];
-    const gsmCost = gsmCfg ? gsmCfg.baseCost : (GSM_OPTIONS.find((g) => g.value === gsm)?.baseCost ?? 18.5);
+    const gsmCost = gsmCfg ? gsmCfg.baseCost : (activeGsmOptions.find((g) => g.value === gsm)?.baseCost ?? 18.5);
 
     const handleCfg = pricingConfig.handle_rates[handleType];
-    const handleCost = handleCfg ? handleCfg.costDelta : (HANDLE_OPTIONS.find((h) => h.id === handleType)?.costDelta ?? 0);
+    const handleCost = handleCfg ? handleCfg.costDelta : (activeHandleOptions.find((h) => h.id === handleType)?.costDelta ?? 0);
 
     const printCfg = pricingConfig.print_rates[printFinish];
-    const printCost = printCfg ? printCfg.costDelta : (PRINT_OPTIONS.find((p) => p.id === printFinish)?.costDelta ?? 0);
+    const printCost = printCfg ? printCfg.costDelta : (activePrintOptions.find((p) => p.id === printFinish)?.costDelta ?? 0);
 
-    let base = gsmCost + handleCost + printCost;
-    if (paperColor === "Bleached White Kraft") base += 1.5;
-    if (paperColor === "Charcoal Black Kraft") base += 2.0;
+    const colorCfg = activeColors.find((c) => c.id === paperColor);
+    const colorCost = colorCfg ? colorCfg.surcharge : 0;
+
+    let base = gsmCost + handleCost + printCost + colorCost;
     if (hasBottomCard) base += 0.8;
     if (hasFoodLining) base += 1.2;
 
-    // Quantity multiplier
+    // Quantity multiplier from active tiers or fallback scale
     let multiplier = 1.0;
-    if (effectiveCount < 1000) multiplier = 1.18;
-    else if (effectiveCount >= 10000) multiplier = 0.76;
-    else if (effectiveCount >= 5000) multiplier = 0.84;
-    else if (effectiveCount >= 2500) multiplier = 0.91;
-    else multiplier = 1.0;
+    const matchedTier = activeQuantities.find((opt) => opt.value === quantity || opt.count === effectiveCount);
+    if (matchedTier) {
+      multiplier = matchedTier.unitMultiplier;
+    } else if (effectiveCount < 1000) {
+      multiplier = 1.18;
+    } else if (effectiveCount >= 10000) {
+      multiplier = 0.78;
+    } else if (effectiveCount >= 5000) {
+      multiplier = 0.85;
+    } else if (effectiveCount >= 2500) {
+      multiplier = 0.92;
+    }
 
-    // Urgency surcharge
-    if (urgency.includes("Express")) {
+    // Urgency surcharge from active turnaround options
+    const matchedTurnaround = activeTurnarounds.find((t) => urgency.includes(t.label) || urgency.includes(t.days) || urgency === t.id);
+    if (matchedTurnaround) {
+      base *= matchedTurnaround.multiplier;
+    } else if (urgency.includes("Express") || urgency.includes("Rush")) {
       base *= 1.15;
     }
 
     const unit = Math.round(base * multiplier * 10) / 10;
     const total = Math.round(unit * effectiveCount);
     return { unitPriceEstimate: unit, totalPriceEstimate: total };
-  }, [gsm, handleType, printFinish, paperColor, hasBottomCard, hasFoodLining, effectiveCount, urgency, pricingConfig]);
+  }, [gsm, handleType, printFinish, paperColor, hasBottomCard, hasFoodLining, effectiveCount, urgency, pricingConfig, activeGsmOptions, activeHandleOptions, activePrintOptions, activeColors, activeQuantities, activeTurnarounds]);
 
   const [copiedSpec, setCopiedSpec] = useState(false);
 
@@ -945,7 +869,7 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
     );
   }
 
-  const selectedColorMeta = PAPER_COLORS.find((c) => c.id === paperColor) || PAPER_COLORS[0];
+  const selectedColorMeta = activeColors.find((c) => c.id === paperColor) || activeColors[0] || studioConfig.paper_colors[0];
 
   return (
     <div className="min-h-screen pt-24 pb-32 md:pb-24 bg-[#F9F6F0]">
@@ -968,17 +892,17 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
           )}
         </div>
 
-        {/* Page Header */}
+        {/* Page Header (Controlled by Admin Settings) */}
         <div className="mb-8">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E3B2E]/10 text-[#1E3B2E] text-xs font-bold uppercase tracking-wider mb-2">
             <PenTool size={13} />
-            <span>Interactive Packaging Studio</span>
+            <span>{studioConfig.headings?.badge || "Industrial Packaging Customizer & Dieline Studio"}</span>
           </div>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900">
-            Custom Paper Bag Design Studio
+            {studioConfig.headings?.title || "Engineer Your Custom Eco-Kraft Packaging"}
           </h1>
           <p className="text-stone-600 text-sm mt-1 max-w-2xl leading-relaxed">
-            Select your exact manufacturing quantity, custom dimensions, paper grammage, handle style, and print finishes. Our Addis Ababa packaging engineers deliver free dielines and binding quotes within 24 hours.
+            {studioConfig.headings?.subtitle || "Direct-to-factory specification dielines, ISO-certified tensile strengths, and real-time wholesale pricing for Ethiopian enterprises."}
           </p>
         </div>
 
@@ -1216,7 +1140,7 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
 
               {!isCustomQuantity ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {QUANTITY_OPTIONS.map((opt) => (
+                  {activeQuantities.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
@@ -1291,7 +1215,7 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
 
               {!isCustomSize ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {SIZE_PRESETS.map((preset) => (
+                  {activePresets.map((preset) => (
                     <button
                       key={preset.id}
                       type="button"
@@ -1319,10 +1243,10 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
                       <label className="text-[11px] font-bold text-stone-700 block mb-1">Width (cm)</label>
                       <input
                         type="number"
-                        min={10}
-                        max={80}
+                        min={studioConfig.dimension_limits.minWidth}
+                        max={studioConfig.dimension_limits.maxWidth}
                         value={customWidth}
-                        onChange={(e) => setCustomWidth(parseInt(e.target.value, 10) || 10)}
+                        onChange={(e) => setCustomWidth(parseInt(e.target.value, 10) || studioConfig.dimension_limits.minWidth)}
                         className="form-input text-xs font-mono font-bold"
                       />
                     </div>
@@ -1330,10 +1254,10 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
                       <label className="text-[11px] font-bold text-stone-700 block mb-1">Height (cm)</label>
                       <input
                         type="number"
-                        min={10}
-                        max={100}
+                        min={studioConfig.dimension_limits.minHeight}
+                        max={studioConfig.dimension_limits.maxHeight}
                         value={customHeight}
-                        onChange={(e) => setCustomHeight(parseInt(e.target.value, 10) || 10)}
+                        onChange={(e) => setCustomHeight(parseInt(e.target.value, 10) || studioConfig.dimension_limits.minHeight)}
                         className="form-input text-xs font-mono font-bold"
                       />
                     </div>
@@ -1341,16 +1265,16 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
                       <label className="text-[11px] font-bold text-stone-700 block mb-1">Gusset Depth (cm)</label>
                       <input
                         type="number"
-                        min={4}
-                        max={40}
+                        min={studioConfig.dimension_limits.minGusset}
+                        max={studioConfig.dimension_limits.maxGusset}
                         value={customGusset}
-                        onChange={(e) => setCustomGusset(parseInt(e.target.value, 10) || 4)}
+                        onChange={(e) => setCustomGusset(parseInt(e.target.value, 10) || studioConfig.dimension_limits.minGusset)}
                         className="form-input text-xs font-mono font-bold"
                       />
                     </div>
                   </div>
                   <p className="text-[11px] text-stone-500">
-                    Bespoke dimensions: {customWidth} cm Width × {customHeight} cm Height + {customGusset} cm Bottom Gusset. Our engineers will create custom cutting dies matching these exact specs.
+                    Bespoke dimensions: {customWidth} cm Width × {customHeight} cm Height + {customGusset} cm Bottom Gusset. Custom range permitted by plant: {studioConfig.dimension_limits.minWidth}–{studioConfig.dimension_limits.maxWidth}cm W × {studioConfig.dimension_limits.minHeight}–{studioConfig.dimension_limits.maxHeight}cm H.
                   </p>
                 </div>
               )}
@@ -1373,7 +1297,7 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {GSM_OPTIONS.map((opt) => (
+                {activeGsmOptions.map((opt) => (
                   <GsmVisualCard
                     key={opt.value}
                     opt={opt}
@@ -1402,7 +1326,7 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {HANDLE_OPTIONS.map((opt) => (
+                {activeHandleOptions.map((opt) => (
                   <HandleVisualCard
                     key={opt.id}
                     opt={opt}
@@ -1431,7 +1355,7 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {PRINT_OPTIONS.map((opt) => (
+                {activePrintOptions.map((opt) => (
                   <PrintVisualCard
                     key={opt.id}
                     opt={opt}
@@ -1455,16 +1379,16 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
               </div>
 
               {/* Color Swatches */}
-              <div className="grid grid-cols-3 gap-3">
-                {PAPER_COLORS.map((col) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {activeColors.map((col) => (
                   <button
                     key={col.id}
                     type="button"
                     onClick={() => setPaperColor(col.id)}
                     className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                       paperColor === col.id
-                        ? "border-[#1E3B2E] ring-2 ring-[#1E3B2E]/20"
-                        : "border-stone-200 hover:border-stone-300"
+                        ? "border-[#1E3B2E] ring-2 ring-[#1E3B2E]/20 bg-white shadow-2xs"
+                        : "border-stone-200 hover:border-stone-300 bg-white"
                     }`}
                   >
                     <div
@@ -1472,7 +1396,10 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
                       style={{ backgroundColor: col.bgHex, borderColor: col.borderHex }}
                     />
                     <span className="text-[11px] font-bold text-stone-800 block leading-tight">
-                      {col.name.split(" ")[0]}
+                      {col.name}
+                    </span>
+                    <span className="text-[10px] font-mono text-stone-500 mt-0.5 block">
+                      {col.surcharge > 0 ? `+${col.surcharge.toFixed(2)} ETB` : "Included"}
                     </span>
                   </button>
                 ))}
@@ -1512,46 +1439,53 @@ Manufactured by: Ethiopia Arenguade Paper Product PLC (Addis Ababa Plant)`;
               </div>
             </div>
 
-            {/* 8. Turnaround Urgency */}
+            {/* 8. Turnaround Urgency (Admin Controlled) */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-stone-200/90 shadow-sm space-y-4">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">
-                  8. Production Urgency & Schedule *
-                </h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-stone-900">
+                    8. Production Urgency & Schedule *
+                  </h3>
+                  <p className="text-[11px] text-stone-500 mt-0.5">
+                    Lead times calibrated to plant production capacity in Addis Ababa.
+                  </p>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setUrgency("Standard (7-10 Days)")}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                    urgency.includes("Standard")
-                      ? "border-[#1E3B2E] bg-[#1E3B2E]/5 ring-2 ring-[#1E3B2E]/20"
-                      : "border-stone-200 hover:border-stone-300 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Clock size={15} className="text-[#1E3B2E]" />
-                    <span className="font-bold text-xs text-stone-900">Standard Production (7–10 Days)</span>
-                  </div>
-                  <p className="text-[11px] text-stone-500">Regular Addis Ababa facility schedule. Standard pricing.</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setUrgency("Express Rush (3-5 Days)")}
-                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                    urgency.includes("Express")
-                      ? "border-[#8C4B31] bg-amber-50/50 ring-2 ring-[#8C4B31]/20"
-                      : "border-stone-200 hover:border-stone-300 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkles size={15} className="text-[#8C4B31]" />
-                    <span className="font-bold text-xs text-stone-900">Express Rush (3–5 Days)</span>
-                  </div>
-                  <p className="text-[11px] text-stone-500">Fast-tracked cylinder prep & priority line (+15% expedited surcharge).</p>
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {activeTurnarounds.map((t) => {
+                  const isSelected = urgency === `${t.label} (${t.days})` || urgency === t.label || urgency.includes(t.days) || urgency.includes(t.label);
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setUrgency(`${t.label} (${t.days})`)}
+                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                        isSelected
+                          ? "border-[#1E3B2E] bg-[#1E3B2E]/5 ring-2 ring-[#1E3B2E]/20 shadow-xs"
+                          : "border-stone-200 hover:border-stone-300 bg-white"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <Clock size={14} className="text-[#1E3B2E]" />
+                            <span className="font-bold text-xs text-stone-900">{t.label}</span>
+                          </div>
+                          {t.badge && (
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">
+                              {t.badge}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] font-mono font-bold text-[#8C4B31] mb-1">
+                          {t.days} {t.multiplier > 1.0 ? `(×${t.multiplier.toFixed(2)})` : "(Standard rate)"}
+                        </div>
+                        <p className="text-[11px] text-stone-500 leading-snug">{t.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

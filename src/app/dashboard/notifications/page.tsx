@@ -18,6 +18,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { sanitizeRelativeRedirect } from "@/utils/validation";
 
 interface NotificationItem {
   id: string;
@@ -128,7 +129,10 @@ export default function NotificationsPage() {
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
       if (link) {
-        router.push(link);
+        const safeLink = sanitizeRelativeRedirect(link, "");
+        if (safeLink) {
+          router.push(safeLink);
+        }
       }
     } catch {}
   };

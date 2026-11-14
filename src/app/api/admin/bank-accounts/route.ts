@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireRole } from "@/utils/roles";
+import { requireRole, requireUser } from "@/utils/roles";
 import { pool } from "@/utils/db";
 import { logAuditEvent } from "@/utils/audit";
+import { isValidUUID } from "@/utils/validation";
 
 const createBankAccountSchema = z.object({
   bank_name: z.string().min(2, "Bank name must be at least 2 characters"),
@@ -21,11 +22,12 @@ const updateBankAccountSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-// GET /api/admin/bank-accounts - List all settlement accounts
+// GET /api/admin/bank-accounts - List settlement accounts (authenticated; non-admins only see active)
 export async function GET(request: NextRequest) {
   try {
+    const user = await requireUser();
     const { searchParams } = new URL(request.url);
-    const activeOnly = searchParams.get("activeOnly") === "true";
+    const activeOnly = user.role !== "admin" || searchParams.get("activeOnly") === "true";
 
     let query = `
       SELECT id, bank_name, account_name, account_number, instructions, is_active, created_at, updated_at
@@ -47,7 +49,11 @@ export async function GET(request: NextRequest) {
       bankAccounts: res.rows || [],
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to load bank accounts" }, { status: 500 });
+    const status = err.status || 500;
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to load bank accounts" },
+      { status }
+    );
   }
 }
 
@@ -152,8 +158,8 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
-    if (!id) {
-      return NextResponse.json({ error: "Bank account ID is required." }, { status: 400 });
+    if (!id || !isValidUUID(id)) {
+      return NextResponse.json({ error: "A valid bank account ID is required." }, { status: 400 });
     }
 
     // Check if account is referenced by existing orders

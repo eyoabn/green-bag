@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/utils/roles";
 import { pool } from "@/utils/db";
 import { logAuditEvent } from "@/utils/audit";
+import { isValidUUID } from "@/utils/validation";
 
 // GET /api/admin/users - List all platform users with filtering & pagination
 export async function GET(request: NextRequest) {
@@ -62,8 +63,12 @@ export async function GET(request: NextRequest) {
       pageSize,
     });
   } catch (err: any) {
+    console.error("Load users error:", err);
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to load users" }, { status });
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to load users" },
+      { status }
+    );
   }
 }
 
@@ -74,8 +79,8 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { userId, role, is_active, full_name, phone } = body;
 
-    if (!userId) {
-      return NextResponse.json({ error: "User ID is required." }, { status: 400 });
+    if (!userId || !isValidUUID(userId)) {
+      return NextResponse.json({ error: "A valid User ID is required." }, { status: 400 });
     }
 
     // Guard: An admin cannot demote or deactivate their own account
@@ -157,8 +162,12 @@ export async function PATCH(request: NextRequest) {
       user: updatedUser,
     });
   } catch (err: any) {
+    console.error("Update user error:", err);
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to update user" }, { status });
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to update user" },
+      { status }
+    );
   }
 }
 
@@ -173,45 +182,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email and Full Name are required." }, { status: 400 });
     }
 
+    if (typeof password !== "string" || password.length < 8 || password.length > 128) {
+      return NextResponse.json(
+        { error: "An explicit password between 8 and 128 characters is required." },
+        { status: 400 }
+      );
+    }
+
     const trimmedEmail = String(email).trim().toLowerCase();
     const assignedRole = ["customer", "teacher", "admin"].includes(role) ? role : "teacher";
-    const userPassword = password || "Password123!";
+    const userPassword = password;
 
-    // 1. Create or update in auth.users
+    // 1. Ensure no existing auth account is silently overwritten
     const existingUser = await pool.query("SELECT id FROM auth.users WHERE email = $1", [trimmedEmail]);
-    let userId: string;
-
     if (existingUser.rows.length > 0) {
-      userId = existingUser.rows[0].id;
-      await pool.query(
-        `
-        UPDATE auth.users
-        SET encrypted_password = crypt($2, gen_salt('bf')),
-            email_confirmed_at = NOW(),
-            raw_user_meta_data = json_build_object('full_name', $3::text, 'phone', $4::text, 'role', $5::text),
-            updated_at = NOW()
-        WHERE id = $1;
-      `,
-        [userId, userPassword, fullName.trim(), phone?.trim() || "", assignedRole]
+      return NextResponse.json(
+        { error: "A user with this email already exists." },
+        { status: 409 }
       );
-    } else {
-      const insertAuth = await pool.query(
-        `
-        INSERT INTO auth.users (
-          instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-          raw_app_meta_data, raw_user_meta_data, created_at, updated_at
-        ) VALUES (
-          '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
-          $1, crypt($2, gen_salt('bf')), NOW(),
-          '{"provider": "email", "providers": ["email"]}',
-          json_build_object('full_name', $3::text, 'phone', $4::text, 'role', $5::text),
-          NOW(), NOW()
-        ) RETURNING id;
-      `,
-        [trimmedEmail, userPassword, fullName.trim(), phone?.trim() || "", assignedRole]
-      );
-      userId = insertAuth.rows[0].id;
     }
+
+    const insertAuth = await pool.query(
+      `
+      INSERT INTO auth.users (
+        instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+      ) VALUES (
+        '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
+        $1, crypt($2, gen_salt('bf')), NOW(),
+        '{"provider": "email", "providers": ["email"]}',
+        json_build_object('full_name', $3::text, 'phone', $4::text, 'role', $5::text),
+        NOW(), NOW()
+      ) RETURNING id;
+    `,
+      [trimmedEmail, userPassword, String(fullName).trim(), phone?.trim() || "", assignedRole]
+    );
+    const userId: string = insertAuth.rows[0].id;
 
     // 2. Upsert profile with email and role
     const profileRes = await pool.query(
@@ -248,8 +254,12 @@ export async function POST(request: NextRequest) {
       user: profileRes.rows[0],
     });
   } catch (err: any) {
+    console.error("Provision user error:", err);
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to provision user" }, { status });
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to provision user" },
+      { status }
+    );
   }
 }
 
@@ -260,8 +270,8 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
 
-    if (!userId) {
-      return NextResponse.json({ error: "User ID is required." }, { status: 400 });
+    if (!userId || !isValidUUID(userId)) {
+      return NextResponse.json({ error: "A valid User ID is required." }, { status: 400 });
     }
 
     if (userId === admin.id) {
@@ -310,6 +320,9 @@ export async function DELETE(request: NextRequest) {
   } catch (err: any) {
     console.error("Delete user error:", err);
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to delete user." }, { status });
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to delete user." },
+      { status }
+    );
   }
 }

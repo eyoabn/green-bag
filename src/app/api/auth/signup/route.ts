@@ -5,8 +5,7 @@ import { checkRateLimit } from "@/utils/rateLimit";
 import { SignupSchema } from "@/utils/validation";
 
 export async function POST(request: NextRequest) {
-  // Rate limit protection
-  const rl = await checkRateLimit(request, { limit: 15, windowMs: 60000, prefix: "auth:signup" });
+  const rl = await checkRateLimit(request, { limit: 10, windowMs: 60000, prefix: "auth:signup" });
   if (!rl.allowed && rl.response) {
     return rl.response;
   }
@@ -23,7 +22,6 @@ export async function POST(request: NextRequest) {
     const displayName = (fullName && fullName.trim()) || trimmedEmail.split("@")[0];
     const phoneNum = (phone && phone.trim()) || "";
 
-    // 1. Check if account already exists
     const existingCheck = await pool.query(
       "SELECT id FROM auth.users WHERE email = $1 LIMIT 1",
       [trimmedEmail]
@@ -36,8 +34,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Insert into auth.users directly with confirmed email & clean non-null tokens
-    // Trigger on_auth_user_created automatically populates public.profiles with role = 'customer'
     const insertRes = await pool.query(
       `
       INSERT INTO auth.users (
@@ -82,7 +78,6 @@ export async function POST(request: NextRequest) {
 
     const userId = insertRes.rows[0].id;
 
-    // 3. Authenticate with Supabase server client to establish session cookies
     const supabase = await createClient();
     await supabase.auth.signInWithPassword({
       email: trimmedEmail,
@@ -102,7 +97,7 @@ export async function POST(request: NextRequest) {
   } catch (err: any) {
     console.error("Signup API error:", err);
     return NextResponse.json(
-      { error: err?.message || "Unable to complete registration. Please try again." },
+      { error: "Unable to complete registration. Please try again." },
       { status: 500 }
     );
   }

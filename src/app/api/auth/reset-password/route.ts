@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { checkRateLimit } from "@/utils/rateLimit";
 
 export async function POST(request: NextRequest) {
+  const rl = await checkRateLimit(request, { limit: 10, windowMs: 60000, prefix: "auth:reset" });
+  if (!rl.allowed && rl.response) {
+    return rl.response;
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const { password } = body;
 
-    if (!password || typeof password !== "string" || password.length < 6) {
+    if (!password || typeof password !== "string" || password.length < 8 || password.length > 128) {
       return NextResponse.json(
-        { error: "New password must be at least 6 characters long." },
+        { error: "New password must be between 8 and 128 characters long." },
         { status: 400 }
       );
     }
 
     const supabase = await createClient();
 
-    // Verify caller has an active recovery session
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
 
     if (userErr || !user) {

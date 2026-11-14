@@ -276,16 +276,22 @@ export default function AdminOrdersPage() {
       "Created Date",
     ];
 
+    const sanitizeCsvCell = (value: unknown) => {
+      const str = String(value ?? "");
+      const safe = /^[=+\-@\t\r]/.test(str) ? `'${str}` : str;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+
     const rows = orders.map((o) => [
-      `"${o.order_number}"`,
-      `"${o.profiles?.full_name || "Customer"}"`,
-      `"${o.profiles?.email || ""}"`,
-      `"${o.phone}"`,
-      `"${o.status}"`,
+      sanitizeCsvCell(o.order_number),
+      sanitizeCsvCell(o.profiles?.full_name || "Customer"),
+      sanitizeCsvCell(o.profiles?.email || ""),
+      sanitizeCsvCell(o.phone),
+      sanitizeCsvCell(o.status),
       o.total_price,
-      `"${o.bank_accounts?.bank_name || "CBE"}"`,
-      `"${(o.delivery_address || "").replace(/"/g, '""')}"`,
-      `"${new Date(o.created_at).toLocaleString()}"`,
+      sanitizeCsvCell(o.bank_accounts?.bank_name || "CBE"),
+      sanitizeCsvCell(o.delivery_address || ""),
+      sanitizeCsvCell(new Date(o.created_at).toLocaleString()),
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");

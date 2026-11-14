@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/utils/db";
+import { createClient } from "@/utils/supabase/server";
+import { isValidUUID } from "@/utils/validation";
+
+async function isAdminViewer(): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const profRes = await pool.query(
+      "SELECT role, is_active FROM public.profiles WHERE id = $1 LIMIT 1",
+      [user.id]
+    );
+    const prof = profRes.rows[0];
+    return Boolean(prof && prof.is_active !== false && prof.role === "admin");
+  } catch {
+    return false;
+  }
+}
 
 // GET /api/products/[id] - Fetch single product by id from PostgreSQL
 export async function GET(
@@ -8,12 +29,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    if (!isValidUUID(id)) {
+      return NextResponse.json({ error: "Invalid product ID format." }, { status: 400 });
+    }
+
+    const admin = await isAdminViewer();
 
     const res = await pool.query(
       `
       SELECT id, name, description, price, images, image_urls, category, stock_quantity, is_available, is_featured, is_client_work, created_at, updated_at
       FROM public.products
-      WHERE id = $1 AND is_deleted IS NOT TRUE
+      WHERE id = $1 AND is_deleted IS NOT TRUE ${admin ? "" : "AND is_available = true"}
       LIMIT 1
     `,
       [id]
@@ -35,6 +61,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, product: normalized });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to fetch product" }, { status: 500 });
+    console.error("Fetch product error:", err);
+    return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 });
   }
 }

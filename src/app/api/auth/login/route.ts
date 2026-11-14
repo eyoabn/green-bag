@@ -5,7 +5,7 @@ import { LoginSchema } from "@/utils/validation";
 import { logAuditEvent } from "@/utils/audit";
 
 export async function POST(request: NextRequest) {
-  // Rate limit protection
+  // Per-IP rate limit protection
   const rl = await checkRateLimit(request, { limit: 20, windowMs: 60000, prefix: "auth:login" });
   if (!rl.allowed && rl.response) {
     return rl.response;
@@ -20,6 +20,17 @@ export async function POST(request: NextRequest) {
     const { email, password } = parseRes.data;
     const trimmedEmail = email.trim().toLowerCase();
 
+    // Per-account rate limit to block distributed brute-force attacks
+    const acctRl = await checkRateLimit(request, {
+      limit: 15,
+      windowMs: 60000,
+      prefix: "auth:login:acct",
+      identifier: trimmedEmail,
+    });
+    if (!acctRl.allowed && acctRl.response) {
+      return acctRl.response;
+    }
+
     const supabase = await createClient();
 
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -28,7 +39,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError || !authData.user) {
-      // Record failed authentication event to database audit log
       await logAuditEvent({
         actorId: null,
         action: "AUTH_LOGIN_FAILED",
@@ -41,7 +51,7 @@ export async function POST(request: NextRequest) {
 
       const isFetchFailed = authError?.message?.toLowerCase().includes("fetch failed");
       const errorMessage = isFetchFailed
-        ? "Unable to reach database service. Please check your network or verify your Supabase environment variables on Vercel."
+        ? "Unable to reach authentication service. Please try again shortly."
         : (authError?.message || "Invalid credentials. Please verify your email and password.");
 
       return NextResponse.json(
@@ -50,8 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Query real profile from PostgreSQL
-    const { data: profile, error: profileErr } = await supabase
+    const { data: profile } = await supabase
       .from("profiles")
       .select("id, full_name, phone, role, is_active, avatar_url")
       .eq("id", authData.user.id)

@@ -2,11 +2,29 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { signProxyUser } from '@/utils/proxyAuth'
 
+function stripProxyUserHeaders(headers: Headers) {
+  headers.delete('x-user-id')
+  headers.delete('x-user-email')
+  headers.delete('x-user-role')
+  headers.delete('x-user-name')
+  headers.delete('x-user-phone')
+  headers.delete('x-user-avatar')
+  headers.delete('x-user-active')
+  headers.delete('x-user-ts')
+  headers.delete('x-user-sig')
+}
+
 export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://heslqxyonklerdcxjohf.supabase.co'
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhlc2xxeHlvbmtsZXJkY3hqb2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5ODMyOTIsImV4cCI6MjEwNDU1OTI5Mn0.NaVbb5W4lZa82GjtFBjE3hur60p68v5r13OdOwp3iwE'
 
-  let supabaseResponse = NextResponse.next({ request })
+  // Unconditionally sanitize any client-supplied internal identity headers
+  const sanitizedIncomingHeaders = new Headers(request.headers)
+  stripProxyUserHeaders(sanitizedIncomingHeaders)
+
+  let supabaseResponse = NextResponse.next({
+    request: { headers: sanitizedIncomingHeaders },
+  })
 
   try {
     const supabase = createServerClient(
@@ -19,7 +37,9 @@ export async function updateSession(request: NextRequest) {
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-            supabaseResponse = NextResponse.next({ request })
+            supabaseResponse = NextResponse.next({
+              request: { headers: sanitizedIncomingHeaders },
+            })
             cookiesToSet.forEach(({ name, value, options }) =>
               supabaseResponse.cookies.set(name, value, options)
             )
@@ -38,13 +58,15 @@ export async function updateSession(request: NextRequest) {
     let avatarUrl = ''
 
     if (user) {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileErr } = await supabase
         .from('profiles')
         .select('role, is_active, full_name, phone, avatar_url')
         .eq('id', user.id)
         .maybeSingle()
 
-      if (profile) {
+      if (profileErr) {
+        isActive = false
+      } else if (profile) {
         role = profile.role || 'customer'
         isActive = profile.is_active ?? true
         fullName = profile.full_name || (user.user_metadata?.full_name as string) || 'Valued User'
@@ -62,27 +84,25 @@ export async function updateSession(request: NextRequest) {
       return redirectRes
     }
 
-    // Forward authenticated user identity headers downstream to eliminate auth waterfalls
-    const requestHeaders = new Headers(request.headers)
+    // Forward authenticated user identity headers downstream only if INTERNAL_PROXY_SECRET is configured
+    const requestHeaders = new Headers(sanitizedIncomingHeaders)
+    stripProxyUserHeaders(requestHeaders)
+
     if (user && isActive) {
-      const sig = signProxyUser(user.id, role, true)
-      requestHeaders.set('x-user-id', user.id)
-      requestHeaders.set('x-user-email', user.email || '')
-      requestHeaders.set('x-user-role', role)
-      requestHeaders.set('x-user-name', encodeURIComponent(fullName))
-      requestHeaders.set('x-user-phone', phone)
-      requestHeaders.set('x-user-avatar', avatarUrl)
-      requestHeaders.set('x-user-active', 'true')
-      requestHeaders.set('x-user-sig', sig)
-    } else {
-      requestHeaders.delete('x-user-id')
-      requestHeaders.delete('x-user-email')
-      requestHeaders.delete('x-user-role')
-      requestHeaders.delete('x-user-name')
-      requestHeaders.delete('x-user-phone')
-      requestHeaders.delete('x-user-avatar')
-      requestHeaders.delete('x-user-active')
-      requestHeaders.delete('x-user-sig')
+      const ts = Date.now()
+      const email = user.email || ''
+      const sig = signProxyUser(user.id, role, true, email, ts)
+      if (sig) {
+        requestHeaders.set('x-user-id', user.id)
+        requestHeaders.set('x-user-email', email)
+        requestHeaders.set('x-user-role', role)
+        requestHeaders.set('x-user-name', encodeURIComponent(fullName))
+        requestHeaders.set('x-user-phone', phone)
+        requestHeaders.set('x-user-avatar', avatarUrl)
+        requestHeaders.set('x-user-active', 'true')
+        requestHeaders.set('x-user-ts', String(ts))
+        requestHeaders.set('x-user-sig', sig)
+      }
     }
 
     // 1. Deactivated user protection
@@ -165,16 +185,8 @@ export async function updateSession(request: NextRequest) {
     })
     return finalResponse
   } catch (_error) {
-    // Sanitize headers on unexpected middleware failure
     const safeHeaders = new Headers(request.headers)
-    safeHeaders.delete('x-user-id')
-    safeHeaders.delete('x-user-email')
-    safeHeaders.delete('x-user-role')
-    safeHeaders.delete('x-user-name')
-    safeHeaders.delete('x-user-phone')
-    safeHeaders.delete('x-user-avatar')
-    safeHeaders.delete('x-user-active')
-    safeHeaders.delete('x-user-sig')
+    stripProxyUserHeaders(safeHeaders)
     return NextResponse.next({
       request: {
         headers: safeHeaders,

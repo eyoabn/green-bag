@@ -6,6 +6,9 @@
 // Prints all seeded credentials at the end.
 
 'use strict';
+if (process.env.NODE_ENV === 'production' && process.env.ALLOW_SEED_IN_PROD !== 'true') {
+  throw new Error('Refusing to run demo seed script in production unless ALLOW_SEED_IN_PROD=true.');
+}
 const { Client } = require('pg');
 
 const fs = require('fs');

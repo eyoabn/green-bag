@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, Check, ExternalLink, ArrowRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { sanitizeRelativeRedirect } from "@/utils/validation";
 
 export interface NotificationItem {
   id: string;
@@ -132,8 +133,11 @@ export default function NotificationBell() {
       );
       setUnreadCount((c) => Math.max(0, c - 1));
       if (link) {
+        const safeLink = sanitizeRelativeRedirect(link, "");
         setIsOpen(false);
-        router.push(link);
+        if (safeLink) {
+          router.push(safeLink);
+        }
       }
     } catch {}
   };

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Sparkles, CheckCircle2, AlertCircle, ShieldCheck, ShoppingBag, BookOpen } from "lucide-react";
 import { setLocalUser, AppUser } from "@/utils/auth";
+import { sanitizeRelativeRedirect } from "@/utils/validation";
 
 function SignupFormContent() {
   const router = useRouter();
@@ -22,11 +23,7 @@ function SignupFormContent() {
 
   const completeSignup = (user: AppUser) => {
     setLocalUser(user);
-    if (returnTo) {
-      router.push(returnTo);
-    } else {
-      router.push("/dashboard");
-    }
+    router.push(returnTo ? sanitizeRelativeRedirect(returnTo, "/dashboard") : "/dashboard");
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -35,8 +32,8 @@ function SignupFormContent() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long.");
+    if (password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long.");
       setIsLoading(false);
       return;
     }

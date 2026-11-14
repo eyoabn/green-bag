@@ -25,8 +25,8 @@ export class AuthError extends Error {
 
 /**
  * Server-side helper to require an authenticated active user.
- * Reads fast verified claims from proxy headers to eliminate the 2-hop network waterfall,
- * falling back to Supabase Auth getUser() if proxy headers are absent.
+ * Reads verified short-lived HMAC claims from proxy headers when INTERNAL_PROXY_SECRET
+ * is configured, falling back to authoritative Supabase Auth getUser() + DB profile lookup.
  */
 export async function requireUser(): Promise<AuthenticatedUser> {
   try {
@@ -34,13 +34,15 @@ export async function requireUser(): Promise<AuthenticatedUser> {
     const hUserId = headerStore.get("x-user-id");
     const hUserRole = headerStore.get("x-user-role") as UserRole | null;
     const hIsActive = headerStore.get("x-user-active");
+    const hUserEmail = headerStore.get("x-user-email") || "";
+    const hUserTs = headerStore.get("x-user-ts");
     const hUserSig = headerStore.get("x-user-sig");
 
     if (
       hUserId &&
       hUserRole &&
       hIsActive === "true" &&
-      verifyProxyUser(hUserId, hUserRole, true, hUserSig)
+      verifyProxyUser(hUserId, hUserRole, true, hUserEmail, hUserTs, hUserSig)
     ) {
       let decodedName = "Valued User";
       try {
@@ -50,7 +52,7 @@ export async function requireUser(): Promise<AuthenticatedUser> {
 
       return {
         id: hUserId,
-        email: headerStore.get("x-user-email") || "",
+        email: hUserEmail,
         full_name: decodedName,
         phone: headerStore.get("x-user-phone") || "",
         avatar_url: headerStore.get("x-user-avatar") || "",
@@ -71,10 +73,13 @@ export async function requireUser(): Promise<AuthenticatedUser> {
     .from("profiles")
     .select("id, full_name, phone, avatar_url, role, is_active")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (profileErr || !profile) {
-    // If profile hasn't been populated by trigger yet, fallback to default customer
+  if (profileErr) {
+    throw new AuthError("Unable to verify account status.", 503);
+  }
+
+  if (!profile) {
     return {
       id: user.id,
       email: user.email || "",

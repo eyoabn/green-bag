@@ -10,6 +10,26 @@ import {
   mergeStudioConfig, 
   extractDesignPricing 
 } from "@/utils/designPricing";
+import { isSafeHttpOrRelativeUrl } from "@/utils/validation";
+
+const safeSocialValueSchema = z
+  .string()
+  .max(500)
+  .refine(
+    (val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return true;
+      if (/^@?[a-zA-Z0-9._-]{1,100}$/.test(trimmed)) return true;
+      try {
+        const parsed = new URL(trimmed);
+        return parsed.protocol === "https:" || parsed.protocol === "http:";
+      } catch {
+        return false;
+      }
+    },
+    { message: "Social link must be a valid handle or http(s) URL" }
+  )
+  .optional();
 
 const settingsSchema = z.object({
   company_name: z.string().min(2, "Company name must be at least 2 characters"),
@@ -18,12 +38,12 @@ const settingsSchema = z.object({
   address: z.string().min(5, "Physical address is required"),
   social_links: z
     .object({
-      facebook: z.string().optional(),
-      instagram: z.string().optional(),
-      telegram: z.string().optional(),
-      linkedin: z.string().optional(),
-      tiktok: z.string().optional(),
-      youtube: z.string().optional(),
+      facebook: safeSocialValueSchema,
+      instagram: safeSocialValueSchema,
+      telegram: safeSocialValueSchema,
+      linkedin: safeSocialValueSchema,
+      tiktok: safeSocialValueSchema,
+      youtube: safeSocialValueSchema,
     })
     .optional(),
   tax_id: z.string().optional(),
@@ -76,9 +96,10 @@ export const DEFAULT_HOMEPAGE_CMS = {
   announcement_visible: false,
 };
 
-// GET /api/admin/settings - Read company configuration
+// GET /api/admin/settings - Read company configuration (Admin only)
 export async function GET() {
   try {
+    await requireRole(["admin"]);
     const res = await pool.query(`
       SELECT id, company_name, contact_phone, contact_email, address, social_links, tax_id, settlement_days, homepage_content, studio_config, updated_at
       FROM public.settings
@@ -138,7 +159,12 @@ export async function GET() {
       }
     );
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to load settings" }, { status: 500 });
+    console.error("Load settings error:", err);
+    const status = err.status || 500;
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to load settings" },
+      { status }
+    );
   }
 }
 
@@ -168,6 +194,25 @@ export async function PATCH(request: NextRequest) {
     } = parsed.data;
 
     // Merge studio configuration if present
+    if (homepage_content && typeof homepage_content === "object") {
+      const urlFields = [
+        "hero_cta1_link",
+        "hero_cta2_link",
+        "hero_image",
+        "mobile_hero_image",
+        "academy_banner_image",
+      ];
+      for (const field of urlFields) {
+        const val = homepage_content[field];
+        if (typeof val === "string" && val.trim() !== "" && !isSafeHttpOrRelativeUrl(val)) {
+          return NextResponse.json(
+            { error: `Invalid or unsafe URL in homepage_content.${field}` },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     const cleanStudioConfig = studio_config ? mergeStudioConfig(studio_config) : undefined;
     const derivedPricing = cleanStudioConfig ? extractDesignPricing(cleanStudioConfig) : design_pricing;
 

@@ -17,15 +17,11 @@ import { isValidUUID, toValidUUID } from "@/utils/uuid";
 export { isValidUUID, toValidUUID };
 
 /**
- * Universally retrieves the currently authenticated user.
- * Tries:
- * 1. Supabase Auth getUser()
- * 2. Supabase Auth getSession()
- * 3. Local storage `arenguade_user`
- * Ensures the returned user has a valid UUID format id.
+ * Universally retrieves the currently authenticated user from the server / Supabase Auth.
+ * Never trusts client user_metadata.role or localStorage as an authorization source.
  */
 export async function getCurrentUser(): Promise<AppUser | null> {
-  // In browser, fast server verification via /api/profile ensures cookie session accuracy
+  // In browser, authoritative server verification via /api/profile ensures cookie & DB accuracy
   if (typeof window !== "undefined") {
     try {
       const controller = new AbortController();
@@ -53,35 +49,43 @@ export async function getCurrentUser(): Promise<AppUser | null> {
         return null;
       }
     } catch {
-      // Fall through to browser client
+      // Fall through to Supabase Auth client check
     }
   }
 
   const supabase = createClient();
 
-  // 1. Always try Supabase Auth getUser() first — authoritative source of truth
   try {
     const { data } = await supabase.auth.getUser();
     if (data?.user) {
       const u = data.user;
-      let role: AppUser["role"] = (u.user_metadata?.role as AppUser["role"]) || "customer";
+      let role: AppUser["role"] = "customer";
       let fullName = u.user_metadata?.full_name || u.email?.split("@")[0] || "Valued User";
       let phone = u.user_metadata?.phone || "";
+      let isActive = true;
 
       try {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("role, full_name, phone")
+          .select("role, full_name, phone, is_active")
           .eq("id", u.id)
           .maybeSingle();
         if (profile) {
           if (profile.role) role = profile.role as AppUser["role"];
           if (profile.full_name) fullName = profile.full_name;
           if (profile.phone) phone = profile.phone;
+          if (profile.is_active === false) isActive = false;
         }
       } catch {}
 
-      const appUser: AppUser = { id: u.id, email: u.email || "", full_name: fullName, phone, role };
+      if (!isActive) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("arenguade_user");
+        }
+        return null;
+      }
+
+      const appUser: AppUser = { id: u.id, email: u.email || "", full_name: fullName, phone, role, is_active: isActive };
       if (typeof window !== "undefined") {
         localStorage.setItem("arenguade_user", JSON.stringify(appUser));
       }
@@ -91,29 +95,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
     console.warn("Supabase auth.getUser() skipped:", err);
   }
 
-  // 2. Try Supabase Auth getSession()
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const u = session.user;
-      const appUser: AppUser = {
-        id: u.id,
-        email: u.email || "",
-        full_name: u.user_metadata?.full_name || u.email?.split("@")[0] || "Valued User",
-        phone: u.user_metadata?.phone || "",
-        role: (u.user_metadata?.role as AppUser["role"]) || "customer",
-      };
-      if (typeof window !== "undefined") {
-        localStorage.setItem("arenguade_user", JSON.stringify(appUser));
-      }
-      return appUser;
-    }
-  } catch (err) {
-    console.warn("Supabase auth.getSession() skipped:", err);
-  }
-
-  // 3. Last resort: localStorage cached user
-  return getLocalUser();
+  return null;
 }
 
 export function getLocalUser(): AppUser | null {

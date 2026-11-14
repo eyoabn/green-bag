@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { sanitizeHref } from "@/utils/validation";
 import { 
   PenTool, 
   FileText, 
@@ -170,7 +171,7 @@ export default function AdminDesignsPage() {
 
   // Executive Metrics
   const metrics = useMemo(() => {
-    let total = designs.length;
+    const total = designs.length;
     let needsQuote = 0;
     let paymentPending = 0;
     let inProduction = 0;
@@ -867,7 +868,7 @@ export default function AdminDesignsPage() {
                               <span>Preflight Artwork File ({design.file_path})</span>
                             </span>
                             <a
-                              href={fileUrl}
+                              href={sanitizeHref(fileUrl, "#")}
                               target="_blank"
                               rel="noreferrer"
                               download
@@ -881,14 +882,14 @@ export default function AdminDesignsPage() {
                           <div className="w-full max-h-[520px] rounded-2xl overflow-hidden bg-black/70 flex items-center justify-center p-2 border border-stone-800">
                             {isPdf ? (
                               <iframe
-                                src={fileUrl}
+                                src={sanitizeHref(fileUrl, "about:blank")}
                                 className="w-full h-[480px] rounded-xl border-0 bg-white"
                                 title="CAD Dieline PDF Preview"
                               />
                             ) : (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                src={fileUrl}
+                                src={sanitizeHref(fileUrl, "")}
                                 alt="CAD Dieline Preview"
                                 className="max-h-[480px] w-auto object-contain rounded-xl"
                               />
@@ -1119,13 +1120,13 @@ export default function AdminDesignsPage() {
                           <div className="p-3 bg-stone-900 rounded-2xl border border-stone-800 space-y-2">
                             <div className="flex items-center justify-between text-[11px] text-stone-300">
                               <span className="font-bold">Bank Deposit Screenshot / QR Receipt</span>
-                              <a href={paymentProofUrl} target="_blank" rel="noreferrer" download className="text-emerald-400 hover:underline">
+                              <a href={sanitizeHref(paymentProofUrl, "#")} target="_blank" rel="noreferrer" download className="text-emerald-400 hover:underline">
                                 Open Original File
                               </a>
                             </div>
                             <div className="max-h-80 overflow-hidden flex items-center justify-center bg-black/60 rounded-xl p-2">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={paymentProofUrl} alt="Bank Deposit Slip" className="max-h-76 w-auto object-contain rounded-lg" />
+                              <img src={sanitizeHref(paymentProofUrl, "")} alt="Bank Deposit Slip" className="max-h-76 w-auto object-contain rounded-lg" />
                             </div>
                           </div>
                         )}

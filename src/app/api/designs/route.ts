@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
-import { pool } from "@/utils/db";
+import { logAuditEvent } from "@/utils/audit";
+import { notifyAdmins } from "@/utils/notifications";
+import { isValidStoragePathForUser } from "@/utils/validation";
 
 // GET /api/designs - List designs by role (Admin sees all, Customer sees own)
 export async function GET(request: NextRequest) {
@@ -39,8 +41,12 @@ export async function GET(request: NextRequest) {
       designs: designs || [],
     });
   } catch (err: any) {
+    console.error("Load designs error:", err);
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to load designs" }, { status });
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to load designs" },
+      { status }
+    );
   }
 }
 
@@ -62,8 +68,24 @@ export async function POST(request: NextRequest) {
       specsJson
     } = body;
 
-    const effectiveFilePath = filePath || "spec-draft-pending-artwork";
-    const designTitle = (title && String(title).trim()) || "Custom Paper Packaging Design";
+    const effectiveFilePath =
+      typeof filePath === "string" && filePath.trim()
+        ? filePath.trim()
+        : "spec-draft-pending-artwork";
+
+    if (
+      !isValidStoragePathForUser(effectiveFilePath, user.id, user.role, {
+        allowDraftSentinel: true,
+      })
+    ) {
+      return NextResponse.json({ error: "Invalid design file path." }, { status: 400 });
+    }
+
+    const designTitle = (title && String(title).trim().slice(0, 200)) || "Custom Paper Packaging Design";
+    const parsedGsm = gsm !== undefined ? Number(gsm) : 200;
+    if (!Number.isFinite(parsedGsm) || parsedGsm < 30 || parsedGsm > 1500) {
+      return NextResponse.json({ error: "Invalid GSM paper weight value." }, { status: 400 });
+    }
 
     const supabase = await createClient();
     const { data: design, error } = await supabase
@@ -72,13 +94,13 @@ export async function POST(request: NextRequest) {
         submitted_by: user.id,
         title: designTitle,
         file_path: effectiveFilePath,
-        description: description || "Custom kraft packaging specification",
-        quantity: quantity || "1,000 pcs",
-        dimensions: dimensions || "Medium (26cm × 32cm + 10cm)",
-        gsm: gsm ? Number(gsm) : 200,
-        handle_type: handleType || "Twisted Kraft Cord",
-        print_finish: printFinish || "1-Color Screenprint",
-        urgency: urgency || "Standard (7-10 Days)",
+        description: description ? String(description).slice(0, 4000) : "Custom kraft packaging specification",
+        quantity: quantity ? String(quantity).slice(0, 100) : "1,000 pcs",
+        dimensions: dimensions ? String(dimensions).slice(0, 200) : "Medium (26cm × 32cm + 10cm)",
+        gsm: parsedGsm,
+        handle_type: handleType ? String(handleType).slice(0, 100) : "Twisted Kraft Cord",
+        print_finish: printFinish ? String(printFinish).slice(0, 100) : "1-Color Screenprint",
+        urgency: urgency ? String(urgency).slice(0, 100) : "Standard (7-10 Days)",
         specs_json: specsJson || {},
         status: "new",
       })
@@ -89,37 +111,27 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
-    // Notify all admin users
-    try {
-      const { data: admins } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("role", "admin");
+    await notifyAdmins({
+      title: "New Custom Design Submitted",
+      body: `Customer ${user.full_name || user.email} submitted a new packaging design: "${designTitle}".`,
+      link: `/admin/designs?id=${design.id}`,
+    });
 
-      if (admins && admins.length > 0) {
-        const notifs = admins.map((adm) => ({
-          user_id: adm.id,
-          title: "New Custom Design Submitted",
-          body: `Customer ${user.full_name || user.email} submitted a new packaging design: "${designTitle}".`,
-          link: `/admin/designs?id=${design.id}`,
-        }));
-        await supabase.from("notifications").insert(notifs);
-      }
-    } catch (notifErr) {
-      console.warn("Could not dispatch admin notifications for design submission:", notifErr);
-    }
-
-    await supabase.from("audit_log").insert({
-      actor_id: user.id,
+    await logAuditEvent({
+      actorId: user.id,
       action: "SUBMIT_DESIGN",
       entity: "designs",
-      entity_id: design.id,
-      metadata: { title: designTitle, filePath },
+      entityId: design.id,
+      metadata: { title: designTitle, filePath: effectiveFilePath },
     });
 
     return NextResponse.json({ success: true, design }, { status: 201 });
   } catch (err: any) {
+    console.error("Submit design error:", err);
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to submit design" }, { status });
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to submit design" },
+      { status }
+    );
   }
 }

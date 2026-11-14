@@ -5,28 +5,29 @@ import { requireRole } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
 import { pool } from "@/utils/db";
 import { logAuditEvent } from "@/utils/audit";
+import { isValidUUID, safeRelativeOrHttpUrlSchema } from "@/utils/validation";
 
 const createProductSchema = z.object({
-  name: z.string().min(2, "Product name must be at least 2 characters"),
-  description: z.string().optional().default(""),
-  price: z.number().positive("Price must be a positive number"),
-  category: z.string().min(2, "Category is required").default("Packaging"),
-  stock_quantity: z.number().int().nonnegative().nullable().optional().default(500),
+  name: z.string().min(2, "Product name must be at least 2 characters").max(200),
+  description: z.string().max(4000).optional().default(""),
+  price: z.number().positive("Price must be a positive number").max(100000000),
+  category: z.string().min(2, "Category is required").max(100).default("Packaging"),
+  stock_quantity: z.number().int().nonnegative().max(10000000).nullable().optional().default(500),
   is_available: z.boolean().optional().default(true),
   is_featured: z.boolean().optional().default(false),
-  images: z.array(z.string()).min(1, "At least one product image is required"),
+  images: z.array(safeRelativeOrHttpUrlSchema).min(1, "At least one product image is required").max(20),
 });
 
 const updateProductSchema = z.object({
   id: z.string().uuid("Invalid product ID"),
-  name: z.string().min(2).optional(),
-  description: z.string().optional(),
-  price: z.number().positive().optional(),
-  category: z.string().min(2).optional(),
-  stock_quantity: z.number().int().nonnegative().nullable().optional(),
+  name: z.string().min(2).max(200).optional(),
+  description: z.string().max(4000).optional(),
+  price: z.number().positive().max(100000000).optional(),
+  category: z.string().min(2).max(100).optional(),
+  stock_quantity: z.number().int().nonnegative().max(10000000).nullable().optional(),
   is_available: z.boolean().optional(),
   is_featured: z.boolean().optional(),
-  images: z.array(z.string()).optional(),
+  images: z.array(safeRelativeOrHttpUrlSchema).max(20).optional(),
 });
 
 // GET /api/products - Read catalog from PostgreSQL with search, category, pagination & featured filters
@@ -208,7 +209,7 @@ export async function GET(request: NextRequest) {
     } catch {
       // Fall through to error response
     }
-    return NextResponse.json({ error: err.message || "Failed to fetch products" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
   }
 }
 
@@ -267,8 +268,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, product });
   } catch (err: any) {
+    console.error("Create product error:", err);
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to create product" }, { status });
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to create product" },
+      { status }
+    );
   }
 }
 
@@ -338,8 +343,12 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, product });
   } catch (err: any) {
+    console.error("Update product error:", err);
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to update product" }, { status });
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to update product" },
+      { status }
+    );
   }
 }
 
@@ -350,8 +359,8 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
-    if (!id) {
-      return NextResponse.json({ error: "Product ID is required." }, { status: 400 });
+    if (!id || !isValidUUID(id)) {
+      return NextResponse.json({ error: "A valid Product ID is required." }, { status: 400 });
     }
 
     // Check if product is referenced in order_items or orders
@@ -425,7 +434,11 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: "Product deleted successfully." });
   } catch (err: any) {
+    console.error("Delete product error:", err);
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to delete product" }, { status });
+    return NextResponse.json(
+      { error: status < 500 ? err.message : "Failed to delete product" },
+      { status }
+    );
   }
 }

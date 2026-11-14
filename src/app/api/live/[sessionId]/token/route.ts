@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/utils/roles";
-import { createClient } from "@/utils/supabase/server";
+import { pool } from "@/utils/db";
+import { isValidUUID } from "@/utils/validation";
 import { createLiveKitToken, getLiveKitConfig } from "@/utils/livekit";
 
 export async function POST(
@@ -9,19 +10,24 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await params;
+    if (!isValidUUID(sessionId)) {
+      return NextResponse.json({ error: "Invalid session ID." }, { status: 400 });
+    }
+
     const user = await requireUser();
-    const supabase = await createClient();
 
-    // 1. Fetch class session
-    const { data: session, error: sessErr } = await supabase
-      .from("class_sessions")
-      .select("id, title, teacher_id, status, livekit_room_name, type, starts_at")
-      .eq("id", sessionId)
-      .maybeSingle();
+    const { rows: sessRows } = await pool.query(
+      `SELECT id, title, teacher_id, status, livekit_room_name, type, starts_at
+       FROM public.class_sessions
+       WHERE id = $1
+       LIMIT 1`,
+      [sessionId]
+    );
 
-    if (sessErr || !session) {
+    if (sessRows.length === 0) {
       return NextResponse.json({ error: "Class session not found." }, { status: 404 });
     }
+    const session = sessRows[0];
 
     const roomName = session.livekit_room_name || `arenguade-live-${session.id.substring(0, 8)}`;
     const isHost = user.role === "admin" || session.teacher_id === user.id;
@@ -33,17 +39,15 @@ export async function POST(
       canPublish = true;
       roomAdmin = true;
     } else {
-      // 2. Student check: must have confirmed/approved enrollment
-      const { data: enrollment, error: enrErr } = await supabase
-        .from("enrollments")
-        .select("id, status")
-        .eq("session_id", sessionId)
-        .eq("student_id", user.id)
-        .maybeSingle();
+      const { rows: enrRows } = await pool.query(
+        `SELECT id, status FROM public.enrollments WHERE session_id = $1 AND student_id = $2 LIMIT 1`,
+        [sessionId, user.id]
+      );
 
-      if (enrErr || !enrollment) {
+      if (enrRows.length === 0) {
         return NextResponse.json({ error: "Access denied. You are not enrolled in this session." }, { status: 403 });
       }
+      const enrollment = enrRows[0];
 
       if (enrollment.status !== "confirmed" && enrollment.status !== "approved" && enrollment.status !== "attended") {
         return NextResponse.json({
@@ -51,7 +55,6 @@ export async function POST(
         }, { status: 403 });
       }
 
-      // 3. Status check: Only teacher/host can open studio early; students admitted when live or within 10 minutes of start
       if (session.status === "ended" || session.status === "cancelled") {
         return NextResponse.json({
           error: "This live session has ended or been cancelled.",
@@ -73,7 +76,7 @@ export async function POST(
         }, { status: 403 });
       }
 
-      canPublish = false; // Viewers cannot speak by default
+      canPublish = false;
       roomAdmin = false;
     }
 
@@ -102,6 +105,6 @@ export async function POST(
     });
   } catch (err: any) {
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to generate live session token" }, { status });
+    return NextResponse.json({ error: status >= 500 ? "Failed to generate live session token" : err.message }, { status });
   }
 }

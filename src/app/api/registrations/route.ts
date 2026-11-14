@@ -1,100 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { isValidUUID, toValidUUID } from "@/utils/uuid";
+import { NextResponse } from "next/server";
+import { requireUser } from "@/utils/roles";
 
-function getServerSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://heslqxyonklerdcxjohf.supabase.co";
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhlc2xxeHlvbmtsZXJkY3hqb2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5ODMyOTIsImV4cCI6MjEwNDU1OTI5Mn0.NaVbb5W4lZa82GjtFBjE3hur60p68v5r13OdOwp3iwE";
-  return createSupabaseClient(url, key);
-}
-
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const body = await request.json();
-    const {
-      sessionId,
-      sessionTitle,
-      studentId,
-      studentName,
-      studentPhone,
-      studentEmail,
-      receiptUrl,
-    } = body;
-
-    const supabase = getServerSupabase();
-
-    // 1. Resolve student UUID
-    let finalStudentId = studentId;
-    if (!isValidUUID(finalStudentId)) {
-      finalStudentId = toValidUUID(studentEmail || studentPhone || "arenguade-student");
-    }
-
-    try {
-      await supabase.from("profiles").upsert({
-        id: finalStudentId,
-        full_name: studentName || "Craft Academy Student",
-        phone: studentPhone || "",
-        role: "student",
-      });
-    } catch (profErr) {
-      console.warn("Student profile upsert note:", profErr);
-    }
-
-    // 2. Resolve class session UUID
-    let resolvedSessionId: string | null = isValidUUID(sessionId) ? sessionId : null;
-
-    if (!resolvedSessionId) {
-      const { data: dbSessions } = await supabase.from("class_sessions").select("id, title");
-      if (dbSessions && dbSessions.length > 0) {
-        if (sessionTitle) {
-          const match = dbSessions.find((s) =>
-            s.title.toLowerCase().includes(sessionTitle.toLowerCase().slice(0, 10))
-          );
-          resolvedSessionId = match ? match.id : dbSessions[0].id;
-        } else {
-          resolvedSessionId = dbSessions[0].id;
-        }
-      }
-    }
-
-    let createdReg: any = null;
-    if (resolvedSessionId) {
-      try {
-        const { data, error } = await supabase
-          .from("session_registrations")
-          .insert({
-            session_id: resolvedSessionId,
-            student_id: finalStudentId,
-            payment_screenshot_url: receiptUrl || "receipt_pending",
-            status: "pending_verification",
-          })
-          .select()
-          .single();
-
-        if (data) createdReg = data;
-        else if (error) console.warn("Supabase registration insert note:", error.message);
-      } catch (insertErr) {
-        console.warn("Supabase registration insert exception:", insertErr);
-      }
-    }
-
-    const regId = createdReg?.id || `REG-2026-${Math.floor(100 + Math.random() * 900)}`;
-
-    return NextResponse.json({
-      success: true,
-      registrationId: regId,
-      registration: createdReg || {
-        id: regId,
-        session_id: resolvedSessionId || sessionId,
-        student_id: finalStudentId,
-        status: "pending_verification",
-      },
-    });
-  } catch (error: any) {
-    console.error("Registration processing error:", error);
+    await requireUser();
     return NextResponse.json(
-      { error: error?.message || "Internal server error" },
-      { status: 500 }
+      { error: "This legacy registration endpoint has been retired. Please use /api/enrollments." },
+      { status: 410 }
     );
+  } catch (err: any) {
+    const status = err?.status || 401;
+    return NextResponse.json({ error: err?.message || "Authentication required" }, { status });
   }
 }

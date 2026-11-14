@@ -15,6 +15,19 @@ import {
   FileText,
   Send
 } from "lucide-react";
+import { sanitizeHref } from "@/utils/validation";
+
+function toSafeSocialHref(raw: string | undefined, basePrefix: string): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const candidate =
+    trimmed.startsWith("https://") || trimmed.startsWith("http://")
+      ? trimmed
+      : `${basePrefix}${encodeURIComponent(trimmed.replace(/^@/, ""))}`;
+  const safe = sanitizeHref(candidate, "#");
+  return safe === "#" ? null : safe;
+}
 
 interface SiteSettings {
   company_name: string;
@@ -104,13 +117,23 @@ export default function Footer() {
             </div>
 
               {/* Social Links */}
-            {settings.social_links && (
-              (settings.social_links.telegram || settings.social_links.instagram || settings.social_links.facebook || settings.social_links.linkedin || settings.social_links.tiktok || settings.social_links.youtube)
-            ) && (
+            {settings.social_links && (() => {
+              const telegramHref = toSafeSocialHref(settings.social_links?.telegram, "https://t.me/");
+              const tiktokHref = toSafeSocialHref(settings.social_links?.tiktok, "https://www.tiktok.com/@");
+              const youtubeHref = toSafeSocialHref(settings.social_links?.youtube, "https://www.youtube.com/@");
+              const instagramHref = toSafeSocialHref(settings.social_links?.instagram, "https://instagram.com/");
+              const facebookHref = toSafeSocialHref(settings.social_links?.facebook, "https://facebook.com/");
+              const linkedinHref = toSafeSocialHref(settings.social_links?.linkedin, "https://linkedin.com/company/");
+
+              if (!telegramHref && !tiktokHref && !youtubeHref && !instagramHref && !facebookHref && !linkedinHref) {
+                return null;
+              }
+
+              return (
               <div className="flex items-center gap-3 pt-2 flex-wrap">
-                {settings.social_links?.telegram && (
+                {telegramHref && (
                   <a
-                    href={settings.social_links.telegram.startsWith("http") ? settings.social_links.telegram : `https://t.me/${settings.social_links.telegram.replace("@", "")}`}
+                    href={telegramHref}
                     target="_blank"
                     rel="noreferrer"
                     className="w-9 h-9 rounded-full bg-stone-800 hover:bg-[#0088cc] text-stone-300 hover:text-white flex items-center justify-center transition-all shadow-xs"
@@ -119,9 +142,9 @@ export default function Footer() {
                     <Send size={15} />
                   </a>
                 )}
-                {settings.social_links?.tiktok && (
+                {tiktokHref && (
                   <a
-                    href={settings.social_links.tiktok.startsWith("http") ? settings.social_links.tiktok : `https://www.tiktok.com/@${settings.social_links.tiktok.replace("@", "")}`}
+                    href={tiktokHref}
                     target="_blank"
                     rel="noreferrer"
                     className="w-9 h-9 rounded-full bg-stone-800 hover:bg-black text-stone-300 hover:text-white flex items-center justify-center transition-all shadow-xs"
@@ -132,9 +155,9 @@ export default function Footer() {
                     </svg>
                   </a>
                 )}
-                {settings.social_links?.youtube && (
+                {youtubeHref && (
                   <a
-                    href={settings.social_links.youtube.startsWith("http") ? settings.social_links.youtube : `https://www.youtube.com/@${settings.social_links.youtube.replace("@", "")}`}
+                    href={youtubeHref}
                     target="_blank"
                     rel="noreferrer"
                     className="w-9 h-9 rounded-full bg-stone-800 hover:bg-[#FF0000] text-stone-300 hover:text-white flex items-center justify-center transition-all shadow-xs"
@@ -145,9 +168,9 @@ export default function Footer() {
                     </svg>
                   </a>
                 )}
-                {settings.social_links?.instagram && (
+                {instagramHref && (
                   <a
-                    href={settings.social_links.instagram.startsWith("http") ? settings.social_links.instagram : `https://instagram.com/${settings.social_links.instagram.replace("@", "")}`}
+                    href={instagramHref}
                     target="_blank"
                     rel="noreferrer"
                     className="w-9 h-9 rounded-full bg-stone-800 hover:bg-[#E4405F] text-stone-300 hover:text-white flex items-center justify-center transition-all shadow-xs"
@@ -158,9 +181,9 @@ export default function Footer() {
                     </svg>
                   </a>
                 )}
-                {settings.social_links?.facebook && (
+                {facebookHref && (
                   <a
-                    href={settings.social_links.facebook.startsWith("http") ? settings.social_links.facebook : `https://facebook.com/${settings.social_links.facebook.replace("@", "")}`}
+                    href={facebookHref}
                     target="_blank"
                     rel="noreferrer"
                     className="w-9 h-9 rounded-full bg-stone-800 hover:bg-[#1877F2] text-stone-300 hover:text-white flex items-center justify-center transition-all shadow-xs"
@@ -171,9 +194,9 @@ export default function Footer() {
                     </svg>
                   </a>
                 )}
-                {settings.social_links?.linkedin && (
+                {linkedinHref && (
                   <a
-                    href={settings.social_links.linkedin.startsWith("http") ? settings.social_links.linkedin : `https://linkedin.com/company/${settings.social_links.linkedin.replace("@", "")}`}
+                    href={linkedinHref}
                     target="_blank"
                     rel="noreferrer"
                     className="w-9 h-9 rounded-full bg-stone-800 hover:bg-[#0A66C2] text-stone-300 hover:text-white flex items-center justify-center transition-all shadow-xs"
@@ -185,7 +208,8 @@ export default function Footer() {
                   </a>
                 )}
               </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Catalog Links */}

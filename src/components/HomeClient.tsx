@@ -6,6 +6,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useCurrency } from "@/components/CurrencyContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { sanitizeHref } from "@/utils/validation";
 import { 
   ShoppingBag, 
   BookOpen, 
@@ -119,14 +120,14 @@ export default function HomeClient({
   const heroBadge = cmsContent.hero_badge || "Addis Ababa • Artisanal Kraft Guild";
   const heroHeadline = cmsContent.hero_headline || "Artisanal Kraft Packaging & Craft Academy";
   const heroSubline = cmsContent.hero_subline || "100% biodegradable kraft shopping bags, specialty coffee pouches, and luxury boutique carriers. Learn the trade in our Addis Ababa workshops or join live online masterclasses.";
-  const heroImage = cmsContent.hero_image || "/images/photo_3_2026-09-05_00-36-02.jpg";
+  const heroImage = sanitizeHref(cmsContent.hero_image, "/images/photo_3_2026-09-05_00-36-02.jpg");
   const heroCta1Text = cmsContent.hero_cta1_text || "Explore catalog";
-  const heroCta1Link = cmsContent.hero_cta1_link || "/products";
+  const heroCta1Link = sanitizeHref(cmsContent.hero_cta1_link, "/products");
   const heroCta2Text = cmsContent.hero_cta2_text || "Book workshop";
-  const heroCta2Link = cmsContent.hero_cta2_link || "/learn/schedule";
+  const heroCta2Link = sanitizeHref(cmsContent.hero_cta2_link, "/learn/schedule");
 
   // Mobile-specific UI / UX controls from CMS
-  const mobileHeroImage = cmsContent.mobile_hero_image || heroImage;
+  const mobileHeroImage = sanitizeHref(cmsContent.mobile_hero_image, heroImage);
   const mobileEyebrow = cmsContent.mobile_eyebrow || heroBadge;
   const mobileHeadline = cmsContent.mobile_headline || "Made by hand. Built for your brand.";
   const mobileSubline = cmsContent.mobile_subline || "Biodegradable paper packaging, shaped by Ethiopian craft and engineered for modern retail.";
@@ -143,7 +144,7 @@ export default function HomeClient({
   const academyBannerEyebrow = cmsContent.academy_banner_eyebrow || "Arenguade craft academy";
   const academyBannerHeadline = cmsContent.academy_banner_headline || "Learn the craft. Build a livelihood.";
   const academyBannerSub = cmsContent.academy_banner_sub || "Hands-on studio courses and live masterclasses led by working Ethiopian makers.";
-  const academyBannerImage = cmsContent.academy_banner_image || "/images/photo_2_2026-09-05_00-36-02.jpg";
+  const academyBannerImage = sanitizeHref(cmsContent.academy_banner_image, "/images/photo_2_2026-09-05_00-36-02.jpg");
 
   // Trust statistics from CMS
   const stat1Val = cmsContent.stat_1_val || "1.2M+";

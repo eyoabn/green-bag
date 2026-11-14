@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/utils/roles";
-import { createClient } from "@/utils/supabase/server";
+import { pool } from "@/utils/db";
+import { isValidUUID } from "@/utils/validation";
 import { removeLiveKitParticipant } from "@/utils/livekit";
 
 export async function POST(
@@ -9,18 +10,24 @@ export async function POST(
 ) {
   try {
     const { sessionId, identity } = await params;
+    if (!isValidUUID(sessionId)) {
+      return NextResponse.json({ error: "Invalid session ID." }, { status: 400 });
+    }
+
     const user = await requireUser();
-    const supabase = await createClient();
 
-    const { data: session } = await supabase
-      .from("class_sessions")
-      .select("id, teacher_id, livekit_room_name")
-      .eq("id", sessionId)
-      .maybeSingle();
+    const { rows: sessRows } = await pool.query(
+      `SELECT id, teacher_id, livekit_room_name
+       FROM public.class_sessions
+       WHERE id = $1
+       LIMIT 1`,
+      [sessionId]
+    );
 
-    if (!session) {
+    if (sessRows.length === 0) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });
     }
+    const session = sessRows[0];
 
     if (user.role !== "admin" && session.teacher_id !== user.id) {
       return NextResponse.json({ error: "Access denied. Only host or admin can remove participants." }, { status: 403 });
@@ -32,6 +39,6 @@ export async function POST(
     return NextResponse.json({ success: true, removed: true, identity });
   } catch (err: any) {
     const status = err.status || 500;
-    return NextResponse.json({ error: err.message || "Failed to remove participant" }, { status });
+    return NextResponse.json({ error: status >= 500 ? "Failed to remove participant" : err.message }, { status });
   }
 }

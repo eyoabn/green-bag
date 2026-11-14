@@ -2,8 +2,16 @@ import { Pool } from "pg";
 
 // Singleton PostgreSQL pool for direct administrative and schema operations
 declare global {
-  // eslint-disable-next-line no-var
   var __pgPool: Pool | undefined;
+}
+
+function resolveSslConfig() {
+  const ca = process.env.PG_SSL_CA?.replace(/\\n/g, "\n");
+  if (ca) {
+    return { rejectUnauthorized: true, ca };
+  }
+  const strict = process.env.PG_SSL_REJECT_UNAUTHORIZED === "true";
+  return { rejectUnauthorized: strict };
 }
 
 function getPoolInstance(): Pool {
@@ -23,7 +31,7 @@ function getPoolInstance(): Pool {
 
   const instance = new Pool({
     connectionString,
-    ssl: { rejectUnauthorized: false },
+    ssl: resolveSslConfig(),
     max: 10,
     idleTimeoutMillis: 30000,
   });

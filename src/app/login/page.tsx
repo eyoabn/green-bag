@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import { setLocalUser, AppUser } from "@/utils/auth";
+import { sanitizeRelativeRedirect } from "@/utils/validation";
 
 function LoginFormContent() {
   const router = useRouter();
@@ -20,17 +21,9 @@ function LoginFormContent() {
   const completeLogin = (user: AppUser) => {
     setLocalUser(user);
     const role = user.role;
-    let target = "/dashboard";
-
-    if (returnTo) {
-      target = returnTo;
-    } else if (role === "admin") {
-      target = "/admin";
-    } else if (role === "teacher") {
-      target = "/teacher";
-    } else {
-      target = "/dashboard";
-    }
+    const roleTarget =
+      role === "admin" ? "/admin" : role === "teacher" ? "/teacher" : "/dashboard";
+    const target = returnTo ? sanitizeRelativeRedirect(returnTo, roleTarget) : roleTarget;
 
     if (typeof window !== "undefined") {
       window.location.href = target;

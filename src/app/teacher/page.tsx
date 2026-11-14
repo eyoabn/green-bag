@@ -33,7 +33,6 @@ interface TeacherSession {
   capacity: number;
   price: number;
   status: "scheduled" | "live" | "ended" | "cancelled";
-  livekit_room_name?: string;
   enrolledCount: number;
   confirmedCount: number;
   attendedCount: number;
@@ -72,7 +71,7 @@ export default function TeacherDashboardPage() {
           .from("class_sessions")
           .select(`
             id, type, title, description, location, starts_at, ends_at,
-            capacity, price, status, livekit_room_name,
+            capacity, price, status,
             enrollments(id, status, attended)
           `)
           .order("starts_at", { ascending: true });
@@ -99,7 +98,6 @@ export default function TeacherDashboardPage() {
             capacity: s.capacity,
             price: Number(s.price),
             status: s.status,
-            livekit_room_name: s.livekit_room_name,
             enrolledCount: enrs.length,
             confirmedCount: active.length,
             attendedCount: attended.length,

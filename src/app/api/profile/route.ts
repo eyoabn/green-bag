@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/utils/roles";
 import { createClient } from "@/utils/supabase/server";
+import { safeRelativeOrHttpUrlSchema } from "@/utils/validation";
 import { z } from "zod";
 
 const updateProfileSchema = z.object({
   fullName: z.string().min(1, "Name cannot be empty").max(100).optional(),
   phone: z.string().max(30).optional(),
-  avatarUrl: z.string().url().or(z.literal("")).optional(),
+  avatarUrl: safeRelativeOrHttpUrlSchema.optional().or(z.literal("")),
 });
 
 export async function GET() {

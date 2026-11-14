@@ -46,7 +46,7 @@ export default function AdminUsersPage() {
   const [newFullName, setNewFullName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newPassword, setNewPassword] = useState("Password123!");
+  const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<"customer" | "teacher" | "admin">("teacher");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
@@ -197,7 +197,7 @@ export default function AdminUsersPage() {
         setNewFullName("");
         setNewEmail("");
         setNewPhone("");
-        setNewPassword("Password123!");
+        setNewPassword("");
         fetchUsers();
         setActionSuccess(`Account provisioned successfully for ${resJson.user.email} (${newRole.toUpperCase()})!`);
         setTimeout(() => setActionSuccess(""), 4000);
@@ -507,17 +507,20 @@ export default function AdminUsersPage() {
 
               <div>
                 <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                  Initial Password
+                  Initial Password *
                 </label>
                 <input
-                  type="text"
+                  type="password"
                   required
+                  minLength={8}
+                  maxLength={128}
+                  placeholder="Minimum 8 characters"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-xs font-mono focus:ring-2 focus:ring-[#1E3B2E]/20 focus:border-[#1E3B2E] outline-none"
                 />
                 <span className="text-[10px] text-stone-400 mt-1 block">
-                  The user can update this password after initial sign in.
+                  Minimum 8 characters. The user can update this password after initial sign in.
                 </span>
               </div>
 
